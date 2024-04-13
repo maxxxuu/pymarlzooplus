@@ -1,7 +1,11 @@
+import math
+
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+
+from ..agents.cnn_agent import CNNAgent
 
 
 class QMixer(nn.Module):
@@ -21,6 +25,9 @@ class QMixer(nn.Module):
             raise ValueError(f"Invalid 'state_shape': {args.state_shape}")
 
         self.embed_dim = args.mixing_embed_dim
+        # cnn
+        if self.is_image is True:
+            self.cnn = CNNAgent([args.state_shape[1:]], args)
 
         if getattr(args, "hypernet_layers", 1) == 1:
             self.hyper_w_1 = nn.Linear(self.state_dim, self.embed_dim * self.n_agents)
@@ -48,13 +55,34 @@ class QMixer(nn.Module):
 
     def forward(self, agent_qs, states):
 
-        print(agent_qs.shape)
-        print(states.shape)
-        exit(0)
-
         bs = agent_qs.size(0)
-        states = states.reshape(-1, self.state_dim)
         agent_qs = agent_qs.view(-1, 1, self.n_agents)
+
+        if self.is_image is True:
+
+            channels = states.shape[3]
+            height = states.shape[4]
+            width = states.shape[5]
+            # Reshape the states
+            # from [batch size, max steps, n_agents, channels, height, width]
+            # to [batch size x max steps x n_agents, channels, height, width]
+            states = states.reshape(-1, channels, height, width)
+            total_samples = states.shape[0]
+            n_batches = math.ceil(total_samples / 2)
+
+            # state-images are processed in batches due to memory limitations
+            states_new = []
+            for batch in range(n_batches):
+                # from [batch size, channels, height, width]
+                # to [batch size, cnn features dim]
+                states_new.append(self.cnn(states[batch*2:(batch+1)*2])) #TODO change 2 to batch size
+
+            # to [batch size x max steps x n_agents, cnn features dim]
+            states = th.concat(states_new, dim=0)
+            states = states.view(-1, self.state_dim)
+        else:
+            states = states.reshape(-1, self.state_dim)
+
         # First layer
         w1 = th.abs(self.hyper_w_1(states))
         b1 = self.hyper_b_1(states)
