@@ -339,7 +339,7 @@ class ObservationPZ(ObservationWrapper):
             self.torch = torch
             import albumentations as A
             from albumentations.pytorch import ToTensorV2
-            img_size = 224
+            img_size = 40 #TODO change it to 224
             self.transform = A.Compose([
                 A.LongestMaxSize(max_size=img_size, interpolation=1), # Resize the longest side to 224
                 A.PadIfNeeded(min_height=img_size, min_width=img_size, border_mode=0, value=(0, 0, 0)), # Pad to make the image square
