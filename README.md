@@ -1,79 +1,100 @@
-# Extended Python MARL framework - EPyMARL
+# Further Extended Python MARL framework - EPyMARL
 
-EPyMARL is  an extension of [PyMARL](https://github.com/oxwhirl/pymarl), and includes
-- Additional algorithms (IA2C, IPPO, MADDPG, MAA2C and MAPPO)
-- Support for [Gym](https://github.com/openai/gym) environments (on top of the existing SMAC support)
-- Option for no-parameter sharing between agents (original PyMARL only allowed for parameter sharing)
-- Flexibility with extra implementation details (e.g. hard/soft updates, reward standarization, and more)
-- Consistency of implementations between different algorithms (fair comparisons)
-
-See our blog post here: https://agents.inf.ed.ac.uk/blog/epymarl/
-
-
-## Update as of *15th July 2023*!
-We have released our _Pareto Actor-Critic_ algorithm, accepted in TMLR, as part of the E-PyMARL source code. 
-
-Find the paper here: https://arxiv.org/abs/2209.14344
-
-Pareto-AC (Pareto-AC), is an actor-critic algorithm that utilises a simple principle of no-conflict games (and, in turn, cooperative games with identical rewards): each agent can assume the others will choose actions that will lead to a Pareto-optimal equilibrium.
-Pareto-AC works especially well in environments with multiple suboptimal equilibria (a problem is also known as relative over-generalisation). We have seen impressive results in a diverse set of multi-agent games with suboptimal equilibria, including the matrix games of the MARL benchmark, but also LBF variations with high penalties.
-
-To run Pareto-AC in an environment, for example the Penalty game, you can run:
-```
-python main.py --config=pac_ns --env-config=gymma with env_args.time_limit=1 env_args.key=matrixgames:penalty-100-nostate-v0
-```
+FEPyMARL is  an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), and includes
+- Additional algorithms (HAPPOM, CDS, MAT, ...)
+- Support for [PettingZoo](https://github.com/Farama-Foundation/PettingZoo) environments (on top of the existing gym support)
+- Support for [Overcooked](https://github.com/HumanCompatibleAI/overcooked_ai) environments.
+- ...
 
 # Table of Contents
-- [Extended Python MARL framework - EPyMARL](#extended-python-marl-framework---epymarl)
+- [Further Extended Python MARL framework - FEPyMARL](#further-extended-python-marl-framework---epymarl)
 - [Table of Contents](#table-of-contents)
 - [Installation & Run instructions](#installation--run-instructions)
-  - [Installing LBF, RWARE, and MPE](#installing-lbf-rware-and-mpe)
-  - [Installing MARBLER for Sim2Real Evaluation](#installing-marbler)
+  - [Base requirements installation](#base-requirements-installation)
+  - [Torch installation](#torch-installation)
+  - [Torch-scatter installation](#torch-scatter-installation)
+  - [Installing LBF, RWARE, MPE, PettingZoo, and Overcooked](#installing-lbf-rware-mpe-pettingzoo-and-overcooked)
   - [Using A Custom Gym Environment](#using-a-custom-gym-environment)
 - [Run an experiment on a Gym environment](#run-an-experiment-on-a-gym-environment)
 - [Run a hyperparameter search](#run-a-hyperparameter-search)
 - [Saving and loading learnt models](#saving-and-loading-learnt-models)
   - [Saving models](#saving-models)
   - [Loading models](#loading-models)
-- [Citing PyMARL and EPyMARL](#citing-pymarl-and-epymarl)
+- [Citing FEPyMARL, PyMARL, and EPyMARL](#citing-fepymarl-epymarl-and-pymarl)
 - [License](#license)
 
 # Installation & Run instructions
 
-For information on installing and using this codebase with SMAC, we suggest visiting and reading the original [PyMARL](https://github.com/oxwhirl/pymarl) README. Here, we maintain information on using the extra features EPyMARL offers.
-To install the codebase, clone this repo and install the `requirements.txt`.  
+## Base requirements installation
+To install the minimum requirements (without environments installation) run the following commands:
+```sh
+git clone ...
+cd epymarl/installation
+conda create -n epymarl python=3.8.18 -y
+conda activate epymarl
+pip install wheel==0.38.4 setuptools==65.5.0 einops
+pip install -r requirements.txt
+``` 
 
-## Installing LBF, RWARE, and MPE
+## Torch installation
+Then, run the following to install torch:
+```sh
+pip install protobuf==3.20.*
+```
+If you need torch with CUDA support:
+```sh
+pip3 install==2.1.2 torch torchvision==0.16.2--index-url https://download.pytorch.org/whl/cu121
+```
+otherwise:
+```sh
+pip3 install torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cpu
+```
 
-In [Benchmarking Multi-Agent Deep Reinforcement Learning Algorithms in Cooperative Tasks](https://arxiv.org/abs/2006.07869) we introduce and benchmark algorithms in Level-Based Foraging, Multi-Robot Warehouse and Multi-agent Particle environments.
-To install these please visit:
-- [Level Based Foraging](https://github.com/uoe-agents/lb-foraging) or install with `pip install lbforaging`
-- [Multi-Robot Warehouse](https://github.com/uoe-agents/robotic-warehouse) or install with `pip install rware`
-- [Our fork of MPE](https://github.com/semitable/multiagent-particle-envs), clone it and install it with `pip install -e .`
+## Torch-scatter installation
+Finally, run the following for torch-scatter installation (which is needed for the most Actor-Critic algorithms):
+```sh
+sh ./install_torch_scatter.sh
+```
+
+## Installing LBF, RWARE, MPE, PettingZoo, and Overcooked
+
+### LBF
+To install [Level Based Foraging](https://github.com/uoe-agents/lb-foraging), run:
+```sh
+pip install lbforaging
+```
 
 Example of using LBF:
 ```sh
 python3 src/main.py --config=qmix --env-config=gymma with env_args.time_limit=25 env_args.key="lbforaging:Foraging-8x8-2p-3f-v1"
 ```
+
+### RWARE
+To install [Multi-Robot Warehouse](https://github.com/uoe-agents/robotic-warehouse), run:
+```sh
+pip install rware
+```
+
 Example of using RWARE:
 ```sh
 python3 src/main.py --config=qmix --env-config=gymma with env_args.time_limit=500 env_args.key="rware:rware-tiny-2ag-v1"
 ```
 
-For MPE, our fork is needed. Essentially all it does (other than fixing some gym compatibility issues) is i) registering the environments with the gym interface when imported as a package and ii) correctly seeding the environments iii) makes the action space compatible with Gym (I think MPE originally does a weird one-hot encoding of the actions).
+### MPE
+To install [MPE](https://github.com/semitable/multiagent-particle-envs), run:
+```sh
+pip install seaborn git+https://github.com/semitable/multiagent-particle-envs.git
+```
+
+For MPE, the fork ... is needed. Essentially all it does (other than fixing some gym compatibility issues) is i) registering the environments with the gym interface when imported as a package and ii) correctly seeding the environments iii) makes the action space compatible with Gym (I think MPE originally does a weird one-hot encoding of the actions).
 
 The environments names in MPE are:
 ```
 ...
     "multi_speaker_listener": "MultiSpeakerListener-v0",
-    "simple_adversary": "SimpleAdversary-v0",
-    "simple_crypto": "SimpleCrypto-v0",
-    "simple_push": "SimplePush-v0",
-    "simple_reference": "SimpleReference-v0",
     "simple_speaker_listener": "SimpleSpeakerListener-v0",
     "simple_spread": "SimpleSpread-v0",
-    "simple_tag": "SimpleTag-v0",
-    "simple_world_comm": "SimpleWorldComm-v0",
+    "simple_tag": "SimpleTag-v0"
 ...
 ```
 Therefore, after installing them you can run it using:
@@ -81,22 +102,33 @@ Therefore, after installing them you can run it using:
 python3 src/main.py --config=qmix --env-config=gymma with env_args.time_limit=25 env_args.key="mpe:SimpleSpeakerListener-v0"
 ```
 
-The pretrained agents are included in this repo [here](https://github.com/uoe-agents/epymarl/tree/main/src/pretrained). You can use them with:
+### PettingZoo
+To install PettinZoo run:
 ```sh
-python3 src/main.py --config=qmix --env-config=gymma with env_args.time_limit=25 env_args.key="mpe:SimpleAdversary-v0" env_args.pretrained_wrapper="PretrainedAdversary"
+pip install opencv-python==4.9.0.80
+pip install transformers==4.38.2 pettingzoo==1.24.3 'pettingzoo[atari]'==1.24.3 autorom==0.6.1 'pettingzoo[butterfly]'==1.24.3 
+AutoROM -y
 ```
-and
+NOTE: For headless machines install opencv with the following command:
 ```sh
-python3 src/main.py --config=qmix --env-config=gymma with env_args.time_limit=25 env_args.key="mpe:SimpleTag-v0" env_args.pretrained_wrapper="PretrainedTag"
+pip install opencv-python==4.9.0.80
 ```
 
-## Installing MARBLER
-
-[MARBLER](https://github.com/GT-STAR-Lab/MARBLER) is a gym built for [the Robotarium](https://www.robotarium.gatech.edu) to enable free and effortless Sim2Real evaluation of algorithms. Clone it and follow the instructions on its Github to install it.
-
-Example of using MARBLER:
+Example of using PettingZoo:
 ```sh
-python3 src/main.py --config=qmix --env-config=gymma with env_args.time_limit=10000 env_args.key="robotarium_gym:PredatorCapturePrey-v0"
+python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.max_cycles=25 env_args.key="pistonball_v6" env_args.kwargs="('n_pistons',4),"
+```
+
+### Overcooked
+To install Overcooked, assuming being in ```epymarl/``` directory run:
+```sh
+cd src/envs/overcooked_ai/
+pip install -e .
+```
+
+Example of using Overcooked:
+```sh
+python3 src/main.py --config=qmix --env-config=overcooked with env_args.horizon=500 env_args.key="asymmetric_advantages"
 ```
 
 ## Using A Custom Gym Environment
@@ -156,9 +188,15 @@ You can save the learnt models to disk by setting `save_model = True`, which is 
 
 Learnt models can be loaded using the `checkpoint_path` parameter, after which the learning will proceed from the corresponding timestep. 
 
-# Citing EPyMARL and PyMARL
+# Citing FEPyMARL, EPyMARL and PyMARL
 
-The Extended PyMARL (EPyMARL) codebase was used in [Benchmarking Multi-Agent Deep Reinforcement Learning Algorithms in Cooperative Tasks](https://arxiv.org/abs/2006.07869).
+If you use FEPyMARL in your research, please cite the ...
+
+In BibTeX format:
+'''tex
+'''
+
+If you use the EPyMARL in your research, please cite the [Benchmarking Multi-Agent Deep Reinforcement Learning Algorithms in Cooperative Tasks](https://arxiv.org/abs/2006.07869).
 
 *Georgios Papoudakis, Filippos Christianos, Lukas Schäfer, & Stefano V. Albrecht. Benchmarking Multi-Agent Deep Reinforcement Learning Algorithms in Cooperative Tasks, Proceedings of the Neural Information Processing Systems Track on Datasets and Benchmarks (NeurIPS), 2021*
 
@@ -193,5 +231,5 @@ In BibTeX format:
 ```
 
 # License
-All the source code that has been taken from the PyMARL repository was licensed (and remains so) under the Apache License v2.0 (included in `LICENSE` file).
+All the source code that has been taken from the and EPyMARL PyMARL repository was licensed (and remains so) under the Apache License v2.0 (included in `LICENSE` file).
 Any new code is also licensed under the Apache License v2.0
