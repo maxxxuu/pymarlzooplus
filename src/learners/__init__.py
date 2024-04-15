@@ -14,5 +14,6 @@ REGISTRY = {"q_learner": QLearner,
             "maddpg_learner": MADDPGLearner,
             "ppo_learner": PPOLearner,
             "pac_learner": PACActorCriticLearner,
-            "pac_dcg_learner": PACDCGLearner}
+            "pac_dcg_learner": PACDCGLearner
+            }
 

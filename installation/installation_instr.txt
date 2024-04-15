@@ -1,10 +1,17 @@
 # For base epymarl with gym support
 # git clone https://github.com/uoe-agents/epymarl.git
 cd epymarl/installation
-conda create -n epymarl python=3.8.18 -y && \
-conda activate epymarl && \
-pip install wheel==0.38.4 setuptools==65.5.0 einops && \
-pip install -r requirements.txt && \
+conda create -n epymarl python=3.8.18 -y
+conda activate epymarl
+pip install wheel==0.38.4 setuptools==65.5.0 einops
+pip install -r requirements.txt
+
+# For torch and torch-scatter installation
+pip install protobuf==3.20.*
+if you have GPU:
+    - pip3 install==2.1.2 torch torchvision==0.16.2--index-url https://download.pytorch.org/whl/cu121
+otherwise:
+    - pip3 install torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cpu
 sh ./install_torch_scatter.sh
 
 # For SMAC
@@ -25,7 +32,8 @@ pip install seaborn git+https://github.com/semitable/multiagent-particle-envs.gi
 # For MARBLER (assumming already in "epymarl/installation" directory)
 bash install_MARBLER.sh
 
-### For pettingzoo
+
+############################## For pettingzoo ##############################
 
 ## Prerequisites
 pip install opencv-python-headless==4.9.0.80
@@ -33,7 +41,7 @@ pip install opencv-python-headless==4.9.0.80
 pip install opencv-python==4.9.0.80 # only for rendering
 
 ## All (of our interest: Atari, Butterfly)
-pip install transformers==4.38.2 pettingzoo==1.24.3 'pettingzoo[atari]'==1.24.3 autorom==0.6.1 'pettingzoo[butterfly]'==1.24.3
+pip install transformers==4.38.2 pettingzoo==1.24.3 'pettingzoo[atari]'==1.24.3 autorom==0.6.1 'pettingzoo[butterfly]'==1.24.3 && AutoROM -y
 
 ## or, individual
 # Atari
@@ -49,4 +57,9 @@ pip install 'pettingzoo[mpe]'==1.24.3
 # SISL
 sudo apt-get install swig
 pip install 'pettingzoo[sisl]'==1.24.3
+################################################################################
 
+# For Overcooked
+# Assuming being in epymarl/ directory:
+cd src/envs/overcooked_ai/
+pip install -e .

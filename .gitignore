@@ -2,3 +2,7 @@
 results/
 **/__pycache__/
 3rdparty/
+**/overcooked_ai.egg-info/
+**/.DS_Store
+
+

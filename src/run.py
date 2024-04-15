@@ -12,9 +12,9 @@ from os.path import dirname, abspath
 from learners import REGISTRY as le_REGISTRY
 from runners import REGISTRY as r_REGISTRY
 from controllers import REGISTRY as mac_REGISTRY
+
 from components.episode_buffer import ReplayBuffer
 from components.transforms import OneHot
-
 
 def run(_run, _config, _log):
 

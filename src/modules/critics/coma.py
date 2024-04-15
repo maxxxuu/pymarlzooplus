@@ -2,7 +2,6 @@ import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 
-
 class COMACritic(nn.Module):
     def __init__(self, scheme, args):
         super(COMACritic, self).__init__()

@@ -1,0 +1,68 @@
+env: "overcooked"
+
+env_args:
+  key: null
+  horizon: null
+  reward_type: "shaped" # Options: "shaped", "sparse"
+
+test_greedy: True
+test_nepisode: 10 # 100
+test_interval: 500 # 50000
+log_interval: 500 # 50000
+runner_log_interval: 1000 # 10000
+learner_log_interval: 1000 # 10000
+t_max: 10000 # 2050000
+
+# Overcooked
+# https://github.com/HumanCompatibleAI/overcooked_ai
+# args: key="asymmetric_advantages", horizon=500, reward_type="shaped"
+# RUN: python3 src/main.py --config=qmix --env-config=overcooked with env_args.horizon=500 env_args.key="asymmetric_advantages"
+
+# layouts (which is the "key" in the "env_args") options:
+#   "random3"                                                   Popular: require that agents are capable of not blocking each other
+#   "random0"                                                   Popular: has different elements at each side of the layout division so cooperation is mandatory for winning
+#   "unident"                                                   Popular: has enough elements at each side of the kitchen for each agent to serve soups by themselves without the need of the other, so cooperation is not mandatory for winning, but desirable for optimality
+#   "soup_coordination"
+#   "small_corridor"
+#   "simple_tomato"
+#   "simple_o_t"
+#   "simple_o"
+#   "schelling_s"
+#   "schelling"
+#   "m_shaped_s"
+#   "long_cook_time"
+#   "large_room"
+#   "forced_coordination_tomato"
+#   "forced_coordination"                                       Popular: removes collision coordination problems, and forces players to develop a high-level joint strategy, since neither player can serve a dish by themselves
+#   "cramped_room_tomato"
+#   "cramped_room_o_3orders"
+#   "cramped_room"                                              Popular: presents low-level coordination challenges: in this shared, confined space it is very easy for the agents to collide
+#   "cramped_corridor"
+#   "counter_circuit_o_1order"
+#   "counter_circuit"                                           Popular: involves a non-obvious coordination strategy, where onions are passed over the counter to the pot, rather than being carried around.
+#   "corridor" --> the first time wait ~10 minutes
+#   "coordination_ring"                                         Popular: players must coordinate to travel between the bottom left and top right corners of the layout
+#   "centre_objects" --> the first time wait 3-4 minutes
+#   "centre_pots"--> the first time wait 20-30 seconds
+#   "asymmetric_advantages"                                     Popular: tests whether players can choose high-level strategies that play to their strengths
+#   "asymmetric_advantages_tomato"
+#   "bottleneck"
+
+# The reward provided is the sum of the mdp_infos["sparse_reward_by_agent"].
+
+# The sparse reward is calculated based on "deliver_soup" (if the order is ready and based on the order bones)
+# and is the same for both agents.
+
+# The shaped reward is calculated based on the following setting:
+#  BASE_REW_SHAPING_PARAMS = {
+#      "PLACEMENT_IN_POT_REW": 3,
+#      "DISH_PICKUP_REWARD": 3,
+#      "SOUP_PICKUP_REWARD": 5,
+#      "DISH_DISP_DISTANCE_REW": 0,
+#      "POT_DISTANCE_REW": 0,
+#      "SOUP_DISTANCE_REW": 0,
+#  }
+# which are returned based on the following conditions:
+#  - is_dish_pickup_useful --> "DISH_PICKUP_REWARD"
+#  - soup_ready_at_location --> "SOUP_PICKUP_REWARD" (conditional on the agent position)
+#  - not soup.is_full --> "PLACEMENT_IN_POT_REW" (conditional on the agent position)
