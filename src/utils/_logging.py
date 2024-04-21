@@ -10,6 +10,10 @@ class Logger:
         self.use_sacred = False
         self.use_hdf = False
 
+        self.tb_logger = None
+        self._run_obj = None
+        self.sacred_info = None
+
         self.stats = defaultdict(lambda: [])
 
     def setup_tb(self, directory_name):
@@ -65,7 +69,7 @@ def get_logger():
     formatter = logging.Formatter('[%(levelname)s %(asctime)s] %(name)s %(message)s', '%H:%M:%S')
     ch.setFormatter(formatter)
     logger.addHandler(ch)
-    logger.setLevel("INFO") # Options: 'DEBUG', 'WARNING', 'ERROR', 'CRITICAL'
+    logger.setLevel("INFO")  # Options: 'DEBUG', 'WARNING', 'ERROR', 'CRITICAL'
 
     return logger
 

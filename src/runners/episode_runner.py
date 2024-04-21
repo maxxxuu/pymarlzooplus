@@ -1,8 +1,8 @@
+import datetime
 from envs import REGISTRY as env_REGISTRY
 from functools import partial
 from components.episode_buffer import EpisodeBatch
 import numpy as np
-
 
 class EpisodeRunner:
 
@@ -17,7 +17,15 @@ class EpisodeRunner:
         self.batch_size = self.args.batch_size_run
         assert self.batch_size == 1
 
+        # Initialize environment
         self.env = env_REGISTRY[self.args.env](**self.args.env_args)
+        if "PettingZoo" in type(self.env).__name__:
+            # Get info from environment to be printed
+            print_info = self.env.get_print_info()
+            # Simulate the message format of the logger defined in _logging.py
+            current_time = datetime.datetime.now().strftime('%H:%M:%S')
+            self.logger.console_logger.info(f"\n[INFO {current_time}] episode_runner {print_info}")
+
         self.episode_limit = self.env.episode_limit
         self.t = 0
 

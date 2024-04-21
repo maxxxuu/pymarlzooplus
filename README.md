@@ -1,7 +1,7 @@
 # Further Extended Python MARL framework - EPyMARL
 
 FEPyMARL is  an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), and includes
-- Additional algorithms (HAPPOM, CDS, MAT, ...)
+- Additional algorithms: HAPPO, CDS, MAT, QPLEX
 - Support for [PettingZoo](https://github.com/Farama-Foundation/PettingZoo) environments (on top of the existing gym support)
 - Support for [Overcooked](https://github.com/HumanCompatibleAI/overcooked_ai) environments.
 - ...

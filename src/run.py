@@ -5,9 +5,11 @@ import time
 import threading
 import torch as th
 from types import SimpleNamespace as SN
-from utils.logging import Logger
+from utils._logging import Logger
 from utils.timehelper import time_left, time_str
 from os.path import dirname, abspath
+
+from sacred.observers import FileStorageObserver  # This is for finding the results path
 
 from learners import REGISTRY as le_REGISTRY
 from runners import REGISTRY as r_REGISTRY
@@ -16,7 +18,20 @@ from controllers import REGISTRY as mac_REGISTRY
 from components.episode_buffer import ReplayBuffer
 from components.transforms import OneHot
 
+from utils.plot_utils import plot_single_experiment_results
+
+
 def run(_run, _config, _log):
+
+    # Find the file path where the results are stored in order to create the plots latter
+    assert _run.observers, "No observers defined!"
+    file_storage_observer_idx = -1
+    for observer_idx, observer in enumerate(_run.observers):
+        if isinstance(observer, FileStorageObserver):
+            file_storage_observer_idx = observer_idx
+            break  # Successfully identified the observer as FileStorageObserver
+    assert file_storage_observer_idx > -1, "File storage observer is not defined!"
+    results_dir = _run.observers[file_storage_observer_idx].dir
 
     # check args sanity
     _config = args_sanity_check(_config, _log)
@@ -50,6 +65,10 @@ def run(_run, _config, _log):
 
     # Run and train
     run_sequential(args=args, logger=logger)
+
+    # Plot results
+    print("Creating plots ...")
+    plot_single_experiment_results(results_dir, algo_name=_config['name'], env_name=map_name)
 
     # Clean up after finishing
     print("Exiting Main")

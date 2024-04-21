@@ -220,6 +220,7 @@ class ObservationPZ(ObservationWrapper):
     def __init__(self, env, trainable_cnn, image_encoder, image_encoder_batch_size, image_encoder_use_cuda):
         super(ObservationPZ, self).__init__(env)
 
+        self.print_info = None
         self.trainable_cnn = trainable_cnn
         self.original_observation_space = self.env.observation_space(self.env.possible_agents[0])
         self.original_observation_space_shape = self.original_observation_space.shape
@@ -253,7 +254,7 @@ class ObservationPZ(ObservationWrapper):
                 from torchvision.models import resnet18
 
                 # Define ResNet18
-                print("\nLoading pretrained ResNet18 model...")
+                self.print_info = "Loading pretrained ResNet18 model..."
                 self.image_encoder = resnet18(weights='IMAGENET1K_V1')
                 self.image_encoder.fc = nn.Identity()
                 self.image_encoder = self.image_encoder.to(self.device)
@@ -282,7 +283,7 @@ class ObservationPZ(ObservationWrapper):
                 from transformers import SamModel, SamProcessor
 
                 # Define SAM
-                print("\nLoading pretrained SlimSAM model...")
+                self.print_info = "Loading pretrained SlimSAM model..."
                 self.image_encoder = SamModel.from_pretrained("Zigeng/SlimSAM-uniform-50").to(self.device) # Original SAM: facebook/sam-vit-base, options: huge, large, base
                 self.image_encoder.eval()
 
@@ -304,7 +305,7 @@ class ObservationPZ(ObservationWrapper):
                 from transformers import AutoProcessor, CLIPVisionModel
 
                 # Define CLIP-image-encoder
-                print("\nLoading pretrained CLIP-image-encoder model...")
+                self.print_info = "Loading pretrained CLIP-image-encoder model..."
                 self.image_encoder = CLIPVisionModel.from_pretrained("openai/clip-vit-base-patch32").to(self.device)
                 self.image_encoder.eval()
 
@@ -339,7 +340,7 @@ class ObservationPZ(ObservationWrapper):
             self.torch = torch
             import albumentations as A
             from albumentations.pytorch import ToTensorV2
-            img_size = 40 #TODO change it to 224
+            img_size = 224
             self.transform = A.Compose([
                 A.LongestMaxSize(max_size=img_size, interpolation=1), # Resize the longest side to 224
                 A.PadIfNeeded(min_height=img_size, min_width=img_size, border_mode=0, value=(0, 0, 0)), # Pad to make the image square
@@ -611,6 +612,9 @@ class _PettingZooWrapper(MultiAgentEnv):
         else:
             raise ValueError(f"Environment '{env_name}' is not supported.")
 
+    def get_print_info(self):
+        return self._env.print_info
+
     def step(self, actions):
         """ Returns reward, terminated, info """
         # Apply action for each agent
@@ -802,7 +806,8 @@ class _OvercookedWrapper(MultiAgentEnv):
                  seed,
                  reward_type):
 
-        assert key in OVERCOOKED_KEY_CHOICES, f"Invalid 'key': {key}! \nChoose one of the following: \n{OVERCOOKED_KEY_CHOICES}"
+        assert key in OVERCOOKED_KEY_CHOICES, \
+            f"Invalid 'key': {key}! \nChoose one of the following: \n{OVERCOOKED_KEY_CHOICES}"
         self.key = key
         assert isinstance(horizon, int), f"Invalid horizon type: {type(horizon)}, 'horizon': {horizon}, is not 'int'!"
         self.horizon = horizon
@@ -820,7 +825,7 @@ class _OvercookedWrapper(MultiAgentEnv):
 
         # Use the wrappers for handling the time limit and the environment observations properly.
         self.episode_limit = self.horizon
-        self.n_agents = 2 # Always 2 agents
+        self.n_agents = 2  # Always 2 agents
         self._env = TimeLimitOvercooked(self.original_env, max_episode_steps=self.episode_limit)
         self._env = ObservationOvercooked(self._env)
 
@@ -847,7 +852,7 @@ class _OvercookedWrapper(MultiAgentEnv):
         # Fix the order of actions, always 'policy_agent_idx' corresponds to agent 0
         actions = [int(a) for a in actions]
         if self._env.agent_policy_idx == 1:
-            actions = actions[::-1] # reverse the order
+            actions = actions[::-1]  # reverse the order
 
         # Make the environment step
         self._obs, reward, done, self._info = self._env.step(actions)

@@ -68,14 +68,14 @@ class QMixer(nn.Module):
             # to [batch size x max steps x n_agents, channels, height, width]
             states = states.reshape(-1, channels, height, width)
             total_samples = states.shape[0]
-            n_batches = math.ceil(total_samples / 2)
+            n_batches = math.ceil(total_samples / bs)
 
             # state-images are processed in batches due to memory limitations
             states_new = []
             for batch in range(n_batches):
                 # from [batch size, channels, height, width]
                 # to [batch size, cnn features dim]
-                states_new.append(self.cnn(states[batch*2:(batch+1)*2])) #TODO change 2 to batch size
+                states_new.append(self.cnn(states[batch*bs: (batch+1)*bs]))
 
             # to [batch size x max steps x n_agents, cnn features dim]
             states = th.concat(states_new, dim=0)

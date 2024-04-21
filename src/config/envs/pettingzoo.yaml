@@ -4,7 +4,7 @@ env_args:
   key: null
   max_cycles: null
   render_mode: "rgb_array" # Options: "human", "rgb_array
-  trainable_cnn: True # When this is True, image encoder parameters do not matter.
+  trainable_cnn: False # When this is True, image encoder parameters do not matter.
   image_encoder: "ResNet18" # Options: "ResNet18", "SlimSAM", "CLIP"
   image_encoder_batch_size: 1
   image_encoder_use_cuda: True
@@ -16,7 +16,7 @@ test_interval: 500 # 50000
 log_interval: 500 # 50000
 runner_log_interval: 1000 # 10000
 learner_log_interval: 1000 # 10000
-t_max: 5000 # 2050000
+t_max: 2000 # 2050000
 
 # Pistonball
 # https://pettingzoo.farama.org/environments/butterfly/pistonball/
@@ -28,9 +28,9 @@ t_max: 5000 # 2050000
 # args: max_cycles=900, render_mode="human", ball_speed=9, left_paddle_speed=12, right_paddle_speed=12, cake_paddle=True, max_cycles=900, bounce_randomness=False, max_reward=100, off_screen_penalty=-10
 # RUN: python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.key="cooperative_pong_v5"
 
+# All (the following) atari games have these default args: obs_type='rgb_image', full_action_space=True, max_cycles=100000, auto_rom_install_path=None)
 # Entombed Cooperative
 # https://pettingzoo.farama.org/environments/atari/entombed_cooperative/
-# args: max_cycles=100000, render_mode="human"
 # RUN: python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.max_cycles=25 env_args.key="entombed_cooperative_v3"
 
 # Space Invaders

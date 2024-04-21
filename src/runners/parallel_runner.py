@@ -1,7 +1,9 @@
+import time
+import datetime
+
 from envs import REGISTRY as env_REGISTRY
 from functools import partial
 from components.episode_buffer import EpisodeBatch
-# from multiprocessing import Pipe, Process # TODO: check
 from torch.multiprocessing import Pipe, Process
 import numpy as np
 import torch as th
@@ -22,15 +24,21 @@ class ParallelRunner:
         for i in range(self.batch_size):
             env_args[i]["seed"] += i
 
-        th.multiprocessing.set_start_method('spawn') # This is necessary when cuda is used along with multithreading # TODO: check
+        th.multiprocessing.set_start_method('spawn')
         self.ps = [Process(target=env_worker,
                            args=(worker_conn, CloudpickleWrapper(partial(env_fn, **env_arg))))
-                    for env_arg, worker_conn in zip(env_args, self.worker_conns)]
+                   for env_arg, worker_conn in zip(env_args, self.worker_conns)]
 
         for p in self.ps:
             p.daemon = True
             p.start()
 
+        # Get info from environment to be printed
+        self.parent_conns[0].send(("get_print_info", None))
+        time.sleep(5)  # Wait a little to initialize the environment and get the print info
+        print_info = self.parent_conns[0].recv()
+        if print_info != "None":
+            self.logger.console_logger.info(print_info)
         self.parent_conns[0].send(("get_env_info", None))
         self.env_info = self.parent_conns[0].recv()
         self.episode_limit = self.env_info["episode_limit"]
@@ -124,8 +132,8 @@ class ParallelRunner:
             # Send actions to each env
             action_idx = 0
             for idx, parent_conn in enumerate(self.parent_conns):
-                if idx in envs_not_terminated: # We produced actions for this env
-                    if not terminated[idx]: # Only send the actions to the env if it hasn't terminated
+                if idx in envs_not_terminated:  # We produced actions for this env
+                    if not terminated[idx]:  # Only send the actions to the env if it hasn't terminated
                         parent_conn.send(("step", cpu_actions[action_idx]))
                     action_idx += 1 # actions is not a list over every env
                     if idx == 0 and test_mode and self.args.render:
@@ -174,7 +182,7 @@ class ParallelRunner:
                     pre_transition_data["avail_actions"].append(data["avail_actions"])
                     pre_transition_data["obs"].append(data["obs"])
 
-            # Add post_transiton data into the batch
+            # Add post_transition data into the batch
             self.batch.update(post_transition_data, bs=envs_not_terminated, ts=self.t, mark_filled=False)
 
             # Move onto the next timestep
@@ -188,7 +196,7 @@ class ParallelRunner:
 
         # Get stats back for each env
         for parent_conn in self.parent_conns:
-            parent_conn.send(("get_stats",None))
+            parent_conn.send(("get_stats", None))
 
         env_stats = []
         for parent_conn in self.parent_conns:
@@ -230,6 +238,7 @@ class ParallelRunner:
 def env_worker(remote, env_fn):
     # Make environment
     env = env_fn.x()
+
     while True:
         cmd, data = remote.recv()
         if cmd == "step":
@@ -269,6 +278,14 @@ def env_worker(remote, env_fn):
             env.render()
         elif cmd == "save_replay":
             env.save_replay()
+        elif cmd == "get_print_info":
+            if "PettingZoo" in type(env).__name__:
+                # Simulate the message format of the logger defined in _logging.py
+                current_time = datetime.datetime.now().strftime('%H:%M:%S')
+                print_info = f"\n[INFO {current_time}] episode_runner " + env.get_print_info()
+                remote.send(print_info)
+            else:
+                remote.send("None")
         else:
             raise NotImplementedError
 

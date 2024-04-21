@@ -19,7 +19,7 @@ class CNNAgent(nn.Module):
 
         self.features_dim = args.cnn_features_dim
 
-        n_input_channels = input_shape[0][0] # 3 if RGB, 1 if gray scale
+        n_input_channels = input_shape[0][0]  # 3 if RGB, 1 if gray scale
         assert n_input_channels in [1, 3], f"Invalid number of input channels: {n_input_channels}"
         self.cnn = nn.Sequential(
             nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4, padding=0),
