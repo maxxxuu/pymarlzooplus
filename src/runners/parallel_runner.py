@@ -282,7 +282,7 @@ def env_worker(remote, env_fn):
             if "PettingZoo" in type(env).__name__:
                 # Simulate the message format of the logger defined in _logging.py
                 current_time = datetime.datetime.now().strftime('%H:%M:%S')
-                print_info = f"\n[INFO {current_time}] episode_runner " + env.get_print_info()
+                print_info = f"\n[INFO {current_time}] episode_runner " + env.get_print_info() if env.get_print_info() else ""
                 remote.send(print_info)
             else:
                 remote.send("None")
