@@ -8,23 +8,25 @@ class BasicMAC:
     def __init__(self, scheme, groups, args):
         self.n_agents = args.n_agents
         self.args = args
-        self.is_image = False # Image input
+        self.is_image = False  # Image input
         input_shape = self._get_input_shape(scheme) # TODO: image support for 'maddpg_controller' and 'non_shared_controller'
         self._build_agents(input_shape)
         self.agent_output_type = args.agent_output_type
-
         self.action_selector = action_REGISTRY[args.action_selector](args)
-
         self.hidden_states = None
 
     def select_actions(self, ep_batch, t_ep, t_env, bs=slice(None), test_mode=False):
         # Only select actions for the selected batch elements in bs
         avail_actions = ep_batch["avail_actions"][:, t_ep]
         agent_outputs = self.forward(ep_batch, t_ep, test_mode=test_mode)
-        chosen_actions = self.action_selector.select_action(agent_outputs[bs], avail_actions[bs], t_env, test_mode=test_mode)
+        chosen_actions = self.action_selector.select_action(agent_outputs[bs],
+                                                            avail_actions[bs],
+                                                            t_env,
+                                                            test_mode=test_mode)
         return chosen_actions
 
     def forward(self, ep_batch, t, test_mode=False):
+
         agent_inputs = self._build_inputs(ep_batch, t)
         avail_actions = ep_batch["avail_actions"][:, t]
         agent_outs, self.hidden_states = self.agent(agent_inputs, self.hidden_states)
@@ -41,7 +43,12 @@ class BasicMAC:
         return agent_outs.view(ep_batch.batch_size, self.n_agents, -1)
 
     def init_hidden(self, batch_size):
-        self.hidden_states = self.agent.init_hidden().unsqueeze(0).expand(batch_size, self.n_agents, -1)  # bav
+        if self.args.agent == "rnn":
+            self.hidden_states = self.agent.init_hidden().unsqueeze(0).expand(batch_size, self.n_agents, -1)  # bav
+        elif self.args.agent == "rnn_ns":
+            self.hidden_states = self.agent.init_hidden().unsqueeze(0).expand(batch_size, -1, -1)
+        else:
+            raise ValueError(f"self.args.agent: {self.args.agent}")
 
     def parameters(self):
         return self.agent.parameters()
@@ -63,7 +70,7 @@ class BasicMAC:
 
     def _build_inputs(self, batch, t):
 
-        # Assumes homogenous agents with flat observations.
+        # Assumes homogenous agents.
         # Other MACs might want to e.g. delegate building inputs to each agent
         bs = batch.batch_size
         inputs = [batch["obs"][:, t]]
@@ -88,18 +95,18 @@ class BasicMAC:
 
     def _get_input_shape(self, scheme):
         input_shape = scheme["obs"]["vshape"]
-        if isinstance(input_shape, int): # vector input
+        if isinstance(input_shape, int):  # vector input
             if self.args.obs_last_action:
                 input_shape += scheme["actions_onehot"]["vshape"][0]
             if self.args.obs_agent_id:
                 input_shape += self.n_agents
-        elif isinstance(input_shape, tuple): # image input
+        elif isinstance(input_shape, tuple):  # image input
             self.is_image = True
             input_shape = [input_shape, 0]
             if self.args.obs_last_action:
                 input_shape[1] += scheme["actions_onehot"]["vshape"][0]
             if self.args.obs_agent_id:
                 input_shape[1] += self.n_agents
-            input_shape = tuple(input_shape) # list to tuple
+            input_shape = tuple(input_shape)  # list to tuple
 
         return input_shape

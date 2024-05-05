@@ -14,6 +14,7 @@ from sacred.observers import FileStorageObserver  # This is for finding the resu
 from learners import REGISTRY as le_REGISTRY
 from runners import REGISTRY as r_REGISTRY
 from controllers import REGISTRY as mac_REGISTRY
+from modules.explorers import REGISTRY as explorer_REGISTRY
 
 from components.episode_buffer import ReplayBuffer
 from components.transforms import OneHot
@@ -136,8 +137,14 @@ def run_sequential(args, logger):
     # Setup multi-agent controller here
     mac = mac_REGISTRY[args.mac](buffer.scheme, groups, args)
 
+    # Setup the explorer, if applicable
+    has_explorer = args.has_explorer
+    explorer = None
+    if args.has_explorer is True:
+        explorer = explorer_REGISTRY[args.explorer](scheme, groups, args, env_info["episode_limit"])
+
     # Give runner the scheme
-    runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac)
+    runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac, explorer=explorer)
 
     # Learner
     learner = le_REGISTRY[args.learner](mac, buffer.scheme, logger, args)
@@ -204,6 +211,10 @@ def run_sequential(args, logger):
         if buffer.can_sample(args.batch_size):
             episode_sample = buffer.sample(args.batch_size)
 
+            # Train explorer. This is for EOI.
+            if has_explorer is True:
+                explorer.train(episode_sample)
+
             # Truncate batch to only filled timesteps
             max_ep_t = episode_sample.max_t_filled()
             episode_sample = episode_sample[:, :max_ep_t]
@@ -240,7 +251,6 @@ def run_sequential(args, logger):
             save_path = os.path.join(
                 args.local_results_path, "models", args.unique_token, str(runner.t_env)
             )
-            # "results/models/{}".format(unique_token)
             os.makedirs(save_path, exist_ok=True)
             logger.console_logger.info("Saving models to {}".format(save_path))
 
@@ -262,7 +272,6 @@ def run_sequential(args, logger):
 def args_sanity_check(config, _log):
 
     # set CUDA flags
-    # config["use_cuda"] = True # Use cuda whenever possible!
     if config["use_cuda"] and not th.cuda.is_available():
         config["use_cuda"] = False
         _log.warning(

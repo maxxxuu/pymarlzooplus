@@ -391,9 +391,9 @@ def plot_multiple_experiment_results(paths_to_results, algo_names, env_name, pat
         # Check if the provided path is valid
         assert os.path.exists(path_to_results), \
             f"The provided 'path_to_results' does not exist! 'path_to_results': {path_to_results}"
-        # Check if the order of paths are on par with the order of the algorithm names
-        assert os.path.basename(os.path.abspath(os.path.join(path_to_results, '..'))) == algo_names[path_to_results_idx], \
-            f"The order of paths should be aligned with the order of algorithm names!"
+        # # Check if the order of paths are on par with the order of the algorithm names
+        # assert os.path.basename(os.path.abspath(os.path.join(path_to_results, '..'))) == algo_names[path_to_results_idx], \
+        #     f"The order of paths should be aligned with the order of algorithm names!"
 
         path_to_exps = [os.path.join(path_to_results, elem) for elem in os.listdir(path_to_results) if elem.isdigit()]
         x_return_data_list = []
@@ -465,17 +465,17 @@ def plot_multiple_experiment_results(paths_to_results, algo_names, env_name, pat
 
 if __name__ == '__main__':
 
-    path_to_results_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/Cooperative_pong/coma_cooperative_pong_v5_w_parallel_2_threads_w_resnet18_results/sacred/coma/cooperative_pong_v5/3"
-    algo_name_ = "coma"
-    env_name_ = "cooperative_pong_v5"
+    path_to_results_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/pistonball_v6/pistonball_v6_w_trainable_cnn_results/results/sacred/qmix/pistonball_v6/3"
+    algo_name_ = "qmix"
+    env_name_ = "pistonball_v6"
     plot_single_experiment_results(path_to_results_, algo_name_, env_name_)
 
-    # paths_to_results_ = ["/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/RWARE/rware-tiny-4ag-hard-v1_results/sacred/qmix/rware:rware-tiny-4ag-hard-v1",
-    #                      "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/RWARE/rware-tiny-4ag-hard-v1_results/results/sacred/qplex/rware-tiny-4ag-hard-v1"
+    # paths_to_results_ = ["/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/space_invaders_v2/space_invaders_v2_max_cycles=25_w_resnet18_results/sacred/maa2c/space_invaders_v2",
+    #                      "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/space_invaders_v2/space_invaders_v2_parallel_2_threads_w_resnet_18_results/results/sacred/mappo/space_invaders_v2"
     #                      ]
-    # algo_names_ = ["qmix", "qplex"]
-    # env_name_ = "rware-tiny-4ag-hard-v1"
-    # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/rware-tiny-4ag-hard-v1/"
+    # algo_names_ = ["maa2c", "mappo"]
+    # env_name_ = "space_invaders_v2"
+    # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/space_invaders_v2/"
     # plot_train_ = False
     # plot_multiple_experiment_results(paths_to_results_, algo_names_, env_name_, path_to_save_, plot_train_)
 

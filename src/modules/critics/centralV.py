@@ -8,6 +8,7 @@ import torch.nn.functional as F
 
 from ..agents.cnn_agent import CNNAgent
 
+
 class CentralVCritic(nn.Module):
     def __init__(self, scheme, args):
         super(CentralVCritic, self).__init__()
@@ -20,10 +21,10 @@ class CentralVCritic(nn.Module):
 
         input_shape = self._get_input_shape(scheme)
         self.output_type = "v"
-        if isinstance(input_shape, np.int64) or isinstance(input_shape, int): # Vector input
+        if isinstance(input_shape, np.int64) or isinstance(input_shape, int):  # Vector input
             self.state_dim = input_shape
-        elif isinstance(input_shape, tuple) and (len(input_shape[0]) == 4) and (input_shape[0][1] == 3): # Image input
-            self.state_dim = (args.cnn_features_dim * input_shape[0][0]) + input_shape[1] # multiply with n_agents
+        elif isinstance(input_shape, tuple) and (len(input_shape[0]) == 4) and (input_shape[0][1] == 3):  # Image input
+            self.state_dim = (args.cnn_features_dim * input_shape[0][0]) + input_shape[1]  # multiply with n_agents
         else:
             raise ValueError(f"Invalid 'input_shape': {input_shape}")
 
@@ -47,14 +48,14 @@ class CentralVCritic(nn.Module):
             # to [batch size x max steps x n_agents, channels, height, width]
             inputs[0] = inputs[0].reshape(-1, channels, height, width)
             total_samples = inputs[0].shape[0]
-            n_batches = math.ceil(total_samples / 2)
+            n_batches = math.ceil(total_samples / bs)
 
             # state-images are processed in batches due to memory limitations
             input_new = []
             for batch in range(n_batches):
                 # from [batch size, channels, height, width]
                 # to [batch size, cnn features dim]
-                input_new.append(self.cnn(inputs[0][batch * 2:(batch + 1) * 2]))  # TODO change 2 to batch size
+                input_new.append(self.cnn(inputs[0][batch * bs:(batch + 1) * bs]))
 
             # to [batch size x max steps x n_agents, cnn features dim]
             inputs[0] = th.concat(input_new, dim=0)
@@ -86,8 +87,9 @@ class CentralVCritic(nn.Module):
         else:
             inputs = [batch["state"][:, ts]]
 
-        # observations
-        assert self.args.obs_individual_obs is False, "In case of state image, obs_individual_obs is not supported."
+        # individual observations
+        assert not (self.args.obs_individual_obs is True and self.is_image is True), \
+            "In case of state image, obs_individual_obs is not supported."
         if self.args.obs_individual_obs:
             inputs.append(batch["obs"][:, ts].view(bs, max_t, -1).unsqueeze(2).repeat(1, 1, self.n_agents, 1))
 
@@ -98,10 +100,13 @@ class CentralVCritic(nn.Module):
             elif isinstance(t, int):
                 inputs.append(batch["actions_onehot"][:, slice(t-1, t)].view(bs, max_t, 1, -1))
             else:
-                last_actions = th.cat([th.zeros_like(batch["actions_onehot"][:, 0:1]), batch["actions_onehot"][:, :-1]], dim=1)
+                last_actions = th.cat([th.zeros_like(batch["actions_onehot"][:, 0:1]),
+                                       batch["actions_onehot"][:, :-1]],
+                                      dim=1)
                 last_actions = last_actions.view(bs, max_t, 1, -1).repeat(1, 1, self.n_agents, 1)
                 inputs.append(last_actions)
 
+        # Add agents IDs in one-hot format
         inputs.append(th.eye(self.n_agents, device=batch.device).unsqueeze(0).unsqueeze(0).expand(bs, max_t, -1, -1))
 
         if self.is_image is False:
@@ -124,7 +129,8 @@ class CentralVCritic(nn.Module):
                 input_shape += scheme["actions_onehot"]["vshape"][0] * self.n_agents
             input_shape += self.n_agents
         elif isinstance(input_shape, tuple):
-            assert self.args.obs_individual_obs is False, "In case of state image, obs_individual_obs is not supported."
+            assert self.args.obs_individual_obs is False, \
+                "In case of state-image, 'obs_individual_obs' argument is not supported."
             self.is_image = True
             input_shape = [input_shape, 0]
             if self.args.obs_last_action:

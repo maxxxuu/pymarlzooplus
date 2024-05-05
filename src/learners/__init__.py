@@ -6,6 +6,7 @@ from .actor_critic_pac_learner import PACActorCriticLearner
 from .actor_critic_pac_dcg_learner import PACDCGLearner
 from .maddpg_learner import MADDPGLearner
 from .ppo_learner import PPOLearner
+from .dmaq_qatten_learner import DMAQ_qattenLearner
 
 REGISTRY = {"q_learner": QLearner,
             "coma_learner": COMALearner,
@@ -14,6 +15,6 @@ REGISTRY = {"q_learner": QLearner,
             "maddpg_learner": MADDPGLearner,
             "ppo_learner": PPOLearner,
             "pac_learner": PACActorCriticLearner,
-            "pac_dcg_learner": PACDCGLearner
+            "pac_dcg_learner": PACDCGLearner,
+            "dmaq_qatten_learner": DMAQ_qattenLearner
             }
-

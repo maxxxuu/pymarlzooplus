@@ -50,7 +50,9 @@ class COMACritic(nn.Module):
             elif isinstance(t, int):
                 inputs.append(batch["actions_onehot"][:, slice(t-1, t)].view(bs, max_t, 1, -1).repeat(1, 1, self.n_agents, 1))
             else:
-                last_actions = th.cat([th.zeros_like(batch["actions_onehot"][:, 0:1]), batch["actions_onehot"][:, :-1]], dim=1)
+                last_actions = th.cat([th.zeros_like(batch["actions_onehot"][:, 0:1]),
+                                       batch["actions_onehot"][:, :-1]],
+                                      dim=1)
                 last_actions = last_actions.view(bs, max_t, 1, -1).repeat(1, 1, self.n_agents, 1)
                 inputs.append(last_actions)
 

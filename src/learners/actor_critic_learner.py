@@ -1,12 +1,9 @@
 # code heavily adapted from https://github.com/AnujMahajanOxf/MAVEN
 import copy
 from components.episode_buffer import EpisodeBatch
-from modules.critics.coma import COMACritic
-from modules.critics.centralV import CentralVCritic
-from utils.rl_utils import build_td_lambda_targets
 import torch as th
 from torch.optim import Adam
-from modules.critics import REGISTRY as critic_resigtry
+from modules.critics import REGISTRY as critic_registry
 from components.standarize_stream import RunningMeanStd
 
 
@@ -21,7 +18,7 @@ class ActorCriticLearner:
         self.agent_params = list(mac.parameters())
         self.agent_optimiser = Adam(params=self.agent_params, lr=args.lr)
 
-        self.critic = critic_resigtry[args.critic_type](scheme, args)
+        self.critic = critic_registry[args.critic_type](scheme, args)
         self.target_critic = copy.deepcopy(self.critic)
 
         self.critic_params = list(self.critic.parameters())
@@ -38,8 +35,8 @@ class ActorCriticLearner:
             self.rew_ms = RunningMeanStd(shape=(1,), device=device)
 
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
-        # Get the relevant quantities
 
+        # Get the relevant quantities
         rewards = batch["reward"][:, :-1]
         actions = batch["actions"][:, :]
         terminated = batch["terminated"][:, :-1].float()
@@ -57,11 +54,13 @@ class ActorCriticLearner:
             return
 
         mask = mask.repeat(1, 1, self.n_agents)
-
         critic_mask = mask.clone()
 
-        mac_out = []
+        # Initialize the hidden states for the first timestep
         self.mac.init_hidden(batch.batch_size)
+
+        # Compute forward passes for each agent
+        mac_out = []
         for t in range(batch.max_seq_length - 1):
             agent_outs = self.mac.forward(batch, t=t)
             mac_out.append(agent_outs)
@@ -73,16 +72,20 @@ class ActorCriticLearner:
                                                                       batch,
                                                                       rewards,
                                                                       critic_mask)
-        actions = actions[:, :-1]
+
+        # Detach advantages from the computational graph
         advantages = advantages.detach()
+
         # Calculate policy grad with mask
-
+        actions = actions[:, :-1]
         pi[mask == 0] = 1.0
-
         pi_taken = th.gather(pi, dim=3, index=actions).squeeze(3)
         log_pi_taken = th.log(pi_taken + 1e-10)
 
+        # Add entropy to loss
         entropy = -th.sum(pi * th.log(pi + 1e-10), dim=-1)
+
+        # Policy Gradient Loss
         pg_loss = -((advantages * log_pi_taken + self.args.entropy_coef * entropy) * mask).sum() / mask.sum()
 
         # Optimise agents
@@ -111,7 +114,7 @@ class ActorCriticLearner:
             self.log_stats_t = t_env
 
     def train_critic_sequential(self, critic, target_critic, batch, rewards, mask):
-        # Optimise critic
+
         with th.no_grad():
             target_vals = target_critic(batch)
             target_vals = target_vals.squeeze(3)
@@ -133,11 +136,15 @@ class ActorCriticLearner:
             "q_taken_mean": [],
         }
 
+        # Forward pass
         v = critic(batch)[:, :-1].squeeze(3)
         td_error = (target_returns.detach() - v)
         masked_td_error = td_error * mask
+
+        # Critic Loss: TD-Error
         loss = (masked_td_error ** 2).sum() / mask.sum()
 
+        # Optimise critic
         self.critic_optimiser.zero_grad()
         loss.backward()
         grad_norm = th.nn.utils.clip_grad_norm_(self.critic_params, self.args.grad_norm_clip)
@@ -149,6 +156,7 @@ class ActorCriticLearner:
         running_log["td_error_abs"].append((masked_td_error.abs().sum().item() / mask_elems))
         running_log["q_taken_mean"].append((v * mask).sum().item() / mask_elems)
         running_log["target_mean"].append((target_returns * mask).sum().item() / mask_elems)
+
         return masked_td_error, running_log
 
     def nstep_returns(self, rewards, mask, values, nsteps):

@@ -4,13 +4,15 @@ from functools import partial
 from components.episode_buffer import EpisodeBatch
 import numpy as np
 
+
 class EpisodeRunner:
 
     def __init__(self, args, logger):
         
         self.batch = None
-        self.mac = None
         self.new_batch = None
+        self.mac = None
+        self.explorer = None
         
         self.args = args
         self.logger = logger
@@ -39,7 +41,7 @@ class EpisodeRunner:
         # Log the first run
         self.log_train_stats_t = -1000000
 
-    def setup(self, scheme, groups, preprocess, mac):
+    def setup(self, scheme, groups, preprocess, mac, explorer):
         self.new_batch = partial(EpisodeBatch,
                                  scheme,
                                  groups,
@@ -48,6 +50,7 @@ class EpisodeRunner:
                                  preprocess=preprocess,
                                  device=self.args.device)
         self.mac = mac
+        self.explorer = explorer
 
     def get_env_info(self):
         return self.env.get_env_info()
@@ -83,6 +86,10 @@ class EpisodeRunner:
             # Pass the entire batch of experiences up till now to the agents
             # Receive the actions for each agent at this timestep in a batch of size 1
             actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
+
+            # Choose actions based on explorer, if applicable. This is for EOI.
+            if self.explorer is not None:
+                actions = self.explorer.select_actions(actions, self.t, test_mode, pre_transition_data)
 
             reward, terminated, env_info = self.env.step(actions[0])
             if test_mode and self.args.render:
