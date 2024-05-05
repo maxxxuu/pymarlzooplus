@@ -34,48 +34,81 @@ class IVF(nn.Module):
 
 
 class EOITrainer(object):
-    def __init__(self, eoi_net, ivf, ivf_tar, n_agent, n_feature, ivf_gamma, ivf_tau, ivf_lr, eoi_lr):
+    def __init__(self,
+                 eoi_net,
+                 ivf,
+                 ivf_tar,
+                 n_agent,
+                 n_feature,
+                 ivf_gamma,
+                 ivf_tau,
+                 ivf_lr,
+                 ivf_alpha_intrinsic_r,
+                 eoi_lr,
+                 eoi_b2_reg,
+                 device):
+
         super(EOITrainer, self).__init__()
 
+        # Parameters
         self.gamma = ivf_gamma
         self.tau = ivf_tau
-        self.n_agent = n_agent
-        self.n_feature = n_feature
+        self.alpha_intrinsic_r = ivf_alpha_intrinsic_r
+        self.b2_reg = eoi_b2_reg
+
+        # Networks
         self.eoi_net = eoi_net
         self.ivf = ivf
         self.ivf_tar = ivf_tar
+
+        # Optimizers
         self.optimizer_eoi = optim.Adam(self.eoi_net.parameters(), lr=eoi_lr)
         self.optimizer_ivf = optim.Adam(self.ivf.parameters(), lr=ivf_lr)
 
-    def train(self, O, O_Next, A, D):
-        device = next(self.eoi_net.parameters()).device  # TODO: get device in more proper way
+        # Specifications
+        self.n_agent = n_agent
+        self.n_feature = n_feature
+        self.device = device
 
-        O = torch.Tensor(O).to(device)
-        O_Next = torch.Tensor(O_Next).to(device)
-        A = torch.Tensor(A).to(device).long()
-        D = torch.Tensor(D).to(device)
+    def train(self, obs, obs_next, actions, episode_end):
 
-        X = O_Next[:, 0:self.n_feature]
-        Y = O_Next[:, self.n_feature:self.n_feature + self.n_agent]
-        p = self.eoi_net(X)
-        loss_1 = -(Y * (torch.log(p + 1e-8))).mean() - 0.1 * (p * (torch.log(p + 1e-8))).mean()
+        # numpy to tensor
+        obs = torch.from_numpy(obs).to(torch.float32).to(self.device)
+        obs_next = torch.from_numpy(obs_next).to(torch.float32).to(self.device)
+        actions = torch.from_numpy(actions).to(torch.int32).to(self.device).long()
+        episode_end = torch.from_numpy(episode_end).to(torch.float32).to(self.device)
+
+        ## EOI net optimisation
+        x = obs_next[:, 0: self.n_feature]
+        y = obs_next[:, self.n_feature: self.n_feature + self.n_agent]
+        # Get classifier probabilities
+        p = self.eoi_net(x)
+        # Compute EOI losses
+        loss_ce_p_obs_onehot = - (y * (torch.log(p + 1e-8))).mean()
+        loss_ce_p_obs_p_obs = - (p * (torch.log(p + 1e-8))).mean()
+        # EOI total loss
+        eoi_loss = loss_ce_p_obs_onehot + (self.b2_reg * loss_ce_p_obs_p_obs)
         self.optimizer_eoi.zero_grad()
-        loss_1.backward()
+        eoi_loss.backward()
         self.optimizer_eoi.step()
 
-        I = O[:, self.n_feature: self.n_feature + self.n_agent].argmax(axis=1, keepdim=True).long()
-        r = self.eoi_net(O[:, 0: self.n_feature]).gather(dim=-1, index=I)
-
-        q_intrinsic = self.ivf(O)
+        ## IVF net optimisation
+        agent_ids = obs[:, self.n_feature: self.n_feature + self.n_agent].argmax(axis=1, keepdim=True).long()
+        intrinsic_r = self.eoi_net(obs[:, 0: self.n_feature]).gather(dim=-1, index=agent_ids)
+        # Get intrinsic Q-values for obs
+        q_intrinsic = self.ivf(obs)
         tar_q_intrinsic = q_intrinsic.clone().detach()
-        next_q_intrinsic = self.ivf_tar(O_Next).max(axis=1, keepdim=True)[0]
-        next_q_intrinsic = r * 10 + self.gamma * (1 - D) * next_q_intrinsic
-        tar_q_intrinsic.scatter_(dim=-1, index=A, src=next_q_intrinsic)
-        loss_2 = (q_intrinsic - tar_q_intrinsic).pow(2).mean()
+        # Get max intrinsic Q-values for next obs
+        next_q_intrinsic = self.ivf_tar(obs_next).max(axis=1, keepdim=True)[0]
+        next_q_intrinsic = (self.alpha_intrinsic_r * intrinsic_r) + (self.gamma * (1 - episode_end) * next_q_intrinsic)
+        tar_q_intrinsic.scatter_(dim=-1, index=actions, src=next_q_intrinsic)
+        # IVF loss
+        ivf_loss = (q_intrinsic - tar_q_intrinsic).pow(2).mean()
         self.optimizer_ivf.zero_grad()
-        loss_2.backward()
+        ivf_loss.backward()
         self.optimizer_ivf.step()
 
+        # Update target IVF net
         with torch.no_grad():
             for p, p_targ in zip(self.ivf.parameters(), self.ivf_tar.parameters()):
                 p_targ.data.mul_(self.tau)
@@ -156,7 +189,10 @@ class Explorer(object):
             args.ivf_gamma,
             args.ivf_tau,
             args.ivf_lr,
-            args.eoi_lr
+            args.ivf_alpha_intrinsic_r,
+            args.eoi_lr,
+            args.eoi_b2_reg,
+            self.device
         )
 
         self.trainer = EOIBatchTrainer(
@@ -206,7 +242,7 @@ class Explorer(object):
                 obs = self.build_obs(obs)
                 q_p = self.ivf(obs).detach().cpu().numpy()
 
-                # Change random actions
+                # Change random actions based on Q-values from IVF net
                 j = np.random.randint(self.n_agents)
                 actions[0][j] = np.argmax(q_p[j] - 9e15 * (1 - np.array(data["avail_actions"][0][j])))
 

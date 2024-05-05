@@ -36,10 +36,12 @@ episode_ratio : 0.4
 ivf_gamma: 0.92
 ivf_tau: 0.995
 ivf_lr: 0.0001
+ivf_alpha_intrinsic_r: 10
 
 # EOI
 eoi_lr: 0.0001
 eoi_batch_size: 256
+eoi_b2_reg: 0.1
 
 name: "eoi"
 

@@ -7,6 +7,7 @@ import torch.nn.functional as F
 
 from ..agents.cnn_agent import CNNAgent
 
+
 class COMACritic(nn.Module):
     def __init__(self, scheme, args):
         super(COMACritic, self).__init__()
