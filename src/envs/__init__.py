@@ -1196,20 +1196,6 @@ register(
 )
 
 register(
-    id="Foraging-15x15-3p-5f-coop-v2",
-    entry_point="lbforaging.foraging:ForagingEnv",
-    kwargs={
-        "players": 3,
-        "max_player_level": 3,
-        "field_size": (15, 15),
-        "max_food": 5,
-        "sight": 15,
-        "max_episode_steps": 50,
-        "force_coop": True,
-    },
-)
-
-register(
     id="Foraging-15x15-3p-5f-v2",
     entry_point="lbforaging.foraging:ForagingEnv",
     kwargs={
@@ -1371,20 +1357,6 @@ register(
         "max_player_level": 3,
         "field_size": (15, 15),
         "max_food": 5,
-        "sight": 15,
-        "max_episode_steps": 50,
-        "force_coop": True,
-    },
-)
-
-register(
-    id="Foraging-15x15-3p-4f-v2",
-    entry_point="lbforaging.foraging:ForagingEnv",
-    kwargs={
-        "players": 3,
-        "max_player_level": 3,
-        "field_size": (15, 15),
-        "max_food": 4,
         "sight": 15,
         "max_episode_steps": 50,
         "force_coop": True,
@@ -1610,20 +1582,6 @@ register(
         "field_size": (12, 12),
         "max_food": 2,
         "sight": 12,
-        "max_episode_steps": 50,
-        "force_coop": True,
-    },
-)
-
-register(
-    id="Foraging-8x8-2p-2f-coop-v2",
-    entry_point="lbforaging.foraging:ForagingEnv",
-    kwargs={
-        "players": 2,
-        "max_player_level": 3,
-        "field_size": (8, 8),
-        "max_food": 2,
-        "sight": 8,
         "max_episode_steps": 50,
         "force_coop": True,
     },
