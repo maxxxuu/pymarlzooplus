@@ -13,6 +13,15 @@ import torch as th
 class ParallelRunner:
 
     def __init__(self, args, logger):
+
+        self.preprocess = None
+        self.groups = None
+        self.scheme = None
+        self.mac = None
+        self.new_batch = None
+        self.batch = None
+        self.env_steps_this_run = None
+
         self.args = args
         self.logger = logger
         self.batch_size = self.args.batch_size_run
@@ -54,7 +63,7 @@ class ParallelRunner:
 
         self.log_train_stats_t = -100000
 
-    def setup(self, scheme, groups, preprocess, mac):
+    def setup(self, scheme, groups, preprocess, mac, explorer):
         self.new_batch = partial(EpisodeBatch,
                                  scheme,
                                  groups,
