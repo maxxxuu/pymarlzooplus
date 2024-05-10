@@ -13,6 +13,7 @@ class EpisodeRunner:
         self.new_batch = None
         self.mac = None
         self.explorer = None
+
         
         self.args = args
         self.logger = logger
@@ -51,6 +52,7 @@ class EpisodeRunner:
                                  device=self.args.device)
         self.mac = mac
         self.explorer = explorer
+
 
     def get_env_info(self):
         return self.env.get_env_info()
