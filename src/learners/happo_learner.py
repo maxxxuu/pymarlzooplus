@@ -23,8 +23,8 @@ class HAPPOLearner:
         for agent_id in th.randperm(self.n_agents):
             self.learners[agent_id].update_current_agent_id(agent_id)
             self.learners[agent_id].train(batch, t_env, episode_num)
-            if agent_id < self.n_agents -1:
-                self.learners[agent_id].M = th.prod(th.exp(self.learners[agent_id].log_pi_taken - self.learners[agent_id].old_log_pi_taken), dim=-1,keepdim=True) * self.learners[agent_id].M
+            if agent_id < self.n_agents - 1:
+                self.learners[agent_id + 1].M = th.prod(th.exp(self.learners[agent_id].log_pi_taken - self.learners[agent_id].old_log_pi_taken), dim=-1,keepdim=True) * self.learners[agent_id].M
 
     def cuda(self):
         [learner.cuda() for learner in self.learners]
