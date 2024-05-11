@@ -4,7 +4,6 @@ import numpy as np
 from components.episode_buffer import EpisodeBatch
 import torch as th
 from torch.optim import Adam
-from torch.nn.functional import huber_loss
 from modules.critics import REGISTRY as critic_registry
 from components.standarize_stream import RunningMeanStd
 
@@ -207,10 +206,20 @@ class HAPPO:
             }
 
             v = critic(batch)[:, :-1].squeeze(3)
-            td_error = huber_loss(returns.detach(), v, delta=self.huber_delta)
+            td_error = (returns.detach() - v)
             masked_td_error = td_error * mask
 
-            loss = masked_td_error.sum() / mask.sum()
+            if self.args.standardise_advantages:
+                masked_td_error_copy = masked_td_error.detach().numpy().copy()
+                masked_td_error_copy[mask == 0.0] = np.nan
+                mean_masked_td_error = np.nanmean(masked_td_error_copy)
+                std_masked_td_error = np.nanstd(masked_td_error_copy)
+                masked_td_error = (masked_td_error - mean_masked_td_error) / (std_masked_td_error + 1e-5)
+            
+            a = (abs(masked_td_error) <= self.huber_delta).float()
+            b = (abs(masked_td_error) > self.huber_delta).float()
+            
+            loss = (a*masked_td_error**2/2 + b*self.huber_delta*(abs(masked_td_error)-self.huber_delta/2)).sum() / mask.sum()
 
             self.critic_optimiser.zero_grad()
             loss.backward()
