@@ -29,7 +29,7 @@ FEPyMARL is  an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), a
 To install the minimum requirements (without environments installation) run the following commands:
 ```sh
 git clone ...
-cd epymarl/installation
+cd fepymarl/installation
 conda create -n epymarl python=3.8.18 -y
 conda activate epymarl
 pip install wheel==0.38.4 setuptools==65.5.0 einops
@@ -43,7 +43,7 @@ pip install protobuf==3.20.*
 ```
 If you need torch with CUDA support:
 ```sh
-pip3 install==2.1.2 torch torchvision==0.16.2--index-url https://download.pytorch.org/whl/cu121
+pip3 install torch==2.1.2 torchvision==0.16.2--index-url https://download.pytorch.org/whl/cu121
 ```
 otherwise:
 ```sh
@@ -120,7 +120,7 @@ python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.max_cycl
 ```
 
 ### Overcooked
-To install Overcooked, assuming being in ```epymarl/``` directory run:
+To install Overcooked, assuming being in ```fepymarl/``` directory run:
 ```sh
 cd src/envs/overcooked_ai/
 pip install -e .
