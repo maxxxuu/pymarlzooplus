@@ -831,9 +831,8 @@ class _OvercookedWrapper(MultiAgentEnv):
         self.n_agents = 2  # Always 2 agents
         self._env = TimeLimitOvercooked(self.original_env, max_episode_steps=self.episode_limit)
         self._env = ObservationOvercooked(self._env)
-        # CUSTOM: here env is overwritten??
 
-        # Define the observation space
+        # Define the observation space (96,)
         self.observation_space = self._env.observation_space
 
         # Define the action space 
@@ -1645,7 +1644,7 @@ class ObservationPressurePlate(ObservationWrapper):
         #    n_agents * [spaces.Box(np.array([0] * self.action_space_dim), np.array([1] * self.action_space_dim))]
         #))
         self._env = env
-        self.observation_space = self._env.observation_space.shape
+        self.observation_space = self._env.observation_space[0].shape
         #self.other_agent_idx = None
         #self.agent_policy_idx = None
     #
@@ -1714,9 +1713,11 @@ class _PressurePlateWrapper(MultiAgentEnv):
         self._env = ObservationPressurePlate(self._env)
 
         # Define the observation space
+        # 
         self.observation_space = self._env.observation_space
         # Define the action space
-        self.action_space = self._env.action_space
+        # num of actions
+        self.action_space = self._env.action_space[0].n
         # Placeholders
         self._obs = None
         self._info = None
