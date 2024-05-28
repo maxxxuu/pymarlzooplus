@@ -1627,7 +1627,7 @@ class TimeLimitPressurePlate(GymTimeLimit):
         self._elapsed_steps += 1
         infos["TimeLimit.truncated"] = False # dummy var, there is no truncation in PressurePlate
         if self._elapsed_steps >= self._max_episode_steps:
-            terminations = {key: True for key in terminations.keys()}
+            terminations = {key: True for key in terminations}
 
         return observations, rewards, terminations, infos
 
@@ -1650,20 +1650,10 @@ class ObservationPressurePlate(ObservationWrapper):
     #
     # returned _get_obs of step() function
     def observation(self, observation):
-
-        #obs = {
-        #    "both_agent_obs": both_agents_ob,
-        #    "overcooked_state": next_state,
-        #    "other_agent_env_idx": 1 - self.agent_idx,
-        #}
-    
-        ## CUSTOM ask why not just do this:
-        observation = self._env._get_obs()        
-
+        # returns list of arrays
         return [
-                spaces.flatten(obs_space, obs)
-                for obs_space, obs in zip(self._env.observation_space, observation)
-            ]
+            obs for obs in observation
+        ]
 
 PRESSUREPLATE_KEY_CHOICES = [
     "pressureplate-linear-4p-v0",
@@ -1686,6 +1676,8 @@ class _PressurePlateWrapper(MultiAgentEnv):
             f"Invalid 'key': {key}! \nChoose one of the following: \n{PRESSUREPLATE_KEY_CHOICES}"
         self.key = key
         assert isinstance(horizon, int), f"Invalid horizon type: {type(horizon)}, 'horizon': {horizon}, is not 'int'!"
+        if not horizon:
+            horizon = 500 
         self.horizon = horizon
         self._seed = seed
 
@@ -1798,15 +1790,16 @@ class _PressurePlateWrapper(MultiAgentEnv):
 
     def reset(self):
         """ Returns initial observations and states """
-
-        self._obs = self._env.reset()
+        observations = self._env.reset()
+        # transform tuple obs to list
+        self._obs = [obs for obs in observations]
 
         return self.get_obs(), self.get_state()
 
     def render(self):
         image = self._env.render()
         image = self.cv2.cvtColor(image, self.cv2.COLOR_BGR2RGB)
-        self.cv2.imshow("Overcooked", image)
+        self.cv2.imshow("Pressureplate", image)
         self.cv2.waitKey(1)
 
     def close(self):
