@@ -78,6 +78,8 @@ class PressurePlate(gym.Env):
         self.walls = []
         self.doors = []
         self.goal = None
+        #self.timestep = 0
+        #self.horizon = horizon
 
         self._rendering_initialized = False
 

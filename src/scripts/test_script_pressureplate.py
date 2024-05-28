@@ -30,7 +30,7 @@ for i in range(n_episodes):
         cv2.waitKey(500)
 
         # Fix the order of actions, always 'policy_agent_idx' corresponds to agent 0
-        _actions = [random.randint(0, 4) for a in range(env.n_agents)]
+        _actions = [random.randint(0, 3) for a in range(env.n_agents)]
         actions = _actions.copy()
         print(actions)
         obs, reward, done, info = env.step(actions)
