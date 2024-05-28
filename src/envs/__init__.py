@@ -729,6 +729,7 @@ class TimeLimitOvercooked(GymTimeLimit):
 
     def step(self, action):
         assert (self._elapsed_steps is not None), "Cannot call env.step() before calling reset()"
+        # CUSTOM:: Calls step of original env (located at overcooked_ai_py/mdp_overcooked_env.py the Overcooked(gym.Env))
         observation, reward, done, info = self.env.step(action)
 
         self._elapsed_steps += 1
@@ -760,7 +761,7 @@ class ObservationOvercooked(ObservationWrapper):
             self.agent_policy_idx = 1 - self.other_agent_idx
 
         # Fix the order of observations, always 'policy_agent_idx' corresponds to agent 0
-        assert self.agent_policy_idx == 1-self.other_agent_idx
+        assert self.agent_policy_idx == 1 - self.other_agent_idx
         assert self.other_agent_idx == observation['other_agent_env_idx']
         observation = [observation['both_agent_obs'][self.agent_policy_idx], 
                        observation['both_agent_obs'][self.other_agent_idx]]
@@ -830,11 +831,13 @@ class _OvercookedWrapper(MultiAgentEnv):
         self.n_agents = 2  # Always 2 agents
         self._env = TimeLimitOvercooked(self.original_env, max_episode_steps=self.episode_limit)
         self._env = ObservationOvercooked(self._env)
+        # CUSTOM: here env is overwritten??
 
         # Define the observation space
         self.observation_space = self._env.observation_space
 
-        # Define the action space
+        # Define the action space 
+        # CUSTOM: num of actions
         self.action_space = self._env.action_space.n
 
         # Placeholders
@@ -857,6 +860,7 @@ class _OvercookedWrapper(MultiAgentEnv):
             actions = actions[::-1]  # reverse the order
 
         # Make the environment step
+        # CUSTOM: calls TimeLimitWrapper whihc calls the step of original env
         self._obs, reward, done, self._info = self._env.step(actions)
 
         if self.reward_type == "shaped":
@@ -1601,4 +1605,252 @@ register(
     },
 )
 
+############################################
+############################################
+# Registration for PressurePlate
+
+### wraps original environment and adds the extra var elapsed_tinme
+### to keep track of when an episode starts
+class TimeLimitPressurePlate(GymTimeLimit):
+
+    def __init__(self, env, max_episode_steps=None):
+        super().__init__(env)
+
+        assert max_episode_steps is not None, "'max_episode_steps' is None!"
+        self._max_episode_steps = max_episode_steps
+        self._elapsed_steps = None
+
+    def step(self, action):
+        assert (self._elapsed_steps is not None), "Cannot call env.step() before calling reset()"
+        # CUSTOM: original env return: self._get_obs(), self._get_rewards(), [self.goal.achieved] * self.n_agents, {}
+        observations, rewards, terminations, infos = self.env.step(action)
+
+        self._elapsed_steps += 1
+        # dummy var
+        infos["TimeLimit.truncated"] = False # There is no truncation in PressurePlate
+        if self._elapsed_steps >= self._max_episode_steps:
+            terminations = {key: True for key in terminations.keys()}
+
+        return observations, rewards, terminations, infos
+
+
+class ObservationPressurePlate(ObservationWrapper):
+    """
+    Observation wrapper that fixes the order of agents' observations.
+    """
+
+    def __init__(self, env):
+        super(ObservationPressurePlate, self).__init__(env)
+
+        #self.observation_space = spaces.Tuple(tuple(
+        #    n_agents * [spaces.Box(np.array([0] * self.action_space_dim), np.array([1] * self.action_space_dim))]
+        #))
+        self._env = env
+        self.observation_space = self._env.observation_space.shape
+        #self.other_agent_idx = None
+        #self.agent_policy_idx = None
+    #
+    # returned _get_obs of step() function
+    def observation(self, observation):
+
+        #obs = {
+        #    "both_agent_obs": both_agents_ob,
+        #    "overcooked_state": next_state,
+        #    "other_agent_env_idx": 1 - self.agent_idx,
+        #}
+    
+        ## CUSTOM ask why not just do this:
+        observation = self._env._get_obs()        
+
+        return [
+                spaces.flatten(obs_space, obs)
+                for obs_space, obs in zip(self._env.observation_space, observation)
+            ]
+
+PRESSUREPLATE_KEY_CHOICES = ["linear"
+                          ]
+
+PRESSUREPLATE_N_AGENTS_CHOICES = [4, 5, 6]
+
+
+class _PressurePlateWrapper(MultiAgentEnv):
+
+    def __init__(self,
+                 key,
+                 horizon,
+                 seed,
+                ):
+
+        assert key in PRESSUREPLATE_KEY_CHOICES, \
+            f"Invalid 'key': {key}! \nChoose one of the following: \n{PRESSUREPLATE_KEY_CHOICES}"
+        self.key = key
+        assert isinstance(horizon, int), f"Invalid horizon type: {type(horizon)}, 'horizon': {horizon}, is not 'int'!"
+        self.horizon = horizon
+        self._seed = seed
+        
+        # Placeholders
+        self.original_env = None
+        self.episode_limit = None
+        self.n_agents = 4 #possible values 4,5,6, instantiated from kwargs later
+        self._env = None
+        self._obs = None
+        self._info = None
+        self.observation_space = None
+        self.action_space = None
+        self.action_prefix = None
+
+        #split the key id to ist args
+        self.get_kwargs(key)
+
+        # Gym make
+        #no base env needed - it is sourced by gym.make with all its args
+        self.original_env = gym.make(key)
+
+        # Use the wrappers for handling the time limit and the environment observations properly.
+        self.n_agents = self.kwargs["n_agents"]
+        self.episode_limit = self.horizon
+        #now create the wrapped env (our env)
+        self._env = TimeLimitPressurePlate(self.original_env, max_episode_steps=self.episode_limit)
+        self._env = ObservationPressurePlate(self._env)
+
+        # Define the observation space
+        self.observation_space = self._env.observation_space
+        # Define the action space
+        self.action_space = self._env.action_space
+        # Placeholders
+        self._obs = None
+        self._info = None
+        # By setting the "seed" in "np.random.seed" in "src/main.py" we control the randomness of the environment.
+        self._seed = seed
+
+    def get_kwargs(self, key):
+        from string import split
+        kwargs = split('-')
+        assert len(kwargs) == 4, \
+            f"pressureplate {key} does not have 4 arguments in the required format!" 
+        
+        assert kwargs[1] in PRESSUREPLATE_KEY_CHOICES, \
+            f"Invalid 'key': {kwargs[1]}! \nChoose one of the following: \n{PRESSUREPLATE_KEY_CHOICES}"
+        assert len(kwargs[2]) >= 2, \
+            f"Invalid 'key': {kwargs[2]}! \nChoose one of the following: \n{PRESSUREPLATE_N_AGENTS_CHOICES}p"
+
+        assert kwargs[1] in PRESSUREPLATE_KEY_CHOICES, \
+            f"Invalid 'key': {kwargs[1]}! \nChoose one of the following: \n{PRESSUREPLATE_KEY_CHOICES}"
+
+        if isinstance(self.kwargs, list):
+            if isinstance(self.kwargs[0], list):
+                # Convert list to dict
+                self.kwargs = {arg[0]: arg[1] for arg in self.kwargs}
+            else:
+                # Convert single arguments to dict
+                assert isinstance(self.kwargs[0], str)
+                tmp_kwargs = self.kwargs
+                self.kwargs = {tmp_kwargs[0]: tmp_kwargs[1]}
+        else:
+            assert isinstance(self.kwargs, str), f"Unsupported kwargs type: {self.kwargs}"
+            self.kwargs = {}
+
+        if max_cycles is not None:
+            self.kwargs["max_cycles"] = max_cycles
+        if n_agents is not None:
+            self.kwargs["n_agents"] = n_agents
+        
+
+    def step(self, actions):
+        """ Returns reward, terminated, info """
+
+        # Apply actions for each agent
+        actions = [int(a) for a in actions]    
+        # Make the environment step
+        self._obs, rewards, terminations, self._info = self._env.step(actions)
+
+        self._obs = [
+            np.pad(
+                o,
+                (0, self.longest_observation_space.shape[0] - len(o)),
+                "constant",
+                constant_values=0,
+            )
+            for o in self._obs
+        ]
+        #if self.reward_type == "shaped":
+        #    assert type(self._info['shaped_r_by_agent']) is list, \
+        #        "'self._info['shaped_r_by_agent']' is not a list! " + \
+        #        f"'self._info['shaped_r_by_agent']': {self._info['shaped_r_by_agent']}"
+        #    reward = sum(self._info['shaped_r_by_agent'])
+        # else: the other option is the sum of sparse rewards which the default 'reward' 
+        # Add all rewards together
+        reward = sum(rewards)
+        # Keep only 'TimeLimit.truncated' in 'self._info'
+        self._info = {"TimeLimit.truncated": not all(terminations)}
+        done = all(terminations) 
+
+        return float(reward), done, {}
+
+    def get_obs(self):
+        """ Returns all agent observations in a list """
+        return self._obs
+
+    def get_obs_agent(self, agent_id):
+        """ Returns observation for agent_id """
+        raise self._obs[agent_id]
+
+    def get_obs_size(self):
+        """ Returns the shape of the observation """
+        return self.observation_space[0]
+
+    def get_state(self):
+        return np.concatenate(self._obs, axis=0).astype(np.float32)
+
+    def get_state_size(self):
+        """ Returns the shape of the state """
+        
+        assert len(self.observation_space) == 1, \
+            f"'self.observation_space' has not only one dimension! \n'self.observation_space': {self.observation_space}" 
+        
+        return self.n_agents * self.observation_space[0]
+
+    def get_avail_actions(self):
+        avail_actions = []
+        for agent_id in range(self.n_agents):
+            avail_agent = self.get_avail_agent_actions(agent_id)
+            avail_actions.append(avail_agent)
+
+        return avail_actions
+
+    def get_avail_agent_actions(self, agent_id):
+        """ Returns the available actions for agent_id (both agents have the same action space) """
+        return self.action_space * [1] # 1 indicates availability of action
+
+    def get_total_actions(self):
+        """ Returns the total number of actions an agent could ever take """
+        return self.action_space
+
+    def reset(self):
+        """ Returns initial observations and states """
+
+        self._obs = self._env.reset()
+
+        return self.get_obs(), self.get_state()
+
+    def render(self):
+        image = self._env.render()
+        image = self.cv2.cvtColor(image, self.cv2.COLOR_BGR2RGB)
+        self.cv2.imshow("Overcooked", image)
+        self.cv2.waitKey(1)
+
+    def close(self):
+        self._env.close()
+
+    def seed(self):
+        return self._seed
+
+    def save_replay(self):
+        pass
+
+    def get_stats(self):
+        return {}
+
+
+REGISTRY["pressureplate"] = partial(env_fn, env=_PressurePlateWrapper)
 ############################################
