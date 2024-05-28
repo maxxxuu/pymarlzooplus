@@ -2,11 +2,7 @@ env: "pressureplate"
 
 env_args:
   key: null # 3 options from gym implemented envs: "pressureplate-linear-4p-v0", "pressureplate-linear-5p-v0", "pressureplate-linear-6p-v0"
-  max_cycles: null ## CUSTOM: find the max timestep var, where an agent can be active
-  layout: "linear" # For now, linear only option
-  horizon: null
-  kwargs: "" # Use in terminal: env_args.kwargs="('arg1',arg1_value), ('arg2',arg2_value)"
-             # has default valuese, if key is not null and gym wrapper called (see register() calls)
+  horizon: null # set by default to 500 by EpisodeRunner wrapper
 
 test_greedy: True
 test_nepisode: 10 # 100
@@ -19,7 +15,7 @@ t_max: 10000 # 2050000
 # PressurePlate
 # https://github.com/uoe-agents/pressureplate/tree/main
 # args: layout="linear", horizon=500, n_agents=4
-# RUN: python3 src/main.py --config=qmix --env-config=pressureplate with env_args.time_limit=500 env_args.key="pressureplate-linear-6p-v0"
+# RUN: python3 src/main.py --config=qmix --env-config=pressureplate with env_args.key="pressureplate-linear-4p-v0" env_args.horizon=500
 
 
 # _sizes = {

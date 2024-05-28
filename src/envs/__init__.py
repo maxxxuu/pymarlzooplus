@@ -1626,8 +1626,7 @@ class TimeLimitPressurePlate(GymTimeLimit):
         observations, rewards, terminations, infos = self.env.step(action)
 
         self._elapsed_steps += 1
-        # dummy var
-        infos["TimeLimit.truncated"] = False # There is no truncation in PressurePlate
+        infos["TimeLimit.truncated"] = False # dummy var, there is no truncation in PressurePlate
         if self._elapsed_steps >= self._max_episode_steps:
             terminations = {key: True for key in terminations.keys()}
 
@@ -1667,8 +1666,11 @@ class ObservationPressurePlate(ObservationWrapper):
                 for obs_space, obs in zip(self._env.observation_space, observation)
             ]
 
-PRESSUREPLATE_KEY_CHOICES = ["linear"
-                          ]
+PRESSUREPLATE_KEY_CHOICES = [
+    "pressureplate-linear-4p-v0",
+    "pressureplate-linear-5p-v0",
+    "pressureplate-linear-6p-v0"
+    ]
 
 PRESSUREPLATE_N_AGENTS_CHOICES = [4, 5, 6]
 
@@ -1687,7 +1689,7 @@ class _PressurePlateWrapper(MultiAgentEnv):
         assert isinstance(horizon, int), f"Invalid horizon type: {type(horizon)}, 'horizon': {horizon}, is not 'int'!"
         self.horizon = horizon
         self._seed = seed
-        
+
         # Placeholders
         self.original_env = None
         self.episode_limit = None
@@ -1699,15 +1701,13 @@ class _PressurePlateWrapper(MultiAgentEnv):
         self.action_space = None
         self.action_prefix = None
 
-        #split the key id to ist args
-        self.get_kwargs(key)
-
         # Gym make
         #no base env needed - it is sourced by gym.make with all its args
-        self.original_env = gym.make(key)
+        from pressureplate.environment import PressurePlate
+        self.original_env = gym.make(f"{key}")
 
         # Use the wrappers for handling the time limit and the environment observations properly.
-        self.n_agents = self.kwargs["n_agents"]
+        self.n_agents = self.original_env.n_agents
         self.episode_limit = self.horizon
         #now create the wrapped env (our env)
         self._env = TimeLimitPressurePlate(self.original_env, max_episode_steps=self.episode_limit)
@@ -1721,40 +1721,7 @@ class _PressurePlateWrapper(MultiAgentEnv):
         self._obs = None
         self._info = None
         # By setting the "seed" in "np.random.seed" in "src/main.py" we control the randomness of the environment.
-        self._seed = seed
-
-    def get_kwargs(self, key):
-        from string import split
-        kwargs = split('-')
-        assert len(kwargs) == 4, \
-            f"pressureplate {key} does not have 4 arguments in the required format!" 
-        
-        assert kwargs[1] in PRESSUREPLATE_KEY_CHOICES, \
-            f"Invalid 'key': {kwargs[1]}! \nChoose one of the following: \n{PRESSUREPLATE_KEY_CHOICES}"
-        assert len(kwargs[2]) >= 2, \
-            f"Invalid 'key': {kwargs[2]}! \nChoose one of the following: \n{PRESSUREPLATE_N_AGENTS_CHOICES}p"
-
-        assert kwargs[1] in PRESSUREPLATE_KEY_CHOICES, \
-            f"Invalid 'key': {kwargs[1]}! \nChoose one of the following: \n{PRESSUREPLATE_KEY_CHOICES}"
-
-        if isinstance(self.kwargs, list):
-            if isinstance(self.kwargs[0], list):
-                # Convert list to dict
-                self.kwargs = {arg[0]: arg[1] for arg in self.kwargs}
-            else:
-                # Convert single arguments to dict
-                assert isinstance(self.kwargs[0], str)
-                tmp_kwargs = self.kwargs
-                self.kwargs = {tmp_kwargs[0]: tmp_kwargs[1]}
-        else:
-            assert isinstance(self.kwargs, str), f"Unsupported kwargs type: {self.kwargs}"
-            self.kwargs = {}
-
-        if max_cycles is not None:
-            self.kwargs["max_cycles"] = max_cycles
-        if n_agents is not None:
-            self.kwargs["n_agents"] = n_agents
-        
+        self._seed = seed        
 
     def step(self, actions):
         """ Returns reward, terminated, info """
@@ -1764,6 +1731,7 @@ class _PressurePlateWrapper(MultiAgentEnv):
         # Make the environment step
         self._obs, rewards, terminations, self._info = self._env.step(actions)
 
+        '''
         self._obs = [
             np.pad(
                 o,
@@ -1773,6 +1741,7 @@ class _PressurePlateWrapper(MultiAgentEnv):
             )
             for o in self._obs
         ]
+        '''
         #if self.reward_type == "shaped":
         #    assert type(self._info['shaped_r_by_agent']) is list, \
         #        "'self._info['shaped_r_by_agent']' is not a list! " + \
