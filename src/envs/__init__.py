@@ -1627,7 +1627,7 @@ class TimeLimitPressurePlate(GymTimeLimit):
         self._elapsed_steps += 1
         infos["TimeLimit.truncated"] = False # dummy var, there is no truncation in PressurePlate
         if self._elapsed_steps >= self._max_episode_steps:
-            terminations = {key: True for key in terminations}
+            terminations = [True for key in terminations]
 
         return observations, rewards, terminations, infos
 
@@ -1790,10 +1790,7 @@ class _PressurePlateWrapper(MultiAgentEnv):
 
     def reset(self):
         """ Returns initial observations and states """
-        observations = self._env.reset()
-        # transform tuple obs to list
-        self._obs = [obs for obs in observations]
-
+        self._obs = self._env.reset()
         return self.get_obs(), self.get_state()
 
     def render(self):
