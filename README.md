@@ -29,7 +29,7 @@ FEPyMARL is  an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), a
 To install the minimum requirements (without environments installation) run the following commands:
 ```sh
 git clone ...
-cd epymarl/installation
+cd fepymarl/installation
 conda create -n epymarl python=3.8.18 -y
 conda activate epymarl
 pip install wheel==0.38.4 setuptools==65.5.0 einops

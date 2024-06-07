@@ -805,6 +805,7 @@ class OvercookedState(object):
         """
         bonus_orders = [Recipe.from_dict(order) for order in bonus_orders]
         all_orders = [Recipe.from_dict(order) for order in all_orders]
+
         for pos, obj in objects.items():
             assert obj.position == pos
         self.players = tuple(players)
@@ -876,6 +877,7 @@ class OvercookedState(object):
     @property
     def all_objects_list(self):
         all_objects_lists = list(self.all_objects_by_type.values()) + [[], []]
+
         return reduce(lambda x, y: x + y, all_objects_lists)
 
     @property
@@ -1167,6 +1169,7 @@ class OvercookedGridworld(object):
 
         # Clean grid
         grid = [layout_row.strip() for layout_row in grid.split("\n")]
+
         return OvercookedGridworld.from_grid(
             grid, base_layout_params, params_to_overwrite
         )
@@ -1229,6 +1232,7 @@ class OvercookedGridworld(object):
             "all_orders": start_all_orders,
             **kwargs,
         }
+
         Recipe.configure(self.recipe_config)
 
     #####################
@@ -1437,6 +1441,7 @@ class OvercookedGridworld(object):
         first and then player 2's, without doing anything like collision checking.
         """
         pot_states = self.get_pot_states(new_state)
+
         # We divide reward by agent to keep track of who contributed
         sparse_reward, shaped_reward = (
             [0] * self.num_players,
@@ -1592,6 +1597,7 @@ class OvercookedGridworld(object):
         The player receives 0 if recipe not in all_orders, receives base value * order_bonus
         if recipe is in bonus orders, and receives base value otherwise
         """
+
         if not discounted:
             if not recipe in state.all_orders:
                 return 0
@@ -1817,6 +1823,7 @@ class OvercookedGridworld(object):
         NOTE: all returned pots are just pot positions
         """
         pots_states_dict = defaultdict(list)
+
         for pot_pos in self.get_pot_locations():
             if not state.has_object(pot_pos):
                 pots_states_dict["empty"].append(pot_pos)

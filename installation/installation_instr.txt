@@ -9,7 +9,7 @@ pip install -r requirements.txt
 # For torch and torch-scatter installation
 pip install protobuf==3.20.*
 if you have GPU:
-    - pip3 install==2.1.2 torch torchvision==0.16.2--index-url https://download.pytorch.org/whl/cu121
+    - pip3 install torch==2.1.2 torchvision==0.16.2--index-url https://download.pytorch.org/whl/cu121
 otherwise:
     - pip3 install torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cpu
 sh ./install_torch_scatter.sh

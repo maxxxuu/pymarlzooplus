@@ -5,7 +5,7 @@ import cv2
 import random
 
 mdp = OvercookedGridworld.from_layout_name("asymmetric_advantages")
-base_env = OvercookedEnv.from_mdp(mdp, horizon=50)
+base_env = OvercookedEnv.from_mdp(mdp, horizon=500)
 env = gym.make("Overcooked-v0", base_env=base_env, featurize_fn=base_env.featurize_state_mdp)
 
 print(f"action_space: {env.action_space}")
@@ -30,26 +30,29 @@ for i in range(n_episodes):
         cv2.waitKey(1)
 
         # Fix the order of actions, always 'policy_agent_idx' corresponds to agent 0
-        _actions = [random.randint(0, 1), 0]
+        _actions = [random.randint(0, 5), random.randint(0, 5)]
         if agent_policy_idx == 0:
             actions = _actions.copy()
         else:
             actions = _actions[::-1]  # reverse the order
         obs, reward, done, info = env.step(actions)
+
         # reward: single scalar value
         # done: single boolean
         # The provided reward is sum of the sparse rewards of both agents
         # (where the individual rewards are the same for both of them)
         # We can calculate also the sum the shaped rewards:
         shaped_reward = sum(info['shaped_r_by_agent'])
-        print(f"shaped_reward: {shaped_reward}")
+        sparse_reward = sum(info['sparse_r_by_agent'])
+        # print(f"shaped_reward: {shaped_reward}")
+        # print(f"sparse_reward: {sparse_reward}")
 
         # print(f"done: {done}")
         # print(f"reward: {reward}")
         # print(f"info: {info}")
 
         counter += 1
-        print(f"\nstep: {counter}")
+        # print(f"\nstep: {counter}")
         # print(f"obs: {obs}")
         # print(f"info: {info}")
 
