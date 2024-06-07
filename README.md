@@ -43,7 +43,7 @@ pip install protobuf==3.20.*
 ```
 If you need torch with CUDA support:
 ```sh
-pip3 install==2.1.2 torch torchvision==0.16.2--index-url https://download.pytorch.org/whl/cu121
+pip3 install torch==2.1.2 torchvision==0.16.2--index-url https://download.pytorch.org/whl/cu121
 ```
 otherwise:
 ```sh
@@ -120,7 +120,7 @@ python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.max_cycl
 ```
 
 ### Overcooked
-To install Overcooked, assuming being in ```epymarl/``` directory run:
+To install Overcooked, assuming being in ```fepymarl/``` directory run:
 ```sh
 cd src/envs/overcooked_ai/
 pip install -e .
