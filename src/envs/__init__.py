@@ -831,7 +831,7 @@ class _OvercookedWrapper(MultiAgentEnv):
         self._env = TimeLimitOvercooked(self.original_env, max_episode_steps=self.episode_limit)
         self._env = ObservationOvercooked(self._env)
 
-        # Define the observation space (96,)
+        # Define the observation space
         self.observation_space = self._env.observation_space
 
         # Define the action space 
