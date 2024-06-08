@@ -729,7 +729,6 @@ class TimeLimitOvercooked(GymTimeLimit):
 
     def step(self, action):
         assert (self._elapsed_steps is not None), "Cannot call env.step() before calling reset()"
-        # CUSTOM:: Calls step of original env (located at overcooked_ai_py/mdp_overcooked_env.py the Overcooked(gym.Env))
         observation, reward, done, info = self.env.step(action)
 
         self._elapsed_steps += 1
@@ -836,7 +835,6 @@ class _OvercookedWrapper(MultiAgentEnv):
         self.observation_space = self._env.observation_space
 
         # Define the action space 
-        # CUSTOM: num of actions
         self.action_space = self._env.action_space.n
 
         # Placeholders
@@ -859,7 +857,6 @@ class _OvercookedWrapper(MultiAgentEnv):
             actions = actions[::-1]  # reverse the order
 
         # Make the environment step
-        # CUSTOM: calls TimeLimitWrapper whihc calls the step of original env
         self._obs, reward, done, self._info = self._env.step(actions)
 
         if self.reward_type == "shaped":
@@ -1621,7 +1618,6 @@ class TimeLimitPressurePlate(GymTimeLimit):
 
     def step(self, action):
         assert (self._elapsed_steps is not None), "Cannot call env.step() before calling reset()"
-        # CUSTOM: original env return: self._get_obs(), self._get_rewards(), [self.goal.achieved] * self.n_agents, {}
         observations, rewards, terminations, infos = self.env.step(action)
 
         self._elapsed_steps += 1
@@ -1639,18 +1635,10 @@ class ObservationPressurePlate(ObservationWrapper):
 
     def __init__(self, env):
         super(ObservationPressurePlate, self).__init__(env)
-
-        #self.observation_space = spaces.Tuple(tuple(
-        #    n_agents * [spaces.Box(np.array([0] * self.action_space_dim), np.array([1] * self.action_space_dim))]
-        #))
         self._env = env
         self.observation_space = self._env.observation_space[0].shape
-        #self.other_agent_idx = None
-        #self.agent_policy_idx = None
-    #
-    # returned _get_obs of step() function
+
     def observation(self, observation):
-        # returns list of arrays
         return [
             obs for obs in observation
         ]
@@ -1684,7 +1672,7 @@ class _PressurePlateWrapper(MultiAgentEnv):
         # Placeholders
         self.original_env = None
         self.episode_limit = None
-        self.n_agents = 4 #possible values 4,5,6, instantiated from kwargs later
+        self.n_agents = 4 #possible values 4,5,6
         self._env = None
         self._obs = None
         self._info = None
@@ -1693,22 +1681,20 @@ class _PressurePlateWrapper(MultiAgentEnv):
         self.action_prefix = None
 
         # Gym make
-        #no base env needed - it is sourced by gym.make with all its args
+        #base env sourced by gym.make with all its args
         from pressureplate.environment import PressurePlate
         self.original_env = gym.make(f"{key}")
 
         # Use the wrappers for handling the time limit and the environment observations properly.
         self.n_agents = self.original_env.n_agents
         self.episode_limit = self.horizon
-        #now create the wrapped env (our env)
+        #now create the wrapped env
         self._env = TimeLimitPressurePlate(self.original_env, max_episode_steps=self.episode_limit)
         self._env = ObservationPressurePlate(self._env)
 
         # Define the observation space
-        # 
         self.observation_space = self._env.observation_space
         # Define the action space
-        # num of actions
         self.action_space = self._env.action_space[0].n
         # Placeholders
         self._obs = None
@@ -1724,23 +1710,6 @@ class _PressurePlateWrapper(MultiAgentEnv):
         # Make the environment step
         self._obs, rewards, terminations, self._info = self._env.step(actions)
 
-        '''
-        self._obs = [
-            np.pad(
-                o,
-                (0, self.longest_observation_space.shape[0] - len(o)),
-                "constant",
-                constant_values=0,
-            )
-            for o in self._obs
-        ]
-        '''
-        #if self.reward_type == "shaped":
-        #    assert type(self._info['shaped_r_by_agent']) is list, \
-        #        "'self._info['shaped_r_by_agent']' is not a list! " + \
-        #        f"'self._info['shaped_r_by_agent']': {self._info['shaped_r_by_agent']}"
-        #    reward = sum(self._info['shaped_r_by_agent'])
-        # else: the other option is the sum of sparse rewards which the default 'reward' 
         # Add all rewards together
         reward = sum(rewards)
         # Keep only 'TimeLimit.truncated' in 'self._info'
