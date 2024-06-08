@@ -3,6 +3,7 @@ results/
 **/__pycache__/
 3rdparty/
 **/overcooked_ai.egg-info/
+**/pressureplate.egg-info/
 **/.DS_Store
 
 
