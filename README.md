@@ -4,7 +4,7 @@ FEPyMARL is  an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), a
 - Additional algorithms: HAPPO, CDS, MAT, QPLEX, EOI
 - Support for [PettingZoo](https://github.com/Farama-Foundation/PettingZoo) environments (on top of the existing gym support)
 - Support for [Overcooked](https://github.com/HumanCompatibleAI/overcooked_ai) environments.
-- ...
+- Support for [Pressure plate](https://github.com/uoe-agents/pressureplate) environments.
 
 # Table of Contents
 - [Further Extended Python MARL framework - FEPyMARL](#further-extended-python-marl-framework---epymarl)
@@ -13,7 +13,7 @@ FEPyMARL is  an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), a
   - [Base requirements installation](#base-requirements-installation)
   - [Torch installation](#torch-installation)
   - [Torch-scatter installation](#torch-scatter-installation)
-  - [Installing LBF, RWARE, MPE, PettingZoo, and Overcooked](#installing-lbf-rware-mpe-pettingzoo-and-overcooked)
+  - [Installing LBF, RWARE, MPE, PettingZoo, Overcooked, and Pressure plate](#installing-lbf-rware-mpe-pettingzoo-and-overcooked)
   - [Using A Custom Gym Environment](#using-a-custom-gym-environment)
 - [Run an experiment on a Gym environment](#run-an-experiment-on-a-gym-environment)
 - [Run a hyperparameter search](#run-a-hyperparameter-search)
@@ -129,6 +129,20 @@ pip install -e .
 Example of using Overcooked:
 ```sh
 python3 src/main.py --config=qmix --env-config=overcooked with env_args.horizon=500 env_args.key="asymmetric_advantages"
+```
+
+### Pressure plate
+To install Pressure plate, assuming being in ```fepymarl/``` directory run:
+```sh
+cd src/envs/pressureplate_ai/
+pip install -e .
+pip install pyglet==1.5.29 # For rendering
+pip install gym==0.21.0
+```
+
+Example of using Pressure plate:
+```sh
+python3 src/main.py --config=qmix --env-config=pressureplate with env_args.key="pressureplate-linear-4p-v0" env_args.horizon=500
 ```
 
 ## Using A Custom Gym Environment

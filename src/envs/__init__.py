@@ -1602,11 +1602,13 @@ register(
 )
 
 ############################################
+
+
 ############################################
 # Registration for PressurePlate
 
-### wraps original environment and adds the extra var elapsed_tinme
-### to keep track of when an episode starts
+# wraps original environment and adds the extra var "elapsed_time"
+# to keep track of when an episode starts
 class TimeLimitPressurePlate(GymTimeLimit):
 
     def __init__(self, env, max_episode_steps=None):
@@ -1621,9 +1623,9 @@ class TimeLimitPressurePlate(GymTimeLimit):
         observations, rewards, terminations, infos = self.env.step(action)
 
         self._elapsed_steps += 1
-        infos["TimeLimit.truncated"] = False # dummy var, there is no truncation in PressurePlate
+        infos["TimeLimit.truncated"] = False  # dummy var, there is no truncation in PressurePlate
         if self._elapsed_steps >= self._max_episode_steps:
-            terminations = [True for key in terminations]
+            terminations = [True for _ in terminations]
 
         return observations, rewards, terminations, infos
 
@@ -1643,6 +1645,7 @@ class ObservationPressurePlate(ObservationWrapper):
             obs for obs in observation
         ]
 
+
 PRESSUREPLATE_KEY_CHOICES = [
     "pressureplate-linear-4p-v0",
     "pressureplate-linear-5p-v0",
@@ -1658,37 +1661,41 @@ class _PressurePlateWrapper(MultiAgentEnv):
                  key,
                  horizon,
                  seed,
-                ):
+                 ):
 
+        # Check key validity
         assert key in PRESSUREPLATE_KEY_CHOICES, \
             f"Invalid 'key': {key}! \nChoose one of the following: \n{PRESSUREPLATE_KEY_CHOICES}"
         self.key = key
+
+        # Check horizon validity
         assert isinstance(horizon, int), f"Invalid horizon type: {type(horizon)}, 'horizon': {horizon}, is not 'int'!"
+
+        # Default horizon
         if not horizon:
             horizon = 500 
+
         self.horizon = horizon
         self._seed = seed
 
         # Placeholders
         self.original_env = None
         self.episode_limit = None
-        self.n_agents = 4 #possible values 4,5,6
         self._env = None
         self._obs = None
         self._info = None
         self.observation_space = None
         self.action_space = None
-        self.action_prefix = None
 
         # Gym make
-        #base env sourced by gym.make with all its args
+        # base env sourced by gym.make with all its args
         from pressureplate.environment import PressurePlate
         self.original_env = gym.make(f"{key}")
 
         # Use the wrappers for handling the time limit and the environment observations properly.
         self.n_agents = self.original_env.n_agents
         self.episode_limit = self.horizon
-        #now create the wrapped env
+        # now create the wrapped env
         self._env = TimeLimitPressurePlate(self.original_env, max_episode_steps=self.episode_limit)
         self._env = ObservationPressurePlate(self._env)
 
@@ -1700,7 +1707,11 @@ class _PressurePlateWrapper(MultiAgentEnv):
         self._obs = None
         self._info = None
         # By setting the "seed" in "np.random.seed" in "src/main.py" we control the randomness of the environment.
-        self._seed = seed        
+        self._seed = seed
+
+        # Needed for rendering
+        import cv2
+        self.cv2 = cv2
 
     def step(self, actions):
         """ Returns reward, terminated, info """
@@ -1713,8 +1724,10 @@ class _PressurePlateWrapper(MultiAgentEnv):
         # Add all rewards together
         reward = sum(rewards)
         # Keep only 'TimeLimit.truncated' in 'self._info'
-        self._info = {"TimeLimit.truncated": not all(terminations)}
-        done = all(terminations) 
+        self._info = {"TimeLimit.truncated": self._info["TimeLimit.truncated"]}
+        # The episode ends when all agents have reached their positions ("terminations" are all True) or
+        # "self._elapsed_steps >= self._max_episode_steps" is True
+        done = all(terminations)
 
         return float(reward), done, {}
 
@@ -1751,7 +1764,7 @@ class _PressurePlateWrapper(MultiAgentEnv):
 
     def get_avail_agent_actions(self, agent_id):
         """ Returns the available actions for agent_id (both agents have the same action space) """
-        return self.action_space * [1] # 1 indicates availability of action
+        return self.action_space * [1]  # 1 indicates availability of action
 
     def get_total_actions(self):
         """ Returns the total number of actions an agent could ever take """
@@ -1763,10 +1776,7 @@ class _PressurePlateWrapper(MultiAgentEnv):
         return self.get_obs(), self.get_state()
 
     def render(self):
-        image = self._env.render()
-        image = self.cv2.cvtColor(image, self.cv2.COLOR_BGR2RGB)
-        self.cv2.imshow("Pressureplate", image)
-        self.cv2.waitKey(1)
+        self._env.render()
 
     def close(self):
         self._env.close()

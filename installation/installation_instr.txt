@@ -63,3 +63,9 @@ pip install 'pettingzoo[sisl]'==1.24.3
 # Assuming being in epymarl/ directory:
 cd src/envs/overcooked_ai/
 pip install -e .
+
+# For pressureplate
+# Assuming being in epymarl/ directory:
+cd src/envs/pressureplate_ai/
+pip install -e .
+pip install pyglet==1.5.29 # For rendering
