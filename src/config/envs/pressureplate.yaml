@@ -17,17 +17,15 @@ t_max: 10000 # 2050000
 # args: layout="linear", horizon=500, n_agents=4
 # RUN: python3 src/main.py --config=qmix --env-config=pressureplate with env_args.key="pressureplate-linear-4p-v0" env_args.horizon=500
 
-
+## Available map sizes:
 # _sizes = {
 #     "tiny": (5, 5),
 #     "small": (8, 8),
 #     "medium": (15, 9),
 #     "large": (20, 20),
 # }
-#
-#
-#
-#
+
+## Gym registration
 # for size in _sizes.keys():
 #     # for n_agents in range(2, 5):
 #
