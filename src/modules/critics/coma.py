@@ -48,7 +48,7 @@ class COMACritic(nn.Module):
             # to [batch size x max steps x n_agents, channels, height, width]
             inputs[0] = inputs[0].reshape(-1, channels, height, width)
             total_samples = inputs[0].shape[0]
-            n_batches = math.ceil(total_samples / 2)
+            n_batches = math.ceil(total_samples / bs)
 
             # state-images are processed in batches due to memory limitations
             input_new = []
