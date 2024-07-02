@@ -466,9 +466,9 @@ def plot_multiple_experiment_results(paths_to_results, algo_names, env_name, pat
 if __name__ == '__main__':
 
     # Single algo
-    # path_to_results_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/pistonball_v6/pistonball_v6_w_trainable_cnn_results/results/sacred/qmix/pistonball_v6/3"
-    # algo_name_ = "qmix"
-    # env_name_ = "pistonball_v6"
+    # path_to_results_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/entombed_cooperative_v3/entombed_cooperative_v3_parallel_2_threads_w_resnet_18_max_steps=20M_hidden_dim=256_results/sacred/mappo/entombed_cooperative_v3/1"
+    # algo_name_ = "mappo"
+    # env_name_ = "entombed_cooperative_v3"
     # plot_single_experiment_results(path_to_results_, algo_name_, env_name_)
 
     ## Many algos
@@ -477,13 +477,14 @@ if __name__ == '__main__':
     # paths_to_results_ = [
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/pistonball_v6/coma_pistonball_v6_w_parallel_2_threads_w_resnet18_results/sacred/coma/pistonball_v6",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/pistonball_v6/pistonball_v6_w_parallel_2_threads_w_resnet18_results/sacred/maa2c/pistonball_v6",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/pistonball_v6/maa2c_pistonball_v6_w_parallel_2_threads_w_trainable_cnn_results/sacred/maa2c/pistonball_v6",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/pistonball_v6/mappo_pistonball_v6_w_parallel_2_threads_w_resnet18_results/results/sacred/mappo/pistonball_v6",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/pistonball_v6/pistonball_v6_w_resnet18_results/results/sacred/qmix/pistonball_v6",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/pistonball_v6/pistonball_v6_w_trainable_cnn_buffer_size=30_results/results/sacred/qmix/pistonball_v6",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/pistonball_v6/pistonball_v6_w_episode_w_resnet18_results/sacred/eoi/pistonball_v6",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/pistonball_v6/pistonball_v6_w_resnet18_results/results/sacred/qplex/pistonball_v6"
     #            ]
-    # algo_names_ = ["coma", "maa2c", "mappo", "qmix-resnet", "qmix-cnn-buff=30", "eoi", "qplex"]
+    # algo_names_ = ["coma", "maa2c-resnet", "maa2c-cnn", "mappo", "qmix-resnet", "qmix-cnn-buff=30", "eoi", "qplex"]
     # env_name_ = "pistonball_v6"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/pistonball_v6/"
 
@@ -508,9 +509,10 @@ if __name__ == '__main__':
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/entombed_cooperative_v3/entombed_cooperative_v3_w_parallel_2_threads_w_resnet18_results/results/sacred/maa2c/entombed_cooperative_v3",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/entombed_cooperative_v3/entombed_cooperative_v3_parallel_2_threads_w_resnet_18_results/results/sacred/mappo/entombed_cooperative_v3",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/entombed_cooperative_v3/eoi_entombed_cooperative_v3_w_episode_w_resnet18_results/results/sacred/eoi/entombed_cooperative_v3",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/entombed_cooperative_v3/qmix_entombed_cooperative_v3_w_max_cycles=2500_w_resnet18_buffer_size=2000_results/sacred/qmix/entombed_cooperative_v3"
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/entombed_cooperative_v3/qmix_entombed_cooperative_v3_w_max_cycles=2500_w_resnet18_buffer_size=2000_results/sacred/qmix/entombed_cooperative_v3",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/entombed_cooperative_v3/entombed_cooperative_v3_w_max_cycles=2500_w_resnet18_buffer_size=1500_results/sacred/qplex/entombed_cooperative_v3"
     #                     ]
-    # algo_names_ = ["coma", "maa2c", "mappo", "eoi", "qmix"]
+    # algo_names_ = ["coma", "maa2c", "mappo", "eoi", "qmix", "qplex"]
     # env_name_ = "entombed_cooperative_v3"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/entombed_cooperative_v3/"
 
@@ -527,28 +529,35 @@ if __name__ == '__main__':
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/space_invaders_v2/"
 
     # Cramped_room
-    # paths_to_results_ = [
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/cramped_room/cramped_room_w_parallel_2_threads_results/results/sacred/maa2c/cramped_room",
-    # ]
-    # algo_names_ = ["maa2c",]
-    # env_name_ = "cramped_room"
-    # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/cramped_room/"
+    paths_to_results_ = [
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/cramped_room/cramped_room_w_parallel_2_threads_results/results/sacred/maa2c/cramped_room",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/cramped_room/mappo_cramped_room_w_parallel_2_threads_results/sacred/mappo/cramped_room",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/cramped_room/coma_cramped_room_w_parallel_2_threads_results/sacred/coma/cramped_room",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/cramped_room/qmix_cramped_room_results/sacred/qmix/cramped_room"
+    ]
+    algo_names_ = ["maa2c", "mappo", "coma", "qmix"]
+    env_name_ = "cramped_room"
+    path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/cramped_room/"
 
     # Assymetric_advantages
     # paths_to_results_ = [
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/assymetric_advantages/maa2c_assymetric_advantages_w_max_steps=100M_w_parallel_2_threads_results/results/sacred/maa2c/asymmetric_advantages",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/assymetric_advantages/mappo_assymetric_advantages_w_max_steps=100M_w_parallel_2_threads_results/sacred/mappo/asymmetric_advantages",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/assymetric_advantages/coma_assymetric_advantages_w_max_steps=100M_w_parallel_2_threads_results/sacred/coma/asymmetric_advantages"
     # ]
-    # algo_names_ = ["maa2c",]
+    # algo_names_ = ["maa2c", "mappo", "coma"]
     # env_name_ = "assymetric_advantages"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/assymetric_advantages/"
 
     # Coordination ring
-    paths_to_results_ = [
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/coordination_ring/maa2c_coordination_ring_w_max_steps=100M_w_parallel_2_threads_results/sacred/maa2c/coordination_ring",
-    ]
-    algo_names_ = ["maa2c", ]
-    env_name_ = "coordination_ring"
-    path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/coordination_ring/"
+    # paths_to_results_ = [
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/coordination_ring/maa2c_coordination_ring_w_max_steps=100M_w_parallel_2_threads_results/sacred/maa2c/coordination_ring",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/coordination_ring/mappo_coordination_ring_w_max_steps=100M_w_parallel_2_threads_results/sacred/mappo/coordination_ring",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/coordination_ring/coma_coordination_ring_w_max_steps=100M_w_parallel_2_threads_results/sacred/coma/coordination_ring",
+    # ]
+    # algo_names_ = ["maa2c", "mappo", "coma"]
+    # env_name_ = "coordination_ring"
+    # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/coordination_ring/"
 
     plot_train_ = False
     plot_multiple_experiment_results(paths_to_results_, algo_names_, env_name_, path_to_save_, plot_train_)

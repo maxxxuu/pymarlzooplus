@@ -55,7 +55,7 @@ class COMACritic(nn.Module):
             for batch in range(n_batches):
                 # from [batch size, channels, height, width]
                 # to [batch size, cnn features dim]
-                input_new.append(self.cnn(inputs[0][batch * 2:(batch + 1) * 2]))  # TODO change 2 to batch size
+                input_new.append(self.cnn(inputs[0][batch * bs:(batch + 1) * bs]))
 
             # to [batch size x max steps x n_agents, cnn features dim]
             inputs[0] = th.concat(input_new, dim=0)
