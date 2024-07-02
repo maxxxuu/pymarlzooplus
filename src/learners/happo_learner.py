@@ -1,5 +1,4 @@
 import os
-import copy
 import numpy as np
 from components.episode_buffer import EpisodeBatch
 import torch as th
@@ -15,15 +14,31 @@ class HAPPOLearner:
         self.learners = [HAPPO(mac, scheme, logger, args) for _ in range(self.n_agents)]
 
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
-        if self.current_episode < episode_num:
-            self.current_episode = episode_num
-            for learner in self.learners:
-                learner.M = None
+        rewards = batch["reward"][:, :-1]
+        actions = batch["actions"][:, :]
+        terminated = batch["terminated"][:, :-1].float()
+        masks = batch["filled"][:, :-1].float()
+        masks[:, 1:] = masks[:, 1:] * (1 - terminated[:, :-1])
+        actions = actions[:, :-1]
+        if self.args.standardise_rewards:
+            self.rew_ms.update(rewards)
+            rewards = (rewards - self.rew_ms.mean) / th.sqrt(self.rew_ms.var)       
+
+        masks = masks.repeat(1, 1, self.n_agents)
+
+        factor = th.ones((batch.batch_size, masks.shape[1], 1))
+        returns = th.zeros((batch.batch_size, masks.shape[1], 1))
+        value_preds = th.zeros_like(returns)
+
         for agent_id in th.randperm(self.n_agents):
             self.learners[agent_id].update_current_agent_id(agent_id)
-            self.learners[agent_id].train(batch, t_env, episode_num)
-            if agent_id < self.n_agents - 1:
-                self.learners[agent_id + 1].M = th.prod(th.exp(self.learners[agent_id].log_pi_taken - self.learners[agent_id].old_log_pi_taken), dim=-1,keepdim=True) * self.learners[agent_id].M
+            self.learners[agent_id].mac.init_hidden(batch.batch_size)
+            hidden_states = self.learners[agent_id].mac.get_hidden_states()
+            old_log_pi_taken, _, _, _ = self.learners[agent_id].evaluate_actions(batch, actions, masks[:, :, agent_id], hidden_states)
+            returns, value_preds = self.learners[agent_id].train(batch, t_env, returns, value_preds, masks[:, :, agent_id], old_log_pi_taken, factor)
+            log_pi_taken, _, _, _ = self.learners[agent_id].evaluate_actions(batch, actions, masks[:, :, agent_id], hidden_states)
+
+            factor = factor * th.prod(th.exp(log_pi_taken - old_log_pi_taken), dim=-1,keepdim=True)
 
     def cuda(self):
         [learner.cuda() for learner in self.learners]
@@ -43,7 +58,6 @@ class HAPPO:
         self.logger = logger
 
         self.mac = mac
-        self.old_mac = copy.deepcopy(mac)
         self.agent_params = list(mac.parameters())
         self.agent_optimiser = Adam(params=self.agent_params, lr=args.lr)
 
@@ -62,126 +76,105 @@ class HAPPO:
             self.rew_ms = RunningMeanStd(shape=(1,), device=device)
         self.huber_delta = args.huber_delta
         self.current_agent_id = None
-        self.M = None
-        self.log_pi_taken = None
-        self.old_log_pi_taken = None
-
+        self.hidden_states = None
+        
     def update_current_agent_id(self, agent_id):
         self.current_agent_id = agent_id.item()
 
-    def _update_log_pis(self, log_pi_taken, old_log_pi_taken):
-        self.log_pi_taken = log_pi_taken
-        self.old_log_pi_taken = old_log_pi_taken
-    
-    def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
-        # Get the relevant quantities
+    def evaluate_actions(self, batch, actions, mask, hidden_states):
+        mac_out = []
         
-        rewards = batch["reward"][:, :-1]
-        actions = batch["actions"][:, :]
-        terminated = batch["terminated"][:, :-1].float()
-        mask = batch["filled"][:, :-1].float()
-        mask[:, 1:] = mask[:, 1:] * (1 - terminated[:, :-1])
-        actions = actions[:, :-1]
-        if self.args.standardise_rewards:
-            self.rew_ms.update(rewards)
-            rewards = (rewards - self.rew_ms.mean) / th.sqrt(self.rew_ms.var)
-
-        mask = mask.repeat(1, 1, self.n_agents)
-
-        critic_mask = mask.clone()
-
-        old_mac_out = []
-        self.old_mac.init_hidden(batch.batch_size)
+        self.mac.update_hidden_states(hidden_states)
+        self.hidden_states = hidden_states
+        
         for t in range(batch.max_seq_length - 1):
-            agent_outs = self.old_mac.forward(batch, t=t)
-            old_mac_out.append(agent_outs)
-        old_mac_out = th.stack(old_mac_out, dim=1)  # Concat over time
-        old_pi = old_mac_out
-        old_pi[mask == 0] = 1.0
-
-        old_pi_taken = th.gather(old_pi, dim=3, index=actions).squeeze(3)
-        old_log_pi_taken = th.log(old_pi_taken + 1e-10)
-
-        advantages, mask = self.compute_advantages(self.critic, batch, rewards, critic_mask)
+            agent_outs = self.mac.forward(batch, t=t)
+            h = self.mac.get_hidden_states().detach()
+            mac_out.append(agent_outs)
+        mac_out = th.stack(mac_out, dim=1)  # Concat over time
+    
+        pi = mac_out
+        pi = pi[:, :, self.current_agent_id, :].unsqueeze(2)
         
-        if self.M is None:
-            self.M = advantages.detach()        
+        # Calculate policy grad with mask
+
+        pi[mask == 0] = 1.0
+
+        pi_taken = th.gather(pi, dim=3, index=actions[:, :, self.current_agent_id, :].unsqueeze(2)).squeeze(3)
+        log_pi_taken = th.log(pi_taken + 1e-10)
+        entropy = -th.sum(pi * th.log(pi + 1e-10), dim=-1)
+
+        return log_pi_taken, entropy, pi, h
+
+    
+    def train(self, batch, t_env, returns, value_preds, masks, old_log_pi_taken, factor):
+        advantages = returns - value_preds
+
+        if self.args.standardise_advantages:
+            advantages_copy = advantages.clone().detach()
+            advantages_copy[masks == 0.0] = np.nan
+            mean_advantages = np.nanmean(advantages_copy)
+            std_advantages = np.nanstd(advantages_copy)
+            advantages = (advantages - mean_advantages) / (std_advantages + 1e-5)
         
         for _ in range(self.args.epochs):
-            mac_out = []
-            self.mac.init_hidden(batch.batch_size)
-            for t in range(batch.max_seq_length - 1):
-                agent_outs = self.mac.forward(batch, t=t)
-                mac_out.append(agent_outs)
-            mac_out = th.stack(mac_out, dim=1)  # Concat over time
-        
-            pi = mac_out
+
+            bs, episode_length = advantages.shape[0:2]
+            batch_size = bs * episode_length
+
+            mini_batch_size = batch_size // self.args.num_mini_batch
             
-            # Calculate policy grad with mask
+            rand = th.randperm(batch.batch_size).numpy()
+            sampler = [rand[i*mini_batch_size:(i+1)*mini_batch_size] for i in range(self.args.num_mini_batch)]
 
-            pi[mask == 0] = 1.0
+            for indices in sampler:
+                rewards = batch["reward"][indices][:, :-1]
+                actions = batch["actions"][indices][:, :]
+                terminated = batch["terminated"][indices][:, :-1].float()
+                mask = batch["filled"][indices][:, :-1].float()
+                adv_targ = advantages[indices].detach()
+                factor = factor[indices]
 
-            pi_taken = th.gather(pi, dim=3, index=actions).squeeze(3)
-            log_pi_taken = th.log(pi_taken + 1e-10)
+                mini_batch = batch[indices]
 
-            ratios = th.prod(th.exp(log_pi_taken - old_log_pi_taken.detach()), dim=-1,keepdim=True)
-            surr1 = ratios * self.M
-            surr2 = th.clamp(ratios, 1 - self.args.eps_clip, 1 + self.args.eps_clip) * self.M
+                mask[:, 1:] = mask[:, 1:] * (1 - terminated[:, :-1])
+                actions = actions[:, :-1]
+                if self.args.standardise_rewards:
+                    self.rew_ms.update(rewards)
+                    rewards = (rewards - self.rew_ms.mean) / th.sqrt(self.rew_ms.var)
 
-            entropy = -th.sum(pi * th.log(pi + 1e-10), dim=-1)
-            pg_loss = -((th.min(surr1, surr2) + self.args.entropy_coef * entropy) * mask).sum() / mask.sum()
+                critic_mask = mask.clone()
 
-            # Optimise agent
-            self.agent_optimiser.zero_grad()
-            pg_loss.backward()
-            grad_norm = th.nn.utils.clip_grad_norm_(self.agent_params, self.args.grad_norm_clip)
-            self.agent_optimiser.step()
+                log_pi_taken, entropy, pi, self.hidden_states = self.evaluate_actions(mini_batch, actions, mask, self.hidden_states)
 
-            critic_train_stats = self.train_critic_sequential(self.critic, batch, rewards, critic_mask)   
+                ratios = th.prod(th.exp(log_pi_taken - old_log_pi_taken.detach()), dim=-1,keepdim=True)
+                surr1 = ratios * adv_targ
+                surr2 = th.clamp(ratios, 1 - self.args.eps_clip, 1 + self.args.eps_clip) * adv_targ
 
-        self.old_mac.load_state(self.mac)
+                pg_loss = -((factor.detach() * th.min(surr1, surr2) + self.args.entropy_coef * entropy) * mask).sum() / mask.sum()
 
-        self.critic_training_steps += 1
+                # Optimise agent
+                self.agent_optimiser.zero_grad()
+                pg_loss.backward()
+                grad_norm = th.nn.utils.clip_grad_norm_(self.agent_params, self.args.grad_norm_clip)
+                self.agent_optimiser.step()
+
+                critic_train_stats, v, ret = self.train_critic_sequential(self.critic, batch, rewards, critic_mask)
+
+            self.critic_training_steps += 1
 
         if t_env - self.log_stats_t >= self.args.learner_log_interval:
             ts_logged = len(critic_train_stats["critic_loss"])
             for key in ["critic_loss", "critic_grad_norm", "td_error_abs", "q_taken_mean"]:
                 self.logger.log_stat(key, sum(critic_train_stats[key]) / ts_logged, t_env)
 
-            self.logger.log_stat("advantage_mean", (self.M * mask).sum().item() / mask.sum().item(), t_env)
+            self.logger.log_stat("advantage_mean", (adv_targ * mask).sum().item() / mask.sum().item(), t_env)
             self.logger.log_stat("pg_loss", pg_loss.item(), t_env)
             self.logger.log_stat("agent_grad_norm", grad_norm.item(), t_env)
             self.logger.log_stat("pi_max", (pi.max(dim=-1)[0] * mask).sum().item() / mask.sum().item(), t_env)
             self.log_stats_t = t_env
 
-        self._update_log_pis(log_pi_taken.detach(), old_log_pi_taken.detach())
-
-    def compute_advantages(self, critic, batch, rewards, mask):
-        with th.no_grad():
-            vals = critic(batch)
-            vals = vals.squeeze(3)
-
-        if self.args.standardise_returns:
-            vals = vals * th.sqrt(self.ret_ms.var) + self.ret_ms.mean
-
-        returns = self.nstep_returns(rewards, mask, vals, self.args.q_nstep)
-        if self.args.standardise_returns:
-            self.ret_ms.update(returns)
-            returns = (returns - self.ret_ms.mean) / th.sqrt(self.ret_ms.var)
-
-        v = critic(batch)[:, :-1].squeeze(3)
-        td_error = (returns.detach() - v)
-        masked_td_error = td_error * mask
-
-        if self.args.standardise_advantages:
-            masked_td_error_copy = masked_td_error.detach().numpy().copy()
-            masked_td_error_copy[mask == 0.0] = np.nan
-            mean_masked_td_error = np.nanmean(masked_td_error_copy)
-            std_masked_td_error = np.nanstd(masked_td_error_copy)
-            masked_td_error = (masked_td_error - mean_masked_td_error) / (std_masked_td_error + 1e-5)
-
-        return masked_td_error, mask
-
+        return ret, v
     
     def train_critic_sequential(self, critic, batch, rewards, mask):
             # Optimise critic
@@ -209,13 +202,6 @@ class HAPPO:
             td_error = (returns.detach() - v)
             masked_td_error = td_error * mask
 
-            if self.args.standardise_advantages:
-                masked_td_error_copy = masked_td_error.detach().numpy().copy()
-                masked_td_error_copy[mask == 0.0] = np.nan
-                mean_masked_td_error = np.nanmean(masked_td_error_copy)
-                std_masked_td_error = np.nanstd(masked_td_error_copy)
-                masked_td_error = (masked_td_error - mean_masked_td_error) / (std_masked_td_error + 1e-5)
-            
             a = (abs(masked_td_error) <= self.huber_delta).float()
             b = (abs(masked_td_error) > self.huber_delta).float()
             
@@ -233,7 +219,7 @@ class HAPPO:
             running_log["q_taken_mean"].append((v * mask).sum().item() / mask_elems)
             running_log["returns_mean"].append((returns * mask).sum().item() / mask_elems)
 
-            return running_log
+            return running_log, v, returns
 
     def nstep_returns(self, rewards, mask, values, nsteps):
         nstep_values = th.zeros_like(values[:, :-1])
@@ -254,7 +240,6 @@ class HAPPO:
         return nstep_values
 
     def cuda(self):
-        self.old_mac.cuda()
         self.mac.cuda()
         self.critic.cuda()
 
