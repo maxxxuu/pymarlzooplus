@@ -119,10 +119,7 @@ class HAPPO:
         
         for _ in range(self.args.epochs):
 
-            bs, episode_length = advantages.shape[0:2]
-            batch_size = bs * episode_length
-
-            mini_batch_size = batch_size // self.args.num_mini_batch
+            mini_batch_size = batch.batch_size // self.args.num_mini_batch
             
             rand = th.randperm(batch.batch_size).numpy()
             sampler = [rand[i*mini_batch_size:(i+1)*mini_batch_size] for i in range(self.args.num_mini_batch)]
