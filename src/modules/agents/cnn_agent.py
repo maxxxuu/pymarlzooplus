@@ -1,6 +1,5 @@
 import torch as th
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 class CNNAgent(nn.Module):
@@ -18,6 +17,8 @@ class CNNAgent(nn.Module):
         self.args = args
 
         self.features_dim = args.cnn_features_dim
+        self.device_cnn_modules = th.device(args.device_cnn_modules)
+        self.device = th.device(args.device)
 
         n_input_channels = input_shape[0][0]  # 3 if RGB, 1 if gray scale
         assert n_input_channels in [1, 3], f"Invalid number of input channels: {n_input_channels}"
@@ -29,13 +30,14 @@ class CNNAgent(nn.Module):
             nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=0),
             nn.ReLU(),
             nn.Flatten(),
-        )
+        ).to(self.device_cnn_modules)
 
         # Compute shape by doing one forward pass
         with th.no_grad():
-            n_flatten = self.cnn(th.ones((1, *input_shape[0])).float()).shape[1]
+            n_flatten = self.cnn(th.ones((1, *input_shape[0])).float().to(self.device_cnn_modules)).shape[1]
 
-        self.linear = nn.Sequential(nn.Linear(n_flatten, self.features_dim), nn.ReLU())
+        self.linear = nn.Sequential(nn.Linear(n_flatten, self.features_dim), nn.ReLU()).to(self.device_cnn_modules)
 
     def forward(self, observations: th.Tensor) -> th.Tensor:
-        return self.linear(self.cnn(observations))
+        # Switch from CPU to GPU, if specified, according to 'self.device' and 'self.device_cnn_modules'
+        return self.linear(self.cnn(observations.to(self.device_cnn_modules))).to(self.device)

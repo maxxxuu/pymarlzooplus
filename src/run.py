@@ -39,6 +39,7 @@ def run(_run, _config, _log):
 
     args = SN(**_config)
     args.device = "cuda" if args.use_cuda else "cpu"
+    args.device_cnn_modules = "cuda" if args.use_cuda_cnn_modules else "cpu"
 
     # setup loggers
     logger = Logger(_log)
@@ -277,6 +278,14 @@ def args_sanity_check(config, _log):
         _log.warning(
             "CUDA flag use_cuda was switched OFF automatically because no CUDA devices are available!"
         )
+    if config["use_cuda_cnn_modules"] and not th.cuda.is_available():
+        config["use_cuda_cnn_modules"] = False
+        _log.warning(
+            "CUDA flag use_cuda_cnn_modules was switched OFF automatically because no CUDA devices are available!"
+        )
+    assert not (config["use_cuda_cnn_modules"] is False and config["use_cuda"] is True), \
+        ("When 'use_cuda' is True, 'use_cuda_cnn_modules' should also be True!"
+         f"\n'use_cuda': {config['use_cuda']}, 'use_cuda_cnn_modules': {config['use_cuda_cnn_modules']}")
 
     if config["test_nepisode"] < config["batch_size_run"]:
         config["test_nepisode"] = config["batch_size_run"]
