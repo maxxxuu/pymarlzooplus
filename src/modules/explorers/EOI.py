@@ -1,3 +1,7 @@
+"""
+Code based on: https://github.com/jiechuanjiang/eoi_pymarl/tree/main
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

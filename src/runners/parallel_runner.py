@@ -117,7 +117,6 @@ class ParallelRunner:
     def run(self, test_mode=False):
         pre_transition_data = self.reset()
 
-        all_terminated = False
         episode_returns = [0 for _ in range(self.batch_size)]
         episode_lengths = [0 for _ in range(self.batch_size)]
         self.mac.init_hidden(batch_size=self.batch_size)
