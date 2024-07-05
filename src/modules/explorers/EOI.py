@@ -204,7 +204,7 @@ class Explorer(object):
             args.eoi_batch_size
         )
 
-        self.ivf_flag = False
+        self.ivf_flag = [False]
 
     def train(self, episode_sample):
         self.trainer.train_batch(episode_sample)
@@ -226,25 +226,38 @@ class Explorer(object):
         return obs
 
     def select_actions(self, actions, t, test_mode, data):
+        """
+        actions: torch tensor of shape [batch_size, n_agents]
+        data["obs"]: list with "batch_size" elements, each with
+                     "n_agents" elements, each with a numpy array (observation)
+        """
 
-        if t == 0:
-            self.ivf_flag = (np.random.rand() < self.episode_ratio)
+        # batch_size
+        bs = len(data["obs"])
+        for batch_idx in range(bs):
 
-        if (test_mode is False) & (self.ivf_flag is True):
-            if np.random.rand() < self.explore_ratio:
+            if t == 0:
+                if len(self.ivf_flag) < batch_idx+1:
+                    self.ivf_flag.append(False)
+                self.ivf_flag[batch_idx] = (np.random.rand() < self.episode_ratio)
+            else:
+                assert len(self.ivf_flag) == bs, f"len(self.ivf_flag): {len(self.ivf_flag)}, bs: {len(self.ivf_flag)}"
 
-                obs = data["obs"][0]
+            if (test_mode is False) & (self.ivf_flag[batch_idx] is True):
+                if np.random.rand() < self.explore_ratio:
 
-                # tuple to list
-                if isinstance(obs, tuple):
-                    obs = list(obs)
+                    obs = data["obs"][batch_idx]
 
-                obs = self.build_obs(obs)
-                q_p = self.ivf(obs).detach().cpu().numpy()
+                    # tuple to list
+                    if isinstance(obs, tuple):
+                        obs = list(obs)
 
-                # Change random actions based on Q-values from IVF net
-                j = np.random.randint(self.n_agents)
-                actions[0][j] = np.argmax(q_p[j] - 9e15 * (1 - np.array(data["avail_actions"][0][j])))
+                    obs = self.build_obs(obs)
+                    q_p = self.ivf(obs).detach().cpu().numpy()
+
+                    # Change random actions based on Q-values from IVF net
+                    j = np.random.randint(self.n_agents)
+                    actions[batch_idx][j] = np.argmax(q_p[j] - 9e15 * (1 - np.array(data["avail_actions"][batch_idx][j])))
 
         return actions
 

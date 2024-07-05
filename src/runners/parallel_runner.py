@@ -18,6 +18,7 @@ class ParallelRunner:
         self.groups = None
         self.scheme = None
         self.mac = None
+        self.explorer = None
         self.new_batch = None
         self.batch = None
         self.env_steps_this_run = None
@@ -72,6 +73,7 @@ class ParallelRunner:
                                  preprocess=preprocess,
                                  device=self.args.device)
         self.mac = mac
+        self.explorer = explorer
         self.scheme = scheme
         self.groups = groups
         self.preprocess = preprocess
@@ -110,8 +112,10 @@ class ParallelRunner:
         self.t = 0
         self.env_steps_this_run = 0
 
+        return pre_transition_data
+
     def run(self, test_mode=False):
-        self.reset()
+        pre_transition_data = self.reset()
 
         all_terminated = False
         episode_returns = [0 for _ in range(self.batch_size)]
@@ -130,6 +134,14 @@ class ParallelRunner:
                                               t_env=self.t_env,
                                               bs=envs_not_terminated,
                                               test_mode=test_mode)
+
+            # Choose actions based on explorer, if applicable. This is for EOI.
+            if self.explorer is not None:
+                actions = self.explorer.select_actions(actions,
+                                                       self.t,
+                                                       test_mode,
+                                                       pre_transition_data)
+
             cpu_actions = actions.to("cpu").numpy()
 
             # Update the actions taken
@@ -192,7 +204,10 @@ class ParallelRunner:
                     pre_transition_data["obs"].append(data["obs"])
 
             # Add post_transition data into the batch
-            self.batch.update(post_transition_data, bs=envs_not_terminated, ts=self.t, mark_filled=False)
+            self.batch.update(post_transition_data,
+                              bs=envs_not_terminated,
+                              ts=self.t,
+                              mark_filled=False)
 
             # Move onto the next timestep
             self.t += 1

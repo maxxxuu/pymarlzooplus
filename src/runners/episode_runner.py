@@ -85,11 +85,17 @@ class EpisodeRunner:
 
             # Pass the entire batch of experiences up till now to the agents
             # Receive the actions for each agent at this timestep in a batch of size 1
-            actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
+            actions = self.mac.select_actions(self.batch,
+                                              t_ep=self.t,
+                                              t_env=self.t_env,
+                                              test_mode=test_mode)
 
             # Choose actions based on explorer, if applicable. This is for EOI.
             if self.explorer is not None:
-                actions = self.explorer.select_actions(actions, self.t, test_mode, pre_transition_data)
+                actions = self.explorer.select_actions(actions,
+                                                       self.t,
+                                                       test_mode,
+                                                       pre_transition_data)
 
             reward, terminated, env_info = self.env.step(actions[0])
             if test_mode and self.args.render:
