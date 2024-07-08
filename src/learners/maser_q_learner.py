@@ -204,7 +204,8 @@ class MASERQLearner:
         individual_targets = (
                 y*rewards + self.lam*intrinsic_rewards_ind +
                 self.args.gamma * (1 - terminated.repeat(1, 1, target_individual_qvals.shape[-1])) *
-                target_individual_qvals)
+                target_individual_qvals
+        )
         td_individual_error = (ind_qvals - individual_targets.detach())
         ind_mask = mask.expand_as(td_individual_error)
         masked_td_individual_error = td_individual_error * ind_mask
