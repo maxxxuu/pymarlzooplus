@@ -30,7 +30,6 @@ class EpisodeRunner:
 
         self.episode_limit = self.env.episode_limit
         self.t = 0
-
         self.t_env = 0
 
         self.train_returns = []
@@ -71,6 +70,8 @@ class EpisodeRunner:
 
         terminated = False
         episode_return = 0
+        env_info = {}
+
         self.mac.init_hidden(batch_size=self.batch_size)
 
         while not terminated:

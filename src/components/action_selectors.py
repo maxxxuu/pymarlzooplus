@@ -15,6 +15,7 @@ class MultinomialActionSelector:
                                               decay="linear")
         self.epsilon = self.schedule.eval(0)
         self.test_greedy = getattr(args, "test_greedy", True)
+        self.action_selector_strategy = args.action_selector_strategy
 
     def select_action(self, agent_inputs, avail_actions, t_env, test_mode=False):
         masked_policies = agent_inputs.clone()
@@ -26,6 +27,11 @@ class MultinomialActionSelector:
             picked_actions = masked_policies.max(dim=2)[1]
         else:
             picked_actions = Categorical(masked_policies).sample().long()
+
+        if self.action_selector_strategy == "maser_selector_strategy":
+            if not (th.gather(avail_actions, dim=2, index=picked_actions.unsqueeze(2)) > 0.99).all():
+                print('Choosing new action ...')
+                return self.select_action(agent_inputs, avail_actions, t_env, test_mode)
 
         return picked_actions
 
@@ -43,6 +49,7 @@ class EpsilonGreedyActionSelector:
                                               args.epsilon_anneal_time,
                                               decay="linear")
         self.epsilon = self.schedule.eval(0)
+        self.action_selector_strategy = args.action_selector_strategy
 
     def select_action(self, agent_inputs, avail_actions, t_env, test_mode=False):
 
@@ -62,6 +69,12 @@ class EpsilonGreedyActionSelector:
         random_actions = Categorical(avail_actions.float()).sample().long()
 
         picked_actions = pick_random * random_actions + (1 - pick_random) * masked_q_values.max(dim=2)[1]
+
+        if self.action_selector_strategy == "maser_selector_strategy":
+            if not (th.gather(avail_actions, dim=2, index=picked_actions.unsqueeze(2)) > 0.99).all():
+                print('Choosing new action ...')
+                return self.select_action(agent_inputs, avail_actions, t_env, test_mode)
+
         return picked_actions
 
 

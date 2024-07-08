@@ -533,9 +533,11 @@ if __name__ == '__main__':
         "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/cramped_room/cramped_room_w_parallel_2_threads_results/results/sacred/maa2c/cramped_room",
         "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/cramped_room/mappo_cramped_room_w_parallel_2_threads_results/sacred/mappo/cramped_room",
         "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/cramped_room/coma_cramped_room_w_parallel_2_threads_results/sacred/coma/cramped_room",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/cramped_room/qmix_cramped_room_results/sacred/qmix/cramped_room"
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/cramped_room/qmix_cramped_room_results/sacred/qmix/cramped_room",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/cramped_room/cramped_room_results/sacred/qplex/cramped_room",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/cramped_room/cramped_room_w_episode_results/sacred/eoi/cramped_room"
     ]
-    algo_names_ = ["maa2c", "mappo", "coma", "qmix"]
+    algo_names_ = ["maa2c", "mappo", "coma", "qmix", "qplex", "eoi"]
     env_name_ = "cramped_room"
     path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/cramped_room/"
 
@@ -543,9 +545,10 @@ if __name__ == '__main__':
     # paths_to_results_ = [
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/assymetric_advantages/maa2c_assymetric_advantages_w_max_steps=100M_w_parallel_2_threads_results/results/sacred/maa2c/asymmetric_advantages",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/assymetric_advantages/mappo_assymetric_advantages_w_max_steps=100M_w_parallel_2_threads_results/sacred/mappo/asymmetric_advantages",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/assymetric_advantages/coma_assymetric_advantages_w_max_steps=100M_w_parallel_2_threads_results/sacred/coma/asymmetric_advantages"
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/assymetric_advantages/coma_assymetric_advantages_w_max_steps=100M_w_parallel_2_threads_results/sacred/coma/asymmetric_advantages",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/assymetric_advantages/qmix_assymetric_advantages_w_max_steps=100M_results/sacred/qmix/asymmetric_advantages"
     # ]
-    # algo_names_ = ["maa2c", "mappo", "coma"]
+    # algo_names_ = ["maa2c", "mappo", "coma", "qmix"]
     # env_name_ = "assymetric_advantages"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/assymetric_advantages/"
 
@@ -554,8 +557,9 @@ if __name__ == '__main__':
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/coordination_ring/maa2c_coordination_ring_w_max_steps=100M_w_parallel_2_threads_results/sacred/maa2c/coordination_ring",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/coordination_ring/mappo_coordination_ring_w_max_steps=100M_w_parallel_2_threads_results/sacred/mappo/coordination_ring",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/coordination_ring/coma_coordination_ring_w_max_steps=100M_w_parallel_2_threads_results/sacred/coma/coordination_ring",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/coordination_ring/coordination_ring_w_max_steps=100M_results/sacred/qmix/coordination_ring"
     # ]
-    # algo_names_ = ["maa2c", "mappo", "coma"]
+    # algo_names_ = ["maa2c", "mappo", "coma", "qmix"]
     # env_name_ = "coordination_ring"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/coordination_ring/"
 

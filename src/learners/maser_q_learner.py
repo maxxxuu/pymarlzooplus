@@ -1,4 +1,4 @@
-# Original implementation available at https://github.com/Jiwonjeon9603/MASER
+# Code based on the original implementation available at: https://github.com/Jiwonjeon9603/MASER
 
 import copy
 from components.episode_buffer import EpisodeBatch
@@ -20,6 +20,7 @@ class MASERQLearner:
         self.device = args.device
         self.params = list(mac.parameters())
 
+        # MASER Hyperparameters
         self.last_target_update_episode = 0
         self.lam = args.lam
         self.alpha = args.alpha
@@ -27,17 +28,17 @@ class MASERQLearner:
         self.mix = args.mix
         self.expl = args.expl
         self.dis = args.dis
-        self.goal = args.goal
-        self.mixer = None
-        if args.mixer is not None:
-            if args.mixer == "vdn":
-                self.mixer = VDNMixer()
-            elif args.mixer == "qmix":
-                self.mixer = QMixer(args)
-            else:
-                raise ValueError("Mixer {} not recognised.".format(args.mixer))
-            self.params += list(self.mixer.parameters())
-            self.target_mixer = copy.deepcopy(self.mixer)
+        self.distance_embed_dim = args.distance_embed_dim
+
+        assert args.mixer is not None
+        if args.mixer == "vdn":
+            self.mixer = VDNMixer()
+        elif args.mixer == "qmix":
+            self.mixer = QMixer(args)
+        else:
+            raise ValueError("Mixer {} not recognised.".format(args.mixer))
+        self.params += list(self.mixer.parameters())
+        self.target_mixer = copy.deepcopy(self.mixer)
 
         self.optimiser = RMSprop(params=self.params, lr=args.lr, alpha=args.optim_alpha, eps=args.optim_eps)
 
@@ -47,11 +48,10 @@ class MASERQLearner:
         self.log_stats_t = -self.args.learner_log_interval - 1
 
         self.distance = nn.Sequential(
-            nn.Linear(self.mac.scheme['obs']['vshape'], 128),
+            nn.Linear(self.mac.scheme['obs']['vshape'], self.distance_embed_dim),
             nn.ReLU(),
-            nn.Linear(128, args.n_actions)
+            nn.Linear(self.distance_embed_dim, args.n_actions)
         ).to(device=self.device)
-
 
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
         
@@ -68,146 +68,129 @@ class MASERQLearner:
         mac_out = []
         self.mac.init_hidden(batch.batch_size)
         for t in range(batch.max_seq_length):
-            agent_outs = self.mac.forward(batch, t=t) #(bs,n,n_actions)
-            mac_out.append(agent_outs) #[t,(bs,n,n_actions)]
+            agent_outs = self.mac.forward(batch, t=t)  # shape: (bs, n, n_actions)
+            mac_out.append(agent_outs)  # shape: [t, (bs, n, n_actions)]
         mac_out = th.stack(mac_out, dim=1)  # Concat over time
 
         # Pick the Q-Values for the actions taken by each agent
         chosen_action_qvals = th.gather(mac_out[:, :-1], dim=3, index=actions).squeeze(3)  # Remove the last dim
-        ind_qvals = th.gather(mac_out[:, :-1], dim=3, index=actions).squeeze(3)
-        # (bs,t,n) Q value of an action
+        ind_qvals = th.gather(mac_out[:, :-1], dim=3, index=actions).squeeze(3)  # shape: (bs, t, n), Q value of an action
 
         # Calculate the Q-Values necessary for the target
         target_mac_out = []
-        self.target_mac.init_hidden(batch.batch_size) # (bs,n,hidden_size)
+        self.target_mac.init_hidden(batch.batch_size)  # shape: (bs, n, hidden_size)
         for t in range(batch.max_seq_length):
-            target_agent_outs = self.target_mac.forward(batch, t=t)  # (bs,n,n_actions)
-            target_mac_out.append(target_agent_outs) #[t,(bs,n,n_actions)]
+            target_agent_outs = self.target_mac.forward(batch, t=t)  # shape: (bs, n, n_actions)
+            target_mac_out.append(target_agent_outs)  # shape: [t, (bs, n, n_actions)]
 
         # We don't need the first timesteps Q-Value estimate for calculating targets
-        target_ind_q = th.stack(target_mac_out[:-1], dim=1)   #### For Q value s
-        target_mac_out = th.stack(target_mac_out[1:], dim=1)  # Concat across time, dim=1 is time index #####For target s'
-
-        #(bs,t,n,n_actions)
+        target_ind_q = th.stack(target_mac_out[:-1], dim=1)   # Q-values
+        target_mac_out = th.stack(target_mac_out[1:], dim=1)  # Concat across time, dim=1 is time index, shape: (bs, t, n, n_actions)
 
         # Mask out unavailable actions
-        target_mac_out[avail_actions[:, 1:] == 0] = -9999999 # Q values
+        target_mac_out[avail_actions[:, 1:] == 0] = -9999999  # Q values
         target_ind_q[avail_actions[:, :-1] == 0] = -9999999  # Q values
 
+        ## Max over target Q-Values
+        # Get actions that maximise live Q (for double q-learning)
+        mac_out_detach = mac_out.clone().detach()  # return a new Tensor, detached from the current graph
+        mac_out_detach[avail_actions == 0] = -9999999  # discard t=0, shape: (bs, t, n, n_actions)
+        cur_max_actions = mac_out_detach[:, 1:].max(dim=3, keepdim=True)[1]  # indices instead of values
+        cur_max_act = mac_out_detach[:, :-1].max(dim=3, keepdim=True)[1]  # indices instead of values, shape: (bs, t, n, 1)
+        target_max_qvals = th.gather(target_mac_out, 3, cur_max_actions).squeeze(3)
+        target_individual_qvals = th.gather(target_mac_out, 3, cur_max_actions).squeeze(3)
+        target_ind_qvals = th.gather(target_ind_q, 3, cur_max_act).squeeze(3)  # max target-Q, shape: (bs, t, n, n_actions) ==> (bs, t, n, 1) ==> (bs, t, n)
 
-        # Max over target Q-Values
-        if self.args.double_q: # True for QMix
-            # Get actions that maximise live Q (for double q-learning)
-            mac_out_detach = mac_out.clone().detach() #return a new Tensor, detached from the current graph
-            mac_out_detach[avail_actions == 0] = -9999999
-                            # (bs,t,n,n_actions), discard t=0
-            cur_max_actions = mac_out_detach[:, 1:].max(dim=3, keepdim=True)[1] # indices instead of values
-            cur_max_act = mac_out_detach[:, :-1].max(dim=3, keepdim=True)[1]  # indices instead of values
-            # (bs,t,n,1)
-            target_max_qvals = th.gather(target_mac_out, 3, cur_max_actions).squeeze(3)
-            target_individual_qvals = th.gather(target_mac_out, 3, cur_max_actions).squeeze(3)
-            target_ind_qvals = th.gather(target_ind_q, 3, cur_max_act).squeeze(3)
-            # (bs,t,n,n_actions) ==> (bs,t,n,1) ==> (bs,t,n) max target-Q
-        else:
-            target_max_qvals = target_mac_out.max(dim=3)[0]
-            target_individual_qvals = target_mac_out.max(dim=3)[0]
         # Mix
+        chosen_action_qvals = self.mixer(chosen_action_qvals, batch["state"][:, :-1])
+        target_max_qvals = self.target_mixer(target_max_qvals, batch["state"][:, 1:])
+        goal_target_max_qvals = self.target_mixer(target_ind_qvals, batch["state"][:, :-1])  # shape: (bs, t, 1)
 
-        if self.mixer is not None:
-            chosen_action_qvals = self.mixer(chosen_action_qvals, batch["state"][:, :-1])
-            target_max_qvals = self.target_mixer(target_max_qvals, batch["state"][:, 1:])
-            goal_target_max_qvals = self.target_mixer(target_ind_qvals, batch["state"][:, :-1]) #target_ind_qvals / ddqn_qval_up same result
-            # (bs,t,1)
+        ###############################################################################
+        # ################ Compute intrinsic reward and MASER losses ##################
+        q_ind_tot_list = []
+        for i in range(self.n_agents):
+            target_qtot_per_agent = (goal_target_max_qvals / self.n_agents).squeeze()
+            q_ind_tot_list.append(self.alpha * target_ind_qvals[:, :, i] + (1 - self.alpha) * target_qtot_per_agent)
 
-        if self.goal == "maser":
+        q_ind_tot = th.stack(q_ind_tot_list, dim=2)
 
-            q_ind_tot_list = []
-            for i in range(self.n_agents):
-                target_qtot_per_agent = (goal_target_max_qvals / self.n_agents).squeeze()
-                q_ind_tot_list.append(self.alpha * target_ind_qvals[:, :, i] + (1 - self.alpha) * target_qtot_per_agent)
+        ddqn_qval_up_idx = th.max(q_ind_tot, dim=1)[1]  # Find out max Q value for t=1~T-1 (whole episode)
 
-            q_ind_tot = th.stack(q_ind_tot_list, dim=2)
+        explore_q_target = th.ones(target_ind_q.shape) / target_ind_q.shape[-1]
+        explore_q_target = explore_q_target.to(device=self.device)
 
-            ddqn_qval_up_idx = th.max(q_ind_tot, dim=1)[1]  # Find out max Q value for t=1~T-1 (whole episode)
+        ddqn_up_list = []
+        distance_list = []
+        explore_list = []
+        for i in range(batch.batch_size):
+            ddqn_up_list_subset = []
+            distance_subset = []
+            explore_loss_subset = []
+            for j in range(self.n_agents):
 
-            explore_q_target = th.ones(target_ind_q.shape) / target_ind_q.shape[-1]
-            explore_q_target = explore_q_target.to(device=self.device)
+                # For distillation (exploration)
+                y = F.softmax(target_ind_q[i, ddqn_qval_up_idx[i][j]:, j, :], dim=-1) + 1e-6
+                z = F.softmax(explore_q_target[i, ddqn_qval_up_idx[i][j]:, j, :], dim=-1)
+                loss1 = y * ((y / z).log())
+                explore_loss = th.sum(loss1, dim=-1)
+                explore_loss_subset.append(th.mean(explore_loss))
 
-            ddqn_up_list = []
-            distance_list = []
-            explore_list = []
-            for i in range(batch.batch_size):
-                ddqn_up_list_subset = []
-                distance_subset = []
-                explore_loss_subset = []
-                for j in range(self.n_agents):
-                    
-                    # For distillation (exploration)
-                    
-                    y = F.softmax(target_ind_q[i, ddqn_qval_up_idx[i][j]:, j, :], dim=-1) + 1e-6
-                    z = F.softmax(explore_q_target[i, ddqn_qval_up_idx[i][j]:, j, :], dim=-1)
-                    loss1 = y * ((y / z).log())
-                    explore_loss = th.sum(loss1, dim=-1)
-                    explore_loss_subset.append(th.mean(explore_loss))
-                    
-                    # For distance function
-                    
-                    cos = nn.CosineSimilarity(dim=-1, eps=1e-8)
-                    goal_q = target_ind_q[i, ddqn_qval_up_idx[i][j], j, :].repeat(target_ind_q.shape[1], 1)
+                # For distance function
+                cos = nn.CosineSimilarity(dim=-1, eps=1e-8)
+                goal_q = target_ind_q[i, ddqn_qval_up_idx[i][j], j, :].repeat(target_ind_q.shape[1], 1)
 
-                    similarity = 1 - cos(target_ind_q[i, :, j, :], goal_q)
-                    dist_obs = self.distance(observation[i, :, j, :])
-                    dist_og = self.distance(observation[i, ddqn_qval_up_idx[i][j], j, :])
+                similarity = 1 - cos(target_ind_q[i, :, j, :], goal_q)
+                dist_obs = self.distance(observation[i, :, j, :])
+                dist_og = self.distance(observation[i, ddqn_qval_up_idx[i][j], j, :])
 
-                    dist_loss = th.norm(dist_obs - dist_og.repeat(dist_obs.shape[0], 1), dim=-1) - similarity
-                    distance_loss = th.mean(dist_loss ** 2)
-                    distance_subset.append(distance_loss)
-                    ddqn_up_list_subset.append(observation[i, ddqn_qval_up_idx[i][j], j, :])
+                dist_loss = th.norm(dist_obs - dist_og.repeat(dist_obs.shape[0], 1), dim=-1) - similarity
+                distance_loss = th.mean(dist_loss ** 2)
+                distance_subset.append(distance_loss)
+                ddqn_up_list_subset.append(observation[i, ddqn_qval_up_idx[i][j], j, :])
 
-                explore_loss1 = th.stack(explore_loss_subset)
-                explore_list.append(explore_loss1)
-                
-                distance1 = th.stack(distance_subset)
-                distance_list.append(distance1)
+            explore_loss1 = th.stack(explore_loss_subset)
+            explore_list.append(explore_loss1)
 
-                ddqn_up1 = th.stack(ddqn_up_list_subset)
-                ddqn_up_list.append(ddqn_up1)
+            distance1 = th.stack(distance_subset)
+            distance_list.append(distance1)
 
-            explore_losses = th.stack(explore_list)
-            distance_losses = th.stack(distance_list)
+            ddqn_up1 = th.stack(ddqn_up_list_subset)
+            ddqn_up_list.append(ddqn_up1)
 
-            mix_explore_distance_losses = self.expl*explore_losses + self.dis*distance_losses
+        explore_losses = th.stack(explore_list)
+        distance_losses = th.stack(distance_list)
 
-            ddqn_up = th.stack(ddqn_up_list)
-            ddqn_up = ddqn_up.unsqueeze(dim=1)
-            ddqn_up = ddqn_up.repeat(1, observation.shape[1], 1, 1)
+        mix_explore_distance_losses = self.expl*explore_losses + self.dis*distance_losses
 
-            reward_ddqn_up = self.distance(observation) - self.distance(ddqn_up)
+        ddqn_up = th.stack(ddqn_up_list)
+        ddqn_up = ddqn_up.unsqueeze(dim=1)
+        ddqn_up = ddqn_up.repeat(1, observation.shape[1], 1, 1)
 
-            intrinsic_reward_list = []
-            for i in range(self.n_agents):
-                intrinsic_reward_list.append(
-                    -th.norm(reward_ddqn_up[:, :, i, :], dim=2).reshape(batch.batch_size, observation.shape[1]))
-            intrinsic_rewards_ind = th.stack(intrinsic_reward_list, dim=-1)
+        reward_ddqn_up = self.distance(observation) - self.distance(ddqn_up)
 
-            intrinsic_rewards = th.zeros(rewards.shape).to(device=self.device)
+        intrinsic_reward_list = []
+        for i in range(self.n_agents):
+            intrinsic_reward_list.append(
+                -th.norm(reward_ddqn_up[:, :, i, :], dim=2).reshape(batch.batch_size, observation.shape[1]))
+        intrinsic_rewards_ind = th.stack(intrinsic_reward_list, dim=-1)
 
-            for i in range(self.n_agents):
-                intrinsic_rewards += -th.norm(reward_ddqn_up[:, :, i, :], dim=2).reshape(batch.batch_size,
-                                                                                         observation.shape[1],
-                                                                                         1) / self.n_agents
-            rewards += self.lam * intrinsic_rewards
+        intrinsic_rewards = th.zeros(rewards.shape).to(device=self.device)
+
+        for i in range(self.n_agents):
+            intrinsic_rewards += -th.norm(reward_ddqn_up[:, :, i, :], dim=2).reshape(batch.batch_size,
+                                                                                     observation.shape[1],
+                                                                                     1) / self.n_agents
+        rewards += self.lam * intrinsic_rewards
+        ###############################################################################
 
         # Calculate 1-step Q-Learning targets
-
         targets = rewards + self.args.gamma * (1 - terminated) * target_max_qvals
 
         # Td-error
-        td_error = (chosen_action_qvals - targets.detach()) # no gradient through target net
-        # (bs,t,1)
+        td_error = (chosen_action_qvals - targets.detach())  # no gradient through target net, shape: (bs, t, 1)
 
         # distillation-error
-
         mask = mask.expand_as(td_error)
 
         # 0-out the targets that came from padded data
@@ -216,16 +199,20 @@ class MASERQLearner:
         # Normal L2 loss, take mean over actual data
         loss = (masked_td_error ** 2).sum() / mask.sum()
 
-        if self.goal == "maser":
-            y = F.softmax(target_individual_qvals, dim=-1)
-            individual_targets = y*rewards + self.lam*intrinsic_rewards_ind + self.args.gamma * (1 - terminated.repeat(1,1, target_individual_qvals.shape[-1])) * target_individual_qvals
-            td_individual_error = (ind_qvals - individual_targets.detach())
-            ind_mask = mask.expand_as(td_individual_error)
-            masked_td_individual_error = td_individual_error * ind_mask
-            individual_loss = th.sum(masked_td_individual_error ** 2).sum() / th.mean(ind_mask, dim=-1).sum()
-            mix_explore_distance_loss = mix_explore_distance_losses.mean()
-            loss += 0.001*(self.ind*individual_loss + self.mix*mix_explore_distance_loss)
+        # MASER final loss
+        y = F.softmax(target_individual_qvals, dim=-1)
+        individual_targets = (
+                y*rewards + self.lam*intrinsic_rewards_ind +
+                self.args.gamma * (1 - terminated.repeat(1, 1, target_individual_qvals.shape[-1])) *
+                target_individual_qvals)
+        td_individual_error = (ind_qvals - individual_targets.detach())
+        ind_mask = mask.expand_as(td_individual_error)
+        masked_td_individual_error = td_individual_error * ind_mask
+        individual_loss = th.sum(masked_td_individual_error ** 2).sum() / th.mean(ind_mask, dim=-1).sum()
+        mix_explore_distance_loss = mix_explore_distance_losses.mean()
+        loss += 0.001*(self.ind*individual_loss + self.mix*mix_explore_distance_loss)
 
+        # Backpropagation
         self.optimiser.zero_grad()
         loss.backward()
         grad_norm = th.nn.utils.clip_grad_norm_(self.params, self.args.grad_norm_clip)# max_norm
@@ -265,7 +252,7 @@ class MASERQLearner:
 
     def load_models(self, path):
         self.mac.load_models(path)
-        # Not quite right but I don't want to save target networks
+        # Not quite right, but we don't want to save target networks
         self.target_mac.load_models(path)
         if self.mixer is not None:
             self.mixer.load_state_dict(th.load("{}/mixer.th".format(path), map_location=lambda storage, loc: storage))
