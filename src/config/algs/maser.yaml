@@ -19,7 +19,6 @@ target_update_interval: 200
 # use the Q_Learner to train
 agent_output_type: "q"
 learner: "maser_q_learner"
-double_q: True
 mixer: "qmix"
 use_rnn: True
 distance_embed_dim: 128
