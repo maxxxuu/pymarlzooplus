@@ -2,6 +2,8 @@ import torch as th
 import numpy as np
 from types import SimpleNamespace as SN
 
+from components.proportional import Experience
+
 
 class EpisodeBatch:
     def __init__(self,
@@ -190,9 +192,9 @@ class EpisodeBatch:
         parsed = []
         # Only batch slice given, add full time slice
         if (isinstance(items, slice)  # slice a:b
-            or isinstance(items, int)  # int i
-            or (isinstance(items, (list, np.ndarray, th.LongTensor, th.cuda.LongTensor)))  # [a,b,c]
-            ):
+                or isinstance(items, int)  # int i
+                or (isinstance(items, (list, np.ndarray, th.LongTensor, th.cuda.LongTensor)))  # [a,b,c]
+        ):
             items = (items, slice(None))
 
         # Need the time indexing to be contiguous
@@ -265,3 +267,62 @@ class ReplayBuffer(EpisodeBatch):
                                                                         self.buffer_size,
                                                                         self.scheme.keys(),
                                                                         self.groups.keys())
+
+
+class PrioritizedReplayBuffer(EpisodeBatch):
+    def __init__(self, scheme, groups, buffer_size, max_seq_length, alpha, preprocess=None, device="cpu"):
+        super(PrioritizedReplayBuffer, self).__init__(scheme,
+                                                      groups,
+                                                      buffer_size,
+                                                      max_seq_length,
+                                                      preprocess=preprocess,
+                                                      device=device)
+        self.proportional = Experience(buffer_size, alpha=alpha)
+        self.buffer_size = buffer_size  # same as self.batch_size but more explicit
+        self.buffer_index = 0
+        self.episodes_in_buffer = 0
+
+    def insert_episode_batch(self, ep_batch):
+        for i in range(ep_batch.batch_size):
+            self.proportional.add(100)
+
+        if self.buffer_index + ep_batch.batch_size <= self.buffer_size:
+            self.update(ep_batch.data.transition_data,
+                        slice(self.buffer_index, self.buffer_index + ep_batch.batch_size),
+                        slice(0, ep_batch.max_seq_length),
+                        mark_filled=False
+                        )
+            self.update(ep_batch.data.episode_data,
+                        slice(self.buffer_index, self.buffer_index + ep_batch.batch_size))
+            self.buffer_index = (self.buffer_index + ep_batch.batch_size)
+            self.episodes_in_buffer = max(self.episodes_in_buffer, self.buffer_index)
+            self.buffer_index = self.buffer_index % self.buffer_size
+            assert self.buffer_index < self.buffer_size
+        else:
+            buffer_left = self.buffer_size - self.buffer_index
+            self.insert_episode_batch(ep_batch[0:buffer_left, :])
+            self.insert_episode_batch(ep_batch[buffer_left:, :])
+
+    def can_sample(self, batch_size):
+        return self.episodes_in_buffer >= batch_size
+
+    def sample(self, batch_size, newest=False):
+        assert self.can_sample(batch_size)
+        if newest and self.episodes_in_buffer >= batch_size:
+            return self[self.episodes_in_buffer - batch_size: self.episodes_in_buffer]
+        elif self.episodes_in_buffer == batch_size:
+            return np.arange(batch_size), self[:batch_size]
+        else:
+            # Sampling by priority - Uniform sampling only atm
+            ep_ids = self.proportional.select(batch_size)
+            assert (ep_ids is not None)
+            return ep_ids, self[ep_ids]
+
+    def update_priority(self, indices, priorities):
+        self.proportional.priority_update(indices, priorities)
+
+    def __repr__(self):
+        return "PrioritizedReplayBuffer. {}/{} episodes. Keys:{} Groups:{}".format(self.episodes_in_buffer,
+                                                                                   self.buffer_size,
+                                                                                   self.scheme.keys(),
+                                                                                   self.groups.keys())
