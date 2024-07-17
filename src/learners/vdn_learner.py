@@ -11,7 +11,7 @@ from controllers import REGISTRY as mac_REGISTRY
 import numpy as np
 
 
-class vdn_QLearner:
+class vdn_Learner:
     def __init__(self, mac, scheme, logger, args, groups=None):
         self.args = args
         self.mac = copy.deepcopy(mac)
@@ -37,13 +37,9 @@ class vdn_QLearner:
         self.optimiser = RMSprop(params=self.params, lr=args.lr, alpha=args.optim_alpha, eps=args.optim_eps)
         self.predict_optimiser = Adam(params=self.predict_params, lr=args.lr)
 
-        # a little wasteful to deepcopy (e.g. duplicates action selector), but should work for any MAC
-        # testS
-
         self.log_stats_t = -self.args.learner_log_interval - 1
 
-    def subtrain(self, batch: EpisodeBatch, t_env: int, episode_num: int, mac, imac=None,
-                 timac=None):
+    def subtrain(self, batch: EpisodeBatch, t_env: int, episode_num: int, mac, imac=None, timac=None):
         # Get the relevant quantities
         rewards = batch["reward"][:, :-1]
         actions = batch["actions"][:, :-1]
@@ -171,8 +167,10 @@ class vdn_QLearner:
             self.logger.log_stat("vdn extrinsic rewards", rewards.sum().item() / mask_elems, t_env)
             self.logger.log_stat("vdn td_error_abs", (masked_td_error.abs().sum().item() / mask_elems), t_env)
             self.logger.log_stat("vdn q_taken_mean",
-                                 (chosen_action_qvals * mask).sum().item() / (mask_elems * self.args.n_agents), t_env)
-            self.logger.log_stat("vdn target_mean", (targets * mask).sum().item() / (mask_elems * self.args.n_agents),
+                                 (chosen_action_qvals * mask).sum().item() / (mask_elems * self.args.n_agents),
+                                 t_env)
+            self.logger.log_stat("vdn target_mean",
+                                 (targets * mask).sum().item() / (mask_elems * self.args.n_agents),
                                  t_env)
 
             self.log_stats_t = t_env
@@ -227,7 +225,7 @@ class vdn_QLearner:
 
     def load_models(self, path):
         self.mac.load_models(path)
-        # Not quite right but I don't want to save target networks
+        # Not quite right, but I don't want to save target networks
         self.target_mac.load_models(path)
         self.soft_target_mac.load_models(path)
         self.predict_mac.load_models('{}/predict_mac'.format(path))

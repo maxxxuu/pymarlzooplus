@@ -2,16 +2,15 @@ import copy
 from components.episode_buffer import EpisodeBatch
 from modules.mixers.dmaq_general import DMAQer
 from modules.mixers.dmaq_qatten import DMAQ_QattenMixer
-import torch.nn.functional as F
 import torch as th
 from torch.optim import RMSprop
 from utils.torch_utils import to_cuda
 import numpy as np
-from .vdn_Qlearner import vdn_QLearner
+from .vdn_learner import vdn_Learner
 import os
 
 
-class QPLEX_curiosity_vdn_Learner:
+class EMC_qplex_curiosity_vdn_Learner:
     def __init__(self, mac, scheme, logger, args):
         self.args = args
         self.mac = mac
@@ -22,7 +21,7 @@ class QPLEX_curiosity_vdn_Learner:
         self.last_target_update_episode = 0
 
         self.mixer = None
-        self.vdn_learner = vdn_QLearner(mac, scheme, logger, args)
+        self.vdn_learner = vdn_Learner(mac, scheme, logger, args)
         if args.mixer is not None:
             if args.mixer == "dmaq":
                 self.mixer = DMAQer(args)
@@ -140,7 +139,7 @@ class QPLEX_curiosity_vdn_Learner:
                         continue
                     z = np.dot(ec_buffer.random_projection, batch["state"][i][j].cpu())
                     q = ec_buffer.peek(z, None, modify=False)
-                    if q != None:
+                    if q is not None:
                         qec_tmp[j - 1] = self.args.gamma * q + rewards[i][j - 1]
                         ec_buffer.qecwatch.append(q)
                         ec_buffer.qec_found += 1
@@ -159,7 +158,6 @@ class QPLEX_curiosity_vdn_Learner:
         mask = mask.expand_as(td_error)
         if self.args.use_emdqn:
             emdqn_td_error = qec_input_new.detach() - chosen_action_qvals
-
             emdqn_masked_td_error = emdqn_td_error * mask
 
         # 0-out the targets that came from padded data
@@ -210,19 +208,34 @@ class QPLEX_curiosity_vdn_Learner:
 
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int, ec_buffer=None):
 
-        intrinsic_rewards = self.vdn_learner.train(batch, t_env, episode_num, imac=self.mac,
+        intrinsic_rewards = self.vdn_learner.train(batch,
+                                                   t_env,
+                                                   episode_num,
+                                                   imac=self.mac,
                                                    timac=self.target_mac)
         if self.args.prioritized_buffer:
-            masked_td_error, mask = self.sub_train(batch, t_env, episode_num, self.mac, self.mixer, self.optimiser,
-                                                   self.params, intrinsic_rewards=intrinsic_reward,
+            masked_td_error, mask = self.sub_train(batch,
+                                                   t_env,
+                                                   episode_num,
+                                                   self.mac,
+                                                   self.mixer,
+                                                   self.optimiser,
+                                                   self.params,
+                                                   intrinsic_rewards=intrinsic_rewards,
                                                    ec_buffer=ec_buffer)
         else:
-            self.sub_train(batch, t_env, episode_num, self.mac, self.mixer, self.optimiser, self.params,
-                           intrinsic_rewards=intrinsic_rewards, ec_buffer=ec_buffer)
+            self.sub_train(batch,
+                           t_env,
+                           episode_num,
+                           self.mac,
+                           self.mixer,
+                           self.optimiser,
+                           self.params,
+                           intrinsic_rewards=intrinsic_rewards,
+                           ec_buffer=ec_buffer)
 
         if (episode_num - self.last_target_update_episode) / self.args.target_update_interval >= 1.0:
             self._update_targets(ec_buffer)
-
             self.last_target_update_episode = episode_num
 
         if self.args.prioritized_buffer:
@@ -254,7 +267,7 @@ class QPLEX_curiosity_vdn_Learner:
 
     def load_models(self, path):
         self.mac.load_models(path)
-        # Not quite right but I don't want to save target networks
+        # Not quite right, but I don't want to save target networks
         self.target_mac.load_models(path)
         if self.mixer is not None:
             self.mixer.load_state_dict(th.load("{}/mixer.th".format(path), map_location=lambda storage, loc: storage))

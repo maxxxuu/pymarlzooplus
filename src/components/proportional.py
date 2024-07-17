@@ -40,11 +40,13 @@ class Experience(object):
     def priority_update(self, indices, priorities):
 
         """
-        The methods update samples's priority.
+        The methods update samples' priority.
         Parameters
         ----------
         indices :
             list of sample indices
+        priorities:
+            list of sample priorities
         """
 
         for i, p in zip(indices, priorities):

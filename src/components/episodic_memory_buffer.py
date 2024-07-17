@@ -1,5 +1,5 @@
 import numpy as np
-from components.LRN_KNN import LRUKNN
+from components.lrn_knn import LRUKNN
 
 
 class EpisodicMemoryBuffer:

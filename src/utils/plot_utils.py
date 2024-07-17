@@ -474,19 +474,20 @@ if __name__ == '__main__':
     ## Many algos
 
     # Pistonball
-    # paths_to_results_ = [
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/pistonball_v6/coma_pistonball_v6_w_parallel_2_threads_w_resnet18_results/sacred/coma/pistonball_v6",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/pistonball_v6/pistonball_v6_w_parallel_2_threads_w_resnet18_results/sacred/maa2c/pistonball_v6",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/pistonball_v6/maa2c_pistonball_v6_w_parallel_2_threads_w_trainable_cnn_results/sacred/maa2c/pistonball_v6",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/pistonball_v6/mappo_pistonball_v6_w_parallel_2_threads_w_resnet18_results/results/sacred/mappo/pistonball_v6",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/pistonball_v6/pistonball_v6_w_resnet18_results/results/sacred/qmix/pistonball_v6",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/pistonball_v6/pistonball_v6_w_trainable_cnn_buffer_size=30_results/results/sacred/qmix/pistonball_v6",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/pistonball_v6/pistonball_v6_w_episode_w_resnet18_results/sacred/eoi/pistonball_v6",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/pistonball_v6/pistonball_v6_w_resnet18_results/results/sacred/qplex/pistonball_v6"
-    #            ]
-    # algo_names_ = ["coma", "maa2c-resnet", "maa2c-cnn", "mappo", "qmix-resnet", "qmix-cnn-buff=30", "eoi", "qplex"]
-    # env_name_ = "pistonball_v6"
-    # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/pistonball_v6/"
+    paths_to_results_ = [
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/pistonball_v6/coma_pistonball_v6_w_parallel_2_threads_w_resnet18_results/sacred/coma/pistonball_v6",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/pistonball_v6/coma_pistonball_v6_w_parallel_2_threads_w_trainable_cnn_results/sacred/coma/pistonball_v6",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/pistonball_v6/pistonball_v6_w_parallel_2_threads_w_resnet18_results/sacred/maa2c/pistonball_v6",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/pistonball_v6/maa2c_pistonball_v6_w_parallel_2_threads_w_trainable_cnn_results/sacred/maa2c/pistonball_v6",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/pistonball_v6/mappo_pistonball_v6_w_parallel_2_threads_w_resnet18_results/results/sacred/mappo/pistonball_v6",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/pistonball_v6/pistonball_v6_w_resnet18_results/results/sacred/qmix/pistonball_v6",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/pistonball_v6/pistonball_v6_w_trainable_cnn_buffer_size=30_results/results/sacred/qmix/pistonball_v6",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/pistonball_v6/pistonball_v6_w_episode_w_resnet18_results/sacred/eoi/pistonball_v6",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/pistonball_v6/pistonball_v6_w_resnet18_results/results/sacred/qplex/pistonball_v6"
+               ]
+    algo_names_ = ["coma-resnet", "coma-cnn", "maa2c-resnet", "maa2c-cnn", "mappo", "qmix-resnet", "qmix-cnn-buff=30", "eoi", "qplex"]
+    env_name_ = "pistonball_v6"
+    path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/pistonball_v6/"
 
     # Cooperative pong
     # paths_to_results_ = [
@@ -569,19 +570,23 @@ if __name__ == '__main__':
     # PressurePlate - linear-4p-v0
     # paths_to_results_ = [
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/pressureplate_linear-4p-v0/qmix_linear-4p-v0_results/sacred/qmix/pressureplate-linear-4p-v0",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/pressureplate_linear-4p-v0/maa2c_linear-4p-v0_w_parallel_2_threads_results/sacred/maa2c/pressureplate-linear-4p-v0"
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/pressureplate_linear-4p-v0/maa2c_linear-4p-v0_w_parallel_2_threads_results/sacred/maa2c/pressureplate-linear-4p-v0",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/pressureplate_linear-4p-v0/coma_linear-4p-v0_results/sacred/coma/pressureplate-linear-4p-v0"
     # ]
-    # algo_names_ = ["qmix", "maa2c"]
+    # algo_names_ = ["qmix", "maa2c", "coma"]
     # env_name_ = "pressureplate-linear-4p-v0"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/pressureplate-linear-4p-v0/"
 
+
     # PressurePlate - linear-6p-v0
-    paths_to_results_ = [
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/pressureplate_linear-6p-v0/maa2c_linear-6p-v0_w_parallel_2_threads_results/sacred/maa2c/pressureplate-linear-6p-v0"
-    ]
-    algo_names_ = ["maa2c"]
-    env_name_ = "pressureplate-linear-6p-v0"
-    path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/pressureplate-linear-6p-v0/"
+    # paths_to_results_ = [
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/pressureplate_linear-6p-v0/maa2c_linear-6p-v0_w_parallel_2_threads_results/sacred/maa2c/pressureplate-linear-6p-v0",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/pressureplate_linear-6p-v0/qmix_linear-6p-v0_results/sacred/qmix/pressureplate-linear-6p-v0",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/pressureplate_linear-6p-v0/coma_linear-6p-v0_results/sacred/coma/pressureplate-linear-6p-v0"
+    # ]
+    # algo_names_ = ["maa2c", "qmix", "coma"]
+    # env_name_ = "pressureplate-linear-6p-v0"
+    # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/pressureplate-linear-6p-v0/"
 
     plot_train_ = False
     plot_multiple_experiment_results(paths_to_results_, algo_names_, env_name_, path_to_save_, plot_train_)

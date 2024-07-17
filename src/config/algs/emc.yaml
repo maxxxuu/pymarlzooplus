@@ -1,6 +1,4 @@
-# --- Qatten specific parameters ---
-
-use_cuda: False
+# --- EMC with Qatten specific parameters ---
 
 # use epsilon greedy action selector
 action_selector: "epsilon_greedy"
@@ -18,7 +16,8 @@ target_update_interval: 200
 
 # use the Q_Learner to train
 agent_output_type: "q"
-learner: "qplex_curiosity_vdn_learner"
+learner: "emc_qplex_curiosity_vdn_learner"
+use_rnn: True
 double_q: True
 mixer: "dmaq_qatten"
 mixing_embed_dim: 32
@@ -49,9 +48,10 @@ curiosity_decay_stop: 0.0
 
 # Buffer
 prioritized_buffer: False
+burn_in_period: 3 # 100
 
-mac: "emc_mac"
-agent: "rnn_emc"
+mac: "basic_mac"
+agent: "rnn"
 use_individual_Q: False
 individual_q_loss_weight: 0.01
 
@@ -69,4 +69,4 @@ use_qtotal_td: False
 
 name: "emc"
 
-t_max: 10050000
+t_max: 2000 # 10050000

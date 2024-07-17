@@ -1,6 +1,6 @@
 from .q_learner import QLearner
 from .coma_learner import COMALearner
-from .qplex_curiosity_vdn_learner import QPLEX_curiosity_vdn_Learner
+from .emc_qplex_curiosity_vdn_learner import EMC_qplex_curiosity_vdn_Learner
 from .qtran_learner import QLearner as QTranLearner
 from .actor_critic_learner import ActorCriticLearner
 from .actor_critic_pac_learner import PACActorCriticLearner
@@ -20,5 +20,5 @@ REGISTRY = {"q_learner": QLearner,
             "pac_learner": PACActorCriticLearner,
             "pac_dcg_learner": PACDCGLearner,
             "dmaq_qatten_learner": DMAQ_qattenLearner,
-            "qplex_curiosity_vdn_learner": QPLEX_curiosity_vdn_Learner
+            "emc_qplex_curiosity_vdn_learner": EMC_qplex_curiosity_vdn_Learner
             }

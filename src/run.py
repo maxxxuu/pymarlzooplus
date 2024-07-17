@@ -142,6 +142,7 @@ def run_sequential(args, logger):
         buffer = ReplayBuffer(
             scheme,
             groups,
+            args,
             args.buffer_size,
             env_info["episode_limit"] + 1,
             preprocess=preprocess,
