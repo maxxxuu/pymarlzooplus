@@ -148,7 +148,9 @@ def run_sequential(args, logger):
             preprocess=preprocess,
             device="cpu" if args.buffer_cpu_only else args.device,
         )
-    if getattr(args, "use_emdqn", False):
+    # Define episode buffer
+    args.use_emdqn = getattr(args, "use_emdqn", False)
+    if args.use_emdqn is True:
         ec_buffer = EpisodicMemoryBuffer(args, scheme)
 
     # Setup multi-agent controller here
@@ -222,8 +224,12 @@ def run_sequential(args, logger):
 
         # Run for a whole episode at a time
         episode_batch = runner.run(test_mode=False)
-        if getattr(args, "use_emdqn", False):
+
+        # Update episode buffer
+        if args.use_emdqn is True:
             ec_buffer.update_ec(episode_batch)
+
+        # Update replay buffer
         buffer.insert_episode_batch(episode_batch)
 
         # Run training iterations
@@ -245,14 +251,15 @@ def run_sequential(args, logger):
                 if episode_sample.device != args.device:
                     episode_sample.to(args.device)
 
+                # Learner training
                 if args.prioritized_buffer is True:
-                    if getattr(args, "use_emdqn", False):
+                    if args.use_emdqn is True:
                         learner.train(episode_sample, runner.t_env, episode, ec_buffer=ec_buffer)
                     else:
                         td_error = learner.train(episode_sample, runner.t_env, episode)
                         buffer.update_priority(sample_indices, td_error)
                 else:
-                    if getattr(args, "use_emdqn", False):
+                    if args.use_emdqn is True:
                         learner.train(episode_sample, runner.t_env, episode, ec_buffer=ec_buffer)
                     else:
                         learner.train(episode_sample, runner.t_env, episode)
