@@ -9,7 +9,7 @@ from learners.mat.runner.shared import base_runner
 
 
 
-class MATLearner:
+class MATLearner: # not modified yet. Still a copy of ppo (CR, 18jul2024)
     def __init__(self, mac, scheme, logger, args):
         self.args = args
         self.n_agents = args.n_agents
