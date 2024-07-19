@@ -94,7 +94,6 @@ class RNNAgent(nn.Module):
                 inputs = inputs.reshape(-1, inputs.shape[-2], inputs.shape[-1])
                 inputs = inputs.reshape(-1, inputs.shape[-1])
 
-                x = F.relu(self.fc1(inputs))
                 x = x.reshape(-1, input_shape[2], x.shape[-1])
 
                 gru_out, _ = self.rnn(x, hidden_state.to(x.device))
