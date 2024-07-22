@@ -1,6 +1,7 @@
 import copy
 from components.episode_buffer import EpisodeBatch
 from modules.mixers.dmaq_general import DMAQer
+from modules.mixers.dmaq_qatten import DMAQ_QattenMixer
 from components.standarize_stream import RunningMeanStd
 
 import torch as th
@@ -15,15 +16,25 @@ class DMAQ_qattenLearner:
 
         self.params = list(mac.parameters())
         self.last_target_update_episode = 0
+        self.algo_name = args.name
 
         self.mixer = None
         if args.mixer is not None:
             if args.mixer == "dmaq":
                 self.mixer = DMAQer(args)
+            elif args.mixer == 'dmaq_qatten':
+                self.mixer = DMAQ_QattenMixer(args)
             else:
                 raise ValueError("Mixer {} not recognised.".format(args.mixer))
             self.params += list(self.mixer.parameters())
             self.target_mixer = copy.deepcopy(self.mixer)
+
+        if self.algo_name == "cds":
+            self.eval_predict_id = Predict_ID_obs_tau(
+                args.rnn_hidden_dim, args.predict_net_dim, args.n_agents)
+            self.target_predict_id = Predict_ID_obs_tau(
+                args.rnn_hidden_dim, args.predict_net_dim, args.n_agents)
+
 
         self.optimiser = RMSprop(params=self.params, lr=args.lr, alpha=args.optim_alpha, eps=args.optim_eps)
 

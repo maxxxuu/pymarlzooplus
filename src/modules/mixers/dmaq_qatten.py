@@ -56,7 +56,7 @@ class DMAQ_QattenMixer(nn.Module):
         bs = agent_qs.size(0)
 
         w_final, v, attend_mag_regs, head_entropies = self.attention_weight(agent_qs, states, actions)
-        w_final = w_final.view(-1, self.n_agents)  + 1e-10
+        w_final = w_final.view(-1, self.n_agents) + 1e-10
         v = v.view(-1, 1).repeat(1, self.n_agents)
         v /= self.n_agents
 
