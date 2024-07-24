@@ -108,10 +108,10 @@ class PredictNetworkWithID(nn.Module):
         return None
 
 
-class PredictNetworkIDObsTau(nn.Module):
+class PredictIDObsTau(nn.Module):
 
     def __init__(self, tau_dim, hidden_dim, n_agents, lr=1e-3):
-        super(PredictNetworkIDObsTau, self).__init__()
+        super(PredictIDObsTau, self).__init__()
 
         self.linear1 = nn.Linear(tau_dim, hidden_dim)
         self.linear2 = nn.Linear(hidden_dim, hidden_dim)

@@ -257,6 +257,25 @@ class ReplayBuffer(EpisodeBatch):
         else:
             return self.episodes_in_buffer >= max(self.burn_in_period, batch_size)
 
+    def on_policy_can_sample(self, batch_size):
+        return self.episodes_in_buffer >= batch_size
+
+    def on_policy_sample(self, batch_size):
+        assert self.episodes_in_buffer >= batch_size
+
+        if self.buffer_index - batch_size >= 0:
+            data = self[self.buffer_index - batch_size: self.buffer_index]
+        else:
+            remain_length = batch_size - self.buffer_index
+            data = self[self.buffer_size - remain_length + 1:]
+            data_add = self[:self.buffer_index]
+            for k, v in data.data.transition_data.items():
+                data.data.transition_data[k] = th.cat(
+                    [data.data.transition_data[k], data_add.data.transition_data[k]], dim=0)
+
+            data.batch_size = data.batch_size + data_add.batch_size
+
+        return data
     def sample(self, batch_size):
         assert self.can_sample(batch_size)
         if self.episodes_in_buffer == batch_size:

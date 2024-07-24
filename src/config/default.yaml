@@ -53,3 +53,4 @@ action_selector_strategy: "basic_selector_strategy"
 repeat_id: 1
 label: "default_label"
 hypergroup: null
+standardise_rewards: False

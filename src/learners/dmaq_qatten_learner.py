@@ -1,13 +1,14 @@
+# Code adapted from: https://github.com/lich14/CDS
+
 import copy
 import numpy as np
 import torch.nn.functional as F
 from components.episode_buffer import EpisodeBatch
 from modules.mixers.dmaq_general import DMAQer
 from modules.mixers.dmaq_qatten import DMAQ_QattenMixer
-from modules.intrinsic.predict_net import Predict_Network1, Predict_Network1_combine
 from torch.utils.data.sampler import BatchSampler, SubsetRandomSampler
 from torch.optim import RMSprop
-from modules.CDS.predict_net import Predict_Network, Predict_Network_WithID, Predict_ID_obs_tau
+from components.predict_net import PredictNetwork, PredictNetworkWithID, PredictIDObsTau
 from components.standarize_stream import RunningMeanStd
 import torch as th
 
@@ -36,44 +37,49 @@ class DMAQ_qattenLearner:
             self.target_mixer = copy.deepcopy(self.mixer)
 
         if self.algo_name == "cds":
-            self.eval_predict_id = Predict_ID_obs_tau(
-                args.rnn_hidden_dim, args.predict_net_dim, args.n_agents)
-            self.target_predict_id = Predict_ID_obs_tau(
-                args.rnn_hidden_dim, args.predict_net_dim, args.n_agents)
+            self.eval_predict_id = PredictIDObsTau(
+                args.hidden_dim, args.predict_net_dim, args.n_agents)
+            self.target_predict_id = PredictIDObsTau(
+                args.hidden_dim, args.predict_net_dim, args.n_agents)
             if args.ifaddobs:
-                self.eval_predict_withoutid = Predict_Network(
-                    args.rnn_hidden_dim + args.obs_shape + args.n_actions, args.predict_net_dim, args.obs_shape)
-                self.target_predict_withoutid = Predict_Network(
-                    args.rnn_hidden_dim + args.obs_shape + args.n_actions, args.predict_net_dim, args.obs_shape)
+                self.obs_shape = scheme["obs"]["vshape"]
+                self.eval_predict_without_id = PredictNetwork(
+                    args.hidden_dim + self.obs_shape + args.n_actions, args.predict_net_dim, self.obs_shape)
+                self.target_predict_without_id = PredictNetwork(
+                    args.hidden_dim + self.obs_shape + args.n_actions, args.predict_net_dim, self.obs_shape)
 
-                self.eval_predict_withid = Predict_Network_WithID(args.rnn_hidden_dim + args.obs_shape + args.n_actions + args.n_agents, args.predict_net_dim,
-                                                                args.obs_shape, args.n_agents)
-                self.target_predict_withid = Predict_Network_WithID(args.rnn_hidden_dim + args.obs_shape + args.n_actions + args.n_agents, args.predict_net_dim,
-                                                                    args.obs_shape, args.n_agents)
+                self.eval_predict_with_id = PredictNetworkWithID(
+                    args.hidden_dim + self.obs_shape + args.n_actions + args.n_agents, args.predict_net_dim,
+                    self.obs_shape, args.n_agents)
+                self.target_predict_with_id = PredictNetworkWithID(
+                    args.hidden_dim + self.obs_shape + args.n_actions + args.n_agents, args.predict_net_dim,
+                    self.obs_shape, args.n_agents)
             else:
-                self.eval_predict_withoutid = Predict_Network(
-                    args.rnn_hidden_dim + args.n_actions, args.predict_net_dim, args.obs_shape)
-                self.target_predict_withoutid = Predict_Network(
-                    args.rnn_hidden_dim + args.n_actions, args.predict_net_dim, args.obs_shape)
+                self.eval_predict_without_id = PredictNetwork(
+                    args.hidden_dim + args.n_actions, args.predict_net_dim, self.obs_shape)
+                self.target_predict_without_id = PredictNetwork(
+                    args.hidden_dim + args.n_actions, args.predict_net_dim, self.obs_shape)
 
-                self.eval_predict_withid = Predict_Network_WithID(args.rnn_hidden_dim + args.n_actions + args.n_agents, args.predict_net_dim,
-                                                                args.obs_shape, args.n_agents)
-                self.target_predict_withid = Predict_Network_WithID(args.rnn_hidden_dim + args.n_actions + args.n_agents, args.predict_net_dim,
-                                                                    args.obs_shape, args.n_agents)
+                self.eval_predict_with_id = PredictNetworkWithID(args.hidden_dim + args.n_actions + args.n_agents,
+                                                                 args.predict_net_dim,
+                                                                 self.obs_shape, args.n_agents)
+                self.target_predict_with_id = PredictNetworkWithID(args.hidden_dim + args.n_actions + args.n_agents,
+                                                                   args.predict_net_dim,
+                                                                   self.obs_shape, args.n_agents)
 
             if self.args.use_cuda:
-                self.eval_predict_withid.to(th.device(self.args.GPU))
-                self.target_predict_withid.to(th.device(self.args.GPU))
+                self.eval_predict_with_id.to(th.device(self.args.GPU))
+                self.target_predict_with_id.to(th.device(self.args.GPU))
 
-                self.eval_predict_withoutid.to(th.device(self.args.GPU))
-                self.target_predict_withoutid.to(th.device(self.args.GPU))
+                self.eval_predict_without_id.to(th.device(self.args.GPU))
+                self.target_predict_without_id.to(th.device(self.args.GPU))
 
                 self.eval_predict_id.to(th.device(self.args.GPU))
                 self.target_predict_id.to(th.device(self.args.GPU))
-                self.target_predict_withid.load_state_dict(
-                    self.eval_predict_withid.state_dict())
-                self.target_predict_withoutid.load_state_dict(
-                    self.eval_predict_withoutid.state_dict())
+                self.target_predict_with_id.load_state_dict(
+                    self.eval_predict_with_id.state_dict())
+                self.target_predict_without_id.load_state_dict(
+                    self.eval_predict_without_id.state_dict())
                 self.target_predict_id.load_state_dict(
                     self.eval_predict_id.state_dict())
 
@@ -90,7 +96,7 @@ class DMAQ_qattenLearner:
         self._device = "cuda" if args.use_cuda and th.cuda.is_available() else "cpu"
         if self.args.standardise_rewards:
             self.rew_ms = RunningMeanStd(shape=(1,), device=self._device)
-    
+
     def train_predict(self, batch: EpisodeBatch, t_env: int):
         # Get the relevant quantities
         terminated = batch["terminated"][:, :-1].float()
@@ -144,9 +150,9 @@ class DMAQ_qattenLearner:
         # update predict network
         for _ in range(self.args.predict_epoch):
             for index in BatchSampler(SubsetRandomSampler(range(_obs.shape[0])), 256, False):
-                loss_withoutid = self.eval_predict_withoutid.update(
+                loss_withoutid = self.eval_predict_without_id.update(
                     _inputs[index], _obs_next[index], _mask_reshape[index])
-                loss_withid = self.eval_predict_withid.update(
+                loss_withid = self.eval_predict_with_id.update(
                     _inputs[index], _obs_next[index], _add_id[index], _mask_reshape[index])
 
                 if loss_withoutid:
@@ -177,6 +183,7 @@ class DMAQ_qattenLearner:
 
             self.logger.log_stat("predict_loss_forid", np.array(
                 loss_predict_id_list).mean(), t_env)
+
     def sub_train(self, batch,
                   t_env,
                   episode_num,
@@ -195,7 +202,7 @@ class DMAQ_qattenLearner:
         actions_onehot = batch["actions_onehot"][:, :-1]
         if self.algo_name == "cds":
             last_actions_onehot = th.cat([th.zeros_like(
-            actions_onehot[:, 0].unsqueeze(1)), actions_onehot], dim=1)
+                actions_onehot[:, 0].unsqueeze(1)), actions_onehot], dim=1)
         if self.args.standardise_rewards:
             self.rew_ms.update(rewards)
             rewards = (rewards - self.rew_ms.mean) / th.sqrt(self.rew_ms.var)
@@ -304,10 +311,10 @@ class DMAQ_qattenLearner:
                 else:
                     target_chosen = self.target_mixer(target_chosen_qvals, batch["state"][:, 1:], is_v=True)
                     target_adv = self.target_mixer(target_chosen_qvals,
-                                                batch["state"][:, 1:],
-                                                actions=cur_max_actions_onehot,
-                                                max_q_i=target_max_qvals,
-                                                is_v=False)
+                                                   batch["state"][:, 1:],
+                                                   actions=cur_max_actions_onehot,
+                                                   max_q_i=target_max_qvals,
+                                                   is_v=False)
                     target_max_qvals = target_chosen + target_adv
             else:
                 target_max_qvals = self.target_mixer(target_max_qvals, batch["state"][:, 1:], is_v=True)
@@ -332,12 +339,12 @@ class DMAQ_qattenLearner:
                 else:
                     intrinsic_input = th.cat([h_cat, actions_onehot], dim=-1)
 
-                log_p_o = self.target_predict_withoutid.get_log_pi(
+                log_p_o = self.target_predict_without_id.get_log_pi(
                     intrinsic_input, obs_next)
 
                 add_id = th.eye(self.args.n_agents).to(obs.device).expand(
                     [obs.shape[0], obs.shape[1], self.args.n_agents, self.args.n_agents])
-                log_q_o = self.target_predict_withid.get_log_pi(
+                log_q_o = self.target_predict_with_id.get_log_pi(
                     intrinsic_input, obs_next, add_id)
                 obs_diverge = self.args.beta1 * log_q_o - log_p_o
 
@@ -357,7 +364,7 @@ class DMAQ_qattenLearner:
                     weight = self.target_predict_id(h_cat)
                     weight_expend = weight.unsqueeze(-1).expand_as(mac_out_c_list)
                     mean_p = (weight_expend *
-                            th.softmax(mac_out_c_list, dim=-1)).sum(dim=-2)
+                              th.softmax(mac_out_c_list, dim=-1)).sum(dim=-2)
 
                 q_pi = th.softmax(self.args.beta1 * mac_out[:, :-1], dim=-1)
 
@@ -369,8 +376,6 @@ class DMAQ_qattenLearner:
 
                 ## add intrinsic reward to target values
                 targets += self.args.beta * intrinsic_rewards
-
-       
 
         # Td-error
         td_error = (chosen_action_qvals - targets.detach())
@@ -422,17 +427,16 @@ class DMAQ_qattenLearner:
                 intrinsic_rewards_mask = th.abs(intrinsic_rewards.detach()) * mask
                 intrinsic_rewards_mask_max = intrinsic_rewards_mask.max().to('cpu').item()
                 intrinsic_rewards_mask_mean = (
-                    intrinsic_rewards_mask.sum() / mask.sum()).to('cpu').item()
+                        intrinsic_rewards_mask.sum() / mask.sum()).to('cpu').item()
 
                 self.logger.log_stat("intrinsic_reward_max",
-                                    intrinsic_rewards_mask_max, t_env)
+                                     intrinsic_rewards_mask_max, t_env)
                 self.logger.log_stat("intrinsic_reward_mean",
-                                    intrinsic_rewards_mask_mean, t_env)
+                                     intrinsic_rewards_mask_mean, t_env)
             self.log_stats_t = t_env
 
         #adding return for cds
         return update_prior.squeeze().detach()
-
 
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
 
@@ -444,15 +448,16 @@ class DMAQ_qattenLearner:
 
         #return for cds
         return update_prior
+
     def _update_targets(self):
         self.target_mac.load_state(self.mac)
         if self.mixer is not None:
             self.target_mixer.load_state_dict(self.mixer.state_dict())
         if self.algo_name == "cds":
-            self.target_predict_withid.load_state_dict(
-                self.eval_predict_withid.state_dict())
-            self.target_predict_withoutid.load_state_dict(
-                self.eval_predict_withoutid.state_dict())
+            self.target_predict_with_id.load_state_dict(
+                self.eval_predict_with_id.state_dict())
+            self.target_predict_without_id.load_state_dict(
+                self.eval_predict_without_id.state_dict())
             self.target_predict_id.load_state_dict(
                 self.eval_predict_id.state_dict())
         self.logger.console_logger.info("Updated target network")

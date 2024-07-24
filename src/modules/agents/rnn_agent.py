@@ -14,6 +14,7 @@ class RNNAgent(nn.Module):
         self.args = args
         self.algo_name = args.name
         self.use_rnn = args.use_rnn
+        self.n_agents = args.n_agents
 
         # Use CNN to encode image observations
         self.is_image = False
@@ -44,7 +45,7 @@ class RNNAgent(nn.Module):
 
         if self.algo_name == 'cds':
             # Create an MLP module list to generate local Q values for each agent
-            self.mlp = nn.ModuleList([nn.Linear(args.rnn_hidden_dim, args.n_actions) for _ in range(self.n_agents)])
+            self.mlp = nn.ModuleList([nn.Linear(args.hidden_dim, args.n_actions) for _ in range(self.n_agents)])
 
     def init_hidden(self):
         # make hidden states on same device as model
@@ -65,9 +66,8 @@ class RNNAgent(nn.Module):
             num_feat = inputs.shape[2]
             inputs = inputs.reshape(bs * epi_len, num_feat)
 
-        x = F.relu(self.fc1(inputs))
-
         if self.algo_name == 'emc':
+            x = F.relu(self.fc1(inputs))
             x = x.reshape(bs, epi_len, self.args.hidden_dim)
             h_in = hidden_state.reshape(1, bs, self.args.hidden_dim).contiguous()
             x, h = self.rnn(x, h_in)
@@ -82,6 +82,7 @@ class RNNAgent(nn.Module):
             input_shape = inputs.shape
 
             if len(input_shape) == 2:
+                x = F.relu(self.fc1(inputs))
                 x = x.unsqueeze(1)
                 gru_out, _ = self.rnn(x, hidden_state)
                 local_q = th.stack([mlp(gru_out[id, :, :]) for id, mlp in enumerate(self.mlp)], dim=1)
@@ -93,7 +94,7 @@ class RNNAgent(nn.Module):
             elif len(input_shape) == 4:
                 inputs = inputs.reshape(-1, inputs.shape[-2], inputs.shape[-1])
                 inputs = inputs.reshape(-1, inputs.shape[-1])
-
+                x = F.relu(self.fc1(inputs))
                 x = x.reshape(-1, input_shape[2], x.shape[-1])
 
                 gru_out, _ = self.rnn(x, hidden_state.to(x.device))
@@ -114,6 +115,7 @@ class RNNAgent(nn.Module):
 
             return q, gru_out, local_q
         else:
+            x = F.relu(self.fc1(inputs))
             h_in = hidden_state.reshape(-1, self.args.hidden_dim)
             if self.use_rnn:
                 h = self.rnn(x, h_in)
