@@ -8,7 +8,7 @@ from modules.mixers.dmaq_general import DMAQer
 from modules.mixers.dmaq_qatten import DMAQ_QattenMixer
 from torch.utils.data.sampler import BatchSampler, SubsetRandomSampler
 from torch.optim import RMSprop
-from components.predict_net import PredictNetwork, PredictNetworkWithID, PredictIDObsTau
+from modules.explorers.CDS import PredictNetwork, PredictNetworkWithID, CDSExplorer
 from components.standarize_stream import RunningMeanStd
 import torch as th
 
@@ -37,51 +37,7 @@ class DMAQ_qattenLearner:
             self.target_mixer = copy.deepcopy(self.mixer)
 
         if self.algo_name == "cds":
-            self.eval_predict_id = PredictIDObsTau(
-                args.hidden_dim, args.predict_net_dim, args.n_agents)
-            self.target_predict_id = PredictIDObsTau(
-                args.hidden_dim, args.predict_net_dim, args.n_agents)
-            if args.ifaddobs:
-                self.obs_shape = scheme["obs"]["vshape"]
-                self.eval_predict_without_id = PredictNetwork(
-                    args.hidden_dim + self.obs_shape + args.n_actions, args.predict_net_dim, self.obs_shape)
-                self.target_predict_without_id = PredictNetwork(
-                    args.hidden_dim + self.obs_shape + args.n_actions, args.predict_net_dim, self.obs_shape)
-
-                self.eval_predict_with_id = PredictNetworkWithID(
-                    args.hidden_dim + self.obs_shape + args.n_actions + args.n_agents, args.predict_net_dim,
-                    self.obs_shape, args.n_agents)
-                self.target_predict_with_id = PredictNetworkWithID(
-                    args.hidden_dim + self.obs_shape + args.n_actions + args.n_agents, args.predict_net_dim,
-                    self.obs_shape, args.n_agents)
-            else:
-                self.eval_predict_without_id = PredictNetwork(
-                    args.hidden_dim + args.n_actions, args.predict_net_dim, self.obs_shape)
-                self.target_predict_without_id = PredictNetwork(
-                    args.hidden_dim + args.n_actions, args.predict_net_dim, self.obs_shape)
-
-                self.eval_predict_with_id = PredictNetworkWithID(args.hidden_dim + args.n_actions + args.n_agents,
-                                                                 args.predict_net_dim,
-                                                                 self.obs_shape, args.n_agents)
-                self.target_predict_with_id = PredictNetworkWithID(args.hidden_dim + args.n_actions + args.n_agents,
-                                                                   args.predict_net_dim,
-                                                                   self.obs_shape, args.n_agents)
-
-            if self.args.use_cuda:
-                self.eval_predict_with_id.to(th.device(self.args.GPU))
-                self.target_predict_with_id.to(th.device(self.args.GPU))
-
-                self.eval_predict_without_id.to(th.device(self.args.GPU))
-                self.target_predict_without_id.to(th.device(self.args.GPU))
-
-                self.eval_predict_id.to(th.device(self.args.GPU))
-                self.target_predict_id.to(th.device(self.args.GPU))
-                self.target_predict_with_id.load_state_dict(
-                    self.eval_predict_with_id.state_dict())
-                self.target_predict_without_id.load_state_dict(
-                    self.eval_predict_without_id.state_dict())
-                self.target_predict_id.load_state_dict(
-                    self.eval_predict_id.state_dict())
+            self.explorer = CDSExplorer(args, scheme)
 
         self.optimiser = RMSprop(
             params=self.params, lr=args.lr, alpha=args.optim_alpha, eps=args.optim_eps)
@@ -150,9 +106,9 @@ class DMAQ_qattenLearner:
         # update predict network
         for _ in range(self.args.predict_epoch):
             for index in BatchSampler(SubsetRandomSampler(range(_obs.shape[0])), 256, False):
-                loss_withoutid = self.eval_predict_without_id.update(
+                loss_withoutid = self.explorer.eval_predict_without_id.update(
                     _inputs[index], _obs_next[index], _mask_reshape[index])
-                loss_withid = self.eval_predict_with_id.update(
+                loss_withid = self.explorer.eval_predict_with_id.update(
                     _inputs[index], _obs_next[index], _add_id[index], _mask_reshape[index])
 
                 if loss_withoutid:
@@ -165,24 +121,6 @@ class DMAQ_qattenLearner:
         self.logger.log_stat("predict_loss_withid", np.array(
             loss_withid_list).mean(), t_env)
 
-        if self.args.ifaver:
-            pass
-        else:
-            ID_for_predict = th.tensor(self.list[0]).type_as(
-                hidden_store).unsqueeze(0).unsqueeze(0)
-
-            ID_for_predict = ID_for_predict.expand_as(hidden_store[..., 0])
-            _ID_for_predict = ID_for_predict.reshape(-1)
-
-            for _ in range(self.args.predict_epoch):
-                for index in BatchSampler(SubsetRandomSampler(range(_obs.shape[0])), 256, False):
-                    loss_predict_id = self.eval_predict_id.update(
-                        _h_cat[index], _ID_for_predict[index], _mask_reshape[index].squeeze())
-                    if loss_predict_id:
-                        loss_predict_id_list.append(loss_predict_id)
-
-            self.logger.log_stat("predict_loss_forid", np.array(
-                loss_predict_id_list).mean(), t_env)
 
     def sub_train(self, batch,
                   t_env,
@@ -339,12 +277,12 @@ class DMAQ_qattenLearner:
                 else:
                     intrinsic_input = th.cat([h_cat, actions_onehot], dim=-1)
 
-                log_p_o = self.target_predict_without_id.get_log_pi(
+                log_p_o = self.explorer.target_predict_without_id.get_log_pi(
                     intrinsic_input, obs_next)
 
                 add_id = th.eye(self.args.n_agents).to(obs.device).expand(
                     [obs.shape[0], obs.shape[1], self.args.n_agents, self.args.n_agents])
-                log_q_o = self.target_predict_with_id.get_log_pi(
+                log_q_o = self.explorer.target_predict_with_id.get_log_pi(
                     intrinsic_input, obs_next, add_id)
                 obs_diverge = self.args.beta1 * log_q_o - log_p_o
 
@@ -358,13 +296,7 @@ class DMAQ_qattenLearner:
                 mac_out_c_list = th.stack(mac_out_c_list, dim=-2)
                 mac_out_c_list = mac_out_c_list[:, :-1]
 
-                if self.args.ifaver:
-                    mean_p = th.softmax(mac_out_c_list, dim=-1).mean(dim=-2)
-                else:
-                    weight = self.target_predict_id(h_cat)
-                    weight_expend = weight.unsqueeze(-1).expand_as(mac_out_c_list)
-                    mean_p = (weight_expend *
-                              th.softmax(mac_out_c_list, dim=-1)).sum(dim=-2)
+                mean_p = th.softmax(mac_out_c_list, dim=-1).mean(dim=-2)
 
                 q_pi = th.softmax(self.args.beta1 * mac_out[:, :-1], dim=-1)
 
@@ -468,6 +400,8 @@ class DMAQ_qattenLearner:
         if self.mixer is not None:
             self.mixer.cuda()
             self.target_mixer.cuda()
+        if self.algo_name == "cds":
+            self.explorer.cuda()
 
     def save_models(self, path):
         self.mac.save_models(path)

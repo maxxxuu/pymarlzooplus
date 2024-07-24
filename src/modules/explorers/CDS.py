@@ -1,5 +1,7 @@
 # Code adapted from: https://github.com/lich14/CDS
-import torch
+import copy
+
+import torch as th
 import torch.optim as optim
 from torch import nn as nn
 from torch.nn import functional as F
@@ -12,10 +14,37 @@ epsilon = 1e-6
 def weights_init_(m):
     """Initialize Policy weights"""
     if isinstance(m, nn.Linear):
-        torch.nn.init.xavier_uniform_(m.weight, gain=1)
-        torch.nn.init.constant_(m.bias, 0)
+        th.nn.init.xavier_uniform_(m.weight, gain=1)
+        th.nn.init.constant_(m.bias, 0)
 
 
+class CDSExplorer:
+    def __init__(self, args, scheme):
+        self.args = args
+        self._device = "cuda" if args.use_cuda and th.cuda.is_available() else "cpu"
+
+        self.obs_shape = scheme["obs"]["vshape"]
+        input_shape_without_id = args.hidden_dim + (self.obs_shape if args.ifaddobs else 0) + args.n_actions
+        hidden_dim = args.predict_net_dim
+        num_outputs = self.obs_shape
+
+        input_shape_with_id = args.hidden_dim + (self.obs_shape if args.ifaddobs else 0) + args.n_actions + args.n_agents
+
+        self.eval_predict_without_id = PredictNetwork(input_shape_without_id, hidden_dim, num_outputs)
+        self.target_predict_without_id = copy.deepcopy(self.eval_predict_without_id)
+
+        self.eval_predict_with_id = PredictNetworkWithID(input_shape_with_id, hidden_dim, num_outputs, args.n_agents)
+        self.target_predict_with_id = copy.deepcopy(self.eval_predict_with_id)
+
+    def cuda(self):
+        if self.args.use_cuda:
+            self.eval_predict_with_id.to(self._device)
+            self.target_predict_with_id.to(self._device)
+
+            self.eval_predict_without_id.to(self._device)
+            self.target_predict_without_id.to(self._device)
+        
+        
 class PredictNetwork(nn.Module):
 
     def __init__(self, num_inputs, hidden_dim, num_outputs, lr=3e-4):
@@ -40,7 +69,7 @@ class PredictNetwork(nn.Module):
         predict_variable = self.forward(own_variable)
         log_prob = -1 * F.mse_loss(predict_variable,
                                    other_variable, reduction='none')
-        log_prob = torch.sum(log_prob, -1, keepdim=True)
+        log_prob = th.sum(log_prob, -1, keepdim=True)
         return log_prob
 
     def update(self, own_variable, other_variable, mask):
@@ -53,7 +82,7 @@ class PredictNetwork(nn.Module):
 
             self.optimizer.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.parameters(), 1.)
+            th.nn.utils.clip_grad_norm_(self.parameters(), 1.)
             self.optimizer.step()
 
             return loss.to('cpu').detach().item()
@@ -75,10 +104,10 @@ class PredictNetworkWithID(nn.Module):
         self.optimizer = optim.Adam(self.parameters(), lr=self.lr)
 
     def forward(self, inputs, add_id):
-        inputs = torch.cat([inputs, add_id], dim=-1)
+        inputs = th.cat([inputs, add_id], dim=-1)
         h = F.relu(self.linear1(inputs))
 
-        h = torch.cat([h, add_id], dim=-1)
+        h = th.cat([h, add_id], dim=-1)
         h = F.relu(self.linear2(h))
         x = self.last_fc(h)
         return x
@@ -87,7 +116,7 @@ class PredictNetworkWithID(nn.Module):
         predict_variable = self.forward(own_variable, add_id)
         log_prob = -1 * F.mse_loss(predict_variable,
                                    other_variable, reduction='none')
-        log_prob = torch.sum(log_prob, -1, keepdim=True)
+        log_prob = th.sum(log_prob, -1, keepdim=True)
         return log_prob
 
     def update(self, own_variable, other_variable, add_id, mask):
@@ -100,47 +129,10 @@ class PredictNetworkWithID(nn.Module):
 
             self.optimizer.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.parameters(), 1.)
+            th.nn.utils.clip_grad_norm_(self.parameters(), 1.)
             self.optimizer.step()
 
             return loss.to('cpu').detach().item()
 
         return None
 
-
-class PredictIDObsTau(nn.Module):
-
-    def __init__(self, tau_dim, hidden_dim, n_agents, lr=1e-3):
-        super(PredictIDObsTau, self).__init__()
-
-        self.linear1 = nn.Linear(tau_dim, hidden_dim)
-        self.linear2 = nn.Linear(hidden_dim, hidden_dim)
-        self.last_fc = nn.Linear(hidden_dim, n_agents)
-
-        self.apply(weights_init_)
-        self.lr = lr
-        self.optimizer = optim.Adam(self.parameters(), lr=self.lr)
-
-        self.CE = nn.CrossEntropyLoss()
-        self.CEP = nn.CrossEntropyLoss(reduction='none')
-
-    def forward(self, tau):
-        h = F.relu(self.linear1(tau))
-        h = F.relu(self.linear2(h))
-        x = torch.softmax(self.last_fc(h), dim=-1)
-        return x
-
-    def update(self, tau, id, mask):
-        if mask.sum() > 0:
-            predict_ = self.forward(tau)
-            loss = self.CEP(predict_, id.long())
-            loss = (loss * mask).sum() / mask.sum()
-
-            self.optimizer.zero_grad()
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.parameters(), 1.)
-            self.optimizer.step()
-
-            return loss.to('cpu').detach().item()
-
-        return None
