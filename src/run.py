@@ -212,7 +212,6 @@ def run_sequential(args, logger):
     last_test_T = -args.test_interval - 1
     last_log_T = 0
     model_save_time = 0
-    on_policy_episode = 0
 
     start_time = time.time()
     last_time = start_time
@@ -257,26 +256,6 @@ def run_sequential(args, logger):
                         learner.train(episode_sample, runner.t_env, episode, ec_buffer=ec_buffer)
                     else:
                         learner.train(episode_sample, runner.t_env, episode)
-
-            # on policy update prediction networks
-            if "CDS" in args.learner:
-                if episode - on_policy_episode >= args.on_policy_batch:
-                    if buffer.on_policy_can_sample(args.on_policy_batch):
-
-                        #if args.ifon_sample:
-                        #    episode_sample = buffer.on_policy_sample(
-                        #        args.on_policy_batch)
-                        #else:
-                        episode_sample = buffer.sample(args.batch_size)
-
-                        max_ep_t = episode_sample.max_t_filled()
-                        episode_sample = episode_sample[:, :max_ep_t]
-
-                        if episode_sample.device != args.device:
-                            episode_sample.to(args.device)
-
-                        learner.explorer.train_predict(episode_sample, runner.t_env)
-                        on_policy_episode = episode
         # Execute test runs once in a while
         n_test_runs = max(1, args.test_nepisode // runner.batch_size)
         if (runner.t_env - last_test_T) / args.test_interval >= 1.0:

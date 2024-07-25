@@ -47,8 +47,7 @@ class DMAQ_qattenLearner:
 
         self.log_stats_t = -self.args.learner_log_interval - 1
         self.n_actions = self.args.n_actions
-        self.list = [(np.arange(args.n_agents - i) + i).tolist() + np.arange(i).tolist()
-                     for i in range(args.n_agents)]
+
         self._device = "cuda" if args.use_cuda and th.cuda.is_available() else "cpu"
         if self.args.standardise_rewards:
             self.rew_ms = RunningMeanStd(shape=(1,), device=self._device)
@@ -149,34 +148,102 @@ class DMAQ_qattenLearner:
             target_mac_out = th.stack(target_mac_out[1:], dim=1)  # Concat across time
             target_max_qvals = target_mac_out.max(dim=3)[0]
 
+        if self.algo_name == "cds":
+            # Intrinsic
+            with th.no_grad():
+
+                obs = batch["obs"][:, :-1]
+                obs_next = batch["obs"][:, 1:]
+                mask_clone = mask.detach().clone(
+                ).unsqueeze(-2).expand(obs.shape[:-1] + mask.shape[-1:])
+                mask_clone = mask_clone.permute(0, 2, 1, 3)
+                mask_clone = mask_clone.reshape(-1,
+                                                mask_clone.shape[-2], mask_clone.shape[-1])
+                mask_clone = mask_clone.reshape(-1, mask_clone.shape[-1])
+
+                obs_intrinsic = obs.clone().permute(0, 2, 1, 3)
+                obs_intrinsic = obs_intrinsic.reshape(
+                    -1, obs_intrinsic.shape[-2], obs_intrinsic.shape[-1])
+                eval_h_intrinsic = hidden_store.clone().permute(0, 2, 1, 3)
+                eval_h_intrinsic = eval_h_intrinsic.reshape(
+                    -1, eval_h_intrinsic.shape[-2], eval_h_intrinsic.shape[-1])
+                h_cat = th.cat([initial_hidden.reshape(-1, initial_hidden.shape[-1]
+                                                       ).unsqueeze(1), eval_h_intrinsic[:, :-2]], dim=1)
+                add_id = th.eye(self.args.n_agents).to(obs.device).expand(
+                    [obs.shape[0], obs.shape[1], self.args.n_agents,
+                     self.args.n_agents]).permute(0, 2, 1, 3)
+
+                actions_onehot_clone = actions_onehot.clone().permute(0, 2, 1, 3)
+
+                intrinsic_input_1 = th.cat(
+                    [h_cat, obs_intrinsic,
+                     actions_onehot_clone.reshape(-1, actions_onehot_clone.shape[-2], actions_onehot_clone.shape[-1])],
+                    dim=-1)
+
+                intrinsic_input_2 = th.cat(
+                    [intrinsic_input_1, add_id.reshape(-1, add_id.shape[-2], add_id.shape[-1])], dim=-1)
+
+                intrinsic_input_1 = intrinsic_input_1.reshape(
+                    -1, intrinsic_input_1.shape[-1])
+                intrinsic_input_2 = intrinsic_input_2.reshape(
+                    -1, intrinsic_input_2.shape[-1])
+
+                next_obs_intrinsic = obs_next.clone().permute(0, 2, 1, 3)
+                next_obs_intrinsic = next_obs_intrinsic.reshape(
+                    -1, next_obs_intrinsic.shape[-2], next_obs_intrinsic.shape[-1])
+                next_obs_intrinsic = next_obs_intrinsic.reshape(
+                    -1, next_obs_intrinsic.shape[-1])
+
+                log_p_o = self.explorer.target_predict_without_id.get_log_pi(
+                    intrinsic_input_1, next_obs_intrinsic)
+                log_q_o = self.explorer.target_predict_with_id.get_log_pi(
+                    intrinsic_input_2, next_obs_intrinsic, add_id.reshape([-1, add_id.shape[-1]]))
+
+                mean_p = th.softmax(mac_out[:, :-1], dim=-1).mean(dim=2)
+                q_pi = th.softmax(self.args.beta1 * mac_out[:, :-1], dim=-1)
+
+                pi_diverge = th.cat(
+                    [(q_pi[:, :, id] * th.log(q_pi[:, :, id] / mean_p)).sum(dim=-
+                    1, keepdim=True) for id in range(self.args.n_agents)],
+                    dim=-1).permute(0, 2, 1).unsqueeze(-1)
+
+                intrinsic_rewards = self.args.beta1 * log_q_o - log_p_o
+                intrinsic_rewards = intrinsic_rewards.reshape(
+                    -1, obs_intrinsic.shape[1], intrinsic_rewards.shape[-1])
+                intrinsic_rewards = intrinsic_rewards.reshape(
+                    -1, obs.shape[2], obs_intrinsic.shape[1], intrinsic_rewards.shape[-1])
+                intrinsic_rewards = intrinsic_rewards + self.args.beta2 * pi_diverge
+
+            # update predict network
+            add_id = add_id.reshape([-1, add_id.shape[-1]])
+            for index in BatchSampler(SubsetRandomSampler(range(intrinsic_input_1.shape[0])), 256, False):
+                self.explorer.eval_predict_without_id.update(
+                    intrinsic_input_1[index], next_obs_intrinsic[index], mask_clone[index])
+                self.explorer.eval_predict_with_id.update(
+                    intrinsic_input_2[index], next_obs_intrinsic[index], add_id[index], mask_clone[index])
         # Mix
         if mixer is not None:
             if self.args.mixer == "dmaq_qatten":
                 ans_chosen, q_attend_regs, head_entropies = \
-                    mixer(chosen_action_qvals, batch["state"][:, :-1], is_v=True,
-                          obs=batch["obs"][:, :-1])  # changed for cds_gfootball
-                ans_adv, _, _ = mixer(chosen_action_qvals, batch["state"][:, :-1], actions=actions_onehot,
-                                      max_q_i=max_action_qvals, is_v=False,
-                                      obs=batch["obs"][:, :-1])  # changed for cds_gfootball
-                chosen_action_qvals = ans_chosen + ans_adv
+                    mixer(chosen_action_qvals,
+                          batch["state"][:, :-1], is_v=True)
+                ans_adv, _, _ = mixer(
+                    chosen_action_qvals, batch["state"][:, :-1], actions=actions_onehot, max_q_i=max_action_qvals,
+                    is_v=False)
             else:
-                ans_chosen = mixer(chosen_action_qvals, batch["state"][:, :-1], is_v=True)
-                ans_adv = mixer(chosen_action_qvals,
-                                batch["state"][:, :-1],
-                                actions=actions_onehot,
-                                max_q_i=max_action_qvals,
-                                is_v=False)
-                chosen_action_qvals = ans_chosen + ans_adv
+                ans_chosen = mixer(chosen_action_qvals,
+                                   batch["state"][:, :-1], is_v=True)
+                ans_adv = mixer(chosen_action_qvals, batch["state"][:, :-1],
+                                actions=actions_onehot, max_q_i=max_action_qvals, is_v=False)
+            chosen_action_qvals = ans_chosen + ans_adv
 
             if self.args.double_q:
                 if self.args.mixer == "dmaq_qatten":
-                    target_chosen, _, _ = self.target_mixer(target_chosen_qvals, batch["state"][:, 1:], is_v=True,
-                                                            obs=batch["obs"][:, 1:])  # changed for cds_gfootball
-                    target_adv, _, _ = self.target_mixer(target_chosen_qvals, batch["state"][:, 1:],
-                                                         actions=cur_max_actions_onehot,
-                                                         max_q_i=target_max_qvals, is_v=False,
-                                                         obs=batch["obs"][:, 1:])  # changed for cds_gfootball
-                    target_max_qvals = target_chosen + target_adv
+                    target_chosen, _, _ = self.target_mixer(
+                        target_chosen_qvals, batch["state"][:, 1:], is_v=True)
+                    target_adv, _, _ = self.target_mixer(
+                        target_chosen_qvals, batch["state"][:, 1:], actions=cur_max_actions_onehot,
+                        max_q_i=target_max_qvals, is_v=False)
                 else:
                     target_chosen = self.target_mixer(target_chosen_qvals, batch["state"][:, 1:], is_v=True)
                     target_adv = self.target_mixer(target_chosen_qvals,
@@ -184,61 +251,17 @@ class DMAQ_qattenLearner:
                                                    actions=cur_max_actions_onehot,
                                                    max_q_i=target_max_qvals,
                                                    is_v=False)
-                    target_max_qvals = target_chosen + target_adv
+                target_max_qvals = target_chosen + target_adv
             else:
                 target_max_qvals = self.target_mixer(target_max_qvals, batch["state"][:, 1:], is_v=True)
 
         # Calculate 1-step Q-Learning targets
-        targets = rewards + self.args.gamma * (1 - terminated) * target_max_qvals
-        # Intrinsic
         if self.algo_name == "cds":
-            with th.no_grad():
-
-                obs = batch["obs"][:, :-1]
-                obs_next = batch["obs"][:, 1:]
-                h_cat = hidden_store[:, :-1]
-                add_id = th.eye(self.args.n_agents).to(obs.device).expand(
-                    [obs.shape[0], obs.shape[1], self.args.n_agents, self.args.n_agents])
-
-                if self.args.ifaddobs:
-                    h_cat_reshape = th.cat(
-                        [th.zeros_like(h_cat[:, 0]).unsqueeze(1), h_cat[:, :-1]], dim=1)
-                    intrinsic_input = th.cat(
-                        [h_cat_reshape, obs, actions_onehot], dim=-1)
-                else:
-                    intrinsic_input = th.cat([h_cat, actions_onehot], dim=-1)
-
-                log_p_o = self.explorer.target_predict_without_id.get_log_pi(
-                    intrinsic_input, obs_next)
-
-                add_id = th.eye(self.args.n_agents).to(obs.device).expand(
-                    [obs.shape[0], obs.shape[1], self.args.n_agents, self.args.n_agents])
-                log_q_o = self.explorer.target_predict_with_id.get_log_pi(
-                    intrinsic_input, obs_next, add_id)
-                obs_diverge = self.args.beta1 * log_q_o - log_p_o
-
-                # estimate p(a|o)
-                mac_out_c_list = []
-                for item_i in range(self.args.n_agents):
-                    mac_out_c, _, _ = self.mac.agent.forward(
-                        input_here[:, self.list[item_i]], initial_hidden)
-                    mac_out_c_list.append(mac_out_c)
-
-                mac_out_c_list = th.stack(mac_out_c_list, dim=-2)
-                mac_out_c_list = mac_out_c_list[:, :-1]
-
-                mean_p = th.softmax(mac_out_c_list, dim=-1).mean(dim=-2)
-
-                q_pi = th.softmax(self.args.beta1 * mac_out[:, :-1], dim=-1)
-
-                pi_diverge = th.cat([(q_pi[:, :, id] * th.log(q_pi[:, :, id] / mean_p[:, :, id])).sum(
-                    dim=-1, keepdim=True) for id in range(self.args.n_agents)], dim=-1).unsqueeze(-1)
-
-                intrinsic_rewards = obs_diverge + self.args.beta2 * pi_diverge
-                intrinsic_rewards = intrinsic_rewards.mean(dim=2)
-
-                ## add intrinsic reward to target values
-                targets += self.args.beta * intrinsic_rewards
+            targets = rewards + self.args.beta * \
+                      intrinsic_rewards.mean(dim=1) + self.args.gamma * \
+                      (1 - terminated) * target_max_qvals
+        else:
+            targets = rewards + self.args.gamma * (1 - terminated) * target_max_qvals
 
         # Td-error
         td_error = (chosen_action_qvals - targets.detach())
@@ -253,15 +276,10 @@ class DMAQ_qattenLearner:
             loss = (masked_td_error ** 2).sum() / mask.sum() + q_attend_regs
         else:
             loss = (masked_td_error ** 2).sum() / mask.sum()
-        ##for cds mainly
-        update_prior = (masked_td_error ** 2).squeeze().sum(dim=-1,
-                                                            keepdim=True) / mask.squeeze().sum(dim=-1, keepdim=True)
-        norm_loss = F.l1_loss(local_qs, target=th.zeros_like(
-            local_qs), reduction='none')[:, :-1]
-        mask_expand = mask.unsqueeze(-1).expand_as(norm_loss)
-        norm_loss = (norm_loss * mask_expand).sum() / mask_expand.sum()
-        loss += 0.1 * norm_loss
-        ##
+        if self.algo_name == "cds":
+            norm_loss = F.l1_loss(local_qs, target=th.zeros_like(
+                local_qs), reduction='mean')
+            loss += self.args.lambda_ * norm_loss
         masked_hit_prob = th.mean(is_max_action, dim=2) * mask
         hit_prob = masked_hit_prob.sum() / mask.sum()
 
@@ -285,44 +303,20 @@ class DMAQ_qattenLearner:
             self.logger.log_stat("target_mean",
                                  (targets * mask).sum().item() / (mask_elems * self.args.n_agents),
                                  t_env)
-            # uoate intrinsic mask for cds
-            if self.algo_name == "cds":
-                intrinsic_rewards_mask = th.abs(intrinsic_rewards.detach()) * mask
-                intrinsic_rewards_mask_max = intrinsic_rewards_mask.max().to('cpu').item()
-                intrinsic_rewards_mask_mean = (
-                        intrinsic_rewards_mask.sum() / mask.sum()).to('cpu').item()
-
-                self.logger.log_stat("intrinsic_reward_max",
-                                     intrinsic_rewards_mask_max, t_env)
-                self.logger.log_stat("intrinsic_reward_mean",
-                                     intrinsic_rewards_mask_mean, t_env)
             self.log_stats_t = t_env
 
-        #adding return for cds
-        return update_prior.squeeze().detach()
-
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
-
-        update_prior = self.sub_train(batch, t_env, episode_num, self.mac, self.mixer, self.optimiser, self.params)
-
+        self.sub_train(batch, t_env, episode_num, self.mac, self.mixer, self.optimiser, self.params)
         if (episode_num - self.last_target_update_episode) / self.args.target_update_interval >= 1.0:
             self._update_targets()
             self.last_target_update_episode = episode_num
-
-        #return for cds
-        return update_prior
 
     def _update_targets(self):
         self.target_mac.load_state(self.mac)
         if self.mixer is not None:
             self.target_mixer.load_state_dict(self.mixer.state_dict())
         if self.algo_name == "cds":
-            self.target_predict_with_id.load_state_dict(
-                self.eval_predict_with_id.state_dict())
-            self.target_predict_without_id.load_state_dict(
-                self.eval_predict_without_id.state_dict())
-            self.target_predict_id.load_state_dict(
-                self.eval_predict_id.state_dict())
+            self.explorer.update_targets()
         self.logger.console_logger.info("Updated target network")
 
     def cuda(self):
@@ -339,6 +333,8 @@ class DMAQ_qattenLearner:
         if self.mixer is not None:
             th.save(self.mixer.state_dict(), "{}/mixer.th".format(path))
         th.save(self.optimiser.state_dict(), "{}/opt.th".format(path))
+        if self.algo_name == "cds":
+            self.explorer.save_models(path)
 
     def load_models(self, path):
         self.mac.load_models(path)
@@ -351,3 +347,5 @@ class DMAQ_qattenLearner:
                                                       map_location=lambda storage, loc: storage))
         self.optimiser.load_state_dict(th.load("{}/opt.th".format(path),
                                                map_location=lambda storage, loc: storage))
+        if self.algo_name == "cds":
+            self.explorer.load_models(path)

@@ -22,15 +22,15 @@ class RNNAgent(nn.Module):
             self.cnn = CNNAgent(input_shape, args)  # TODO: image support for 'rnn_feature_agent' and 'rnn_ns_agent'
             input_shape = self.cnn.features_dim + input_shape[1]
             self.is_image = True
-
-        assert not (self.is_image is True and (self.algo_name == 'emc' or self.algo_name == 'cds')), \
+        self.algo_names = args.algo_names
+        assert not (self.is_image is True and self.algo_name in self.algo_names), \
             f"{self.algo_name} does not support image obs for the time being!"
-        assert not (self.use_rnn is False and (self.algo_name == 'emc' or self.algo_name == 'cds')), \
+        assert not (self.use_rnn is False and self.algo_name in self.algo_names), \
             f"{self.algo_name} is implemented only to use RNN for the time being!"
 
         self.fc1 = nn.Linear(input_shape, args.hidden_dim)
         if self.use_rnn is True:
-            if self.algo_name == 'emc' or self.algo_name == 'cds':
+            if self.algo_name in self.algo_names:
                 self.rnn = nn.GRU(
                     input_size=args.hidden_dim,
                     num_layers=1,
