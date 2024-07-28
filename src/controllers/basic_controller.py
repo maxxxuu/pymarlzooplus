@@ -16,9 +16,9 @@ class BasicMAC:
         self.algo_name = args.name
         self.scheme = scheme
         self.hidden_states = None
-
-        assert not (self.is_image is True and self.algo_name == "emc"), \
-            "EMC does not support image obs for the time being!"
+        self.algo_names = args.algo_names
+        assert not (self.is_image is True and self.algo_name in self.algo_names), \
+            f"{self.algo_name} does not support image obs for the time being!"
 
         self.mask_before_softmax = getattr(self.args, "mask_before_softmax", True)
         self.use_individual_Q = False if hasattr(self.args, 'use_individual_Q') is False else self.args.use_individual_Q
@@ -58,7 +58,10 @@ class BasicMAC:
         if self.use_individual_Q is True:
             agent_outs, self.hidden_states, individual_Q = self.agent(agent_inputs, self.hidden_states)
         else:
-            agent_outs, self.hidden_states = self.agent(agent_inputs, self.hidden_states)
+            if self.algo_name == 'cds':
+                agent_outs, self.hidden_states, local_q = self.agent(agent_inputs, self.hidden_states)
+            else:
+                agent_outs, self.hidden_states = self.agent(agent_inputs, self.hidden_states)
 
         # Softmax the agent outputs if they're policy logits
         if self.agent_output_type == "pi_logits":
@@ -75,7 +78,7 @@ class BasicMAC:
                 agent_outs[reshaped_avail_actions == 0] = -1e10
             agent_outs = th.nn.functional.softmax(agent_outs, dim=-1)
 
-            if self.algo_name == 'emc':
+            if self.algo_name in self.algo_names:
                 if not test_mode:
                     # Epsilon floor
                     epsilon_action_num = agent_outs.size(-1)
