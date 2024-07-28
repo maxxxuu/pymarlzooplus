@@ -37,15 +37,17 @@ attend_reg_coef: 0.001 # attention regulation coefficient  # For MMM2 and 3s5z_v
 state_bias: True # the constant value c(s) in the paper
 mask_dead: False
 weighted_head: False # weighted head Q-values, for MMM2 and 3s5z_vs_3s6z, it is True
-nonlinear: False # non-linearity, for MMM2, it is True
-
+nonlinear: False # non-linearity
 burn_in_period: 2
-predict_net_dim: 128 # hidden dim
 
+predict_net_dim: 128 # hidden dim
 beta1: 0.5
 beta2: 1.0
 beta: 0.1
-
 alpha: 0.6
 lambda_: 0.1
+
+mac: "cds_mac"
+agent: "rnn_cds"
+
 name: "cds"

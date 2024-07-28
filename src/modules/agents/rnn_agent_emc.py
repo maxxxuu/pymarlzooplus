@@ -1,4 +1,6 @@
 # code adapted from https://github.com/wendelinboehmer/dcg
+# and https://github.com/lich14/CDS/blob/main/CDS_GRF/modules/agents/rnn_agent.py
+
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
@@ -6,9 +8,9 @@ import torch.nn.functional as F
 from .cnn_agent import CNNAgent
 
 
-class RNNAgent(nn.Module):
+class RNNAgentEMC(nn.Module):
     def __init__(self, input_shape, args):
-        super(RNNAgent, self).__init__()
+        super(RNNAgentEMC, self).__init__()
         self.args = args
         self.algo_name = args.name
         self.use_rnn = args.use_rnn
@@ -17,13 +19,21 @@ class RNNAgent(nn.Module):
         # Use CNN to encode image observations
         self.is_image = False
         if isinstance(input_shape, tuple):  # image input
-            self.cnn = CNNAgent(input_shape, args)  # TODO: image support for 'rnn_feature_agent' and 'rnn_ns_agent'
+            self.cnn = CNNAgent(input_shape, args)
             input_shape = self.cnn.features_dim + input_shape[1]
             self.is_image = True
 
+        assert self.is_image is False, "EMC does not support image obs for the time being!"
+        assert self.use_rnn is True, "EMC is implemented only to use RNN for the time being!"
+
         self.fc1 = nn.Linear(input_shape, args.hidden_dim)
         if self.use_rnn is True:
-            self.rnn = nn.GRUCell(args.hidden_dim, args.hidden_dim)
+            self.rnn = nn.GRU(
+                input_size=args.hidden_dim,
+                num_layers=1,
+                hidden_size=args.hidden_dim,
+                batch_first=True
+            )
         else:
             self.rnn = nn.Linear(args.hidden_dim, args.hidden_dim)
         self.fc2 = nn.Linear(args.hidden_dim, args.n_actions)
@@ -41,12 +51,18 @@ class RNNAgent(nn.Module):
             else:
                 inputs = inputs[0]
 
+        bs = inputs.shape[0]
+        epi_len = inputs.shape[1]
+        num_feat = inputs.shape[2]
+        inputs = inputs.reshape(bs * epi_len, num_feat)
+
         x = F.relu(self.fc1(inputs))
-        h_in = hidden_state.reshape(-1, self.args.hidden_dim)
-        if self.use_rnn:
-            h = self.rnn(x, h_in)
-        else:
-            h = F.relu(self.rnn(x))
-        q = self.fc2(h)
+        x = x.reshape(bs, epi_len, self.args.hidden_dim)
+        h_in = hidden_state.reshape(1, bs, self.args.hidden_dim).contiguous()
+        x, h = self.rnn(x, h_in)
+        x = x.reshape(bs * epi_len, self.args.hidden_dim)
+        q = self.fc2(x)
+        q = q.reshape(bs, epi_len, self.args.n_actions)
 
         return q, h
+
