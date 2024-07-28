@@ -8,7 +8,8 @@ from .rnn_agent_cds import RNNAgentCDS
 REGISTRY = {"rnn": RNNAgent,
             "rnn_ns": RNNNSAgent,
             "rnn_feat": RNNFeatureAgent,
-            "rnn_happo": RNNAgentHAPPO}
+            "rnn_happo": RNNAgentHAPPO,
             "rnn_emc": RNNAgentEMC,
-            "rnn_cds": RNNAgentCDS}
+            "rnn_cds": RNNAgentCDS
+            }
 

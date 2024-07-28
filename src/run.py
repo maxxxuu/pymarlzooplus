@@ -144,14 +144,7 @@ def run_sequential(args, logger):
         else:
             args.extra_in_buffer = [item for item in args.extra_in_buffer if item != 'hidden_states_critic']
 
-    buffer = ReplayBuffer(
-        scheme,
-        groups,
-        args.buffer_size,
-        env_info["episode_limit"] + 1,
-        preprocess=preprocess,
-        device="cpu" if args.buffer_cpu_only else args.device,
-    )
+    # Define buffer
     if args.prioritized_buffer is True:
         buffer = PrioritizedReplayBuffer(
             scheme,

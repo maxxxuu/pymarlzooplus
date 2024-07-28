@@ -8,6 +8,7 @@ from .cds_controller import cdsMAC
 REGISTRY = {"basic_mac": BasicMAC,
             "non_shared_mac": NonSharedMAC,
             "maddpg_mac": MADDPGMAC,
-            "happo_mac": happoMAC}
+            "happo_mac": happoMAC,
             "emc_mac": emcMAC,
-            "cds_mac": cdsMAC}
+            "cds_mac": cdsMAC
+            }

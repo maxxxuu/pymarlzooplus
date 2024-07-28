@@ -21,8 +21,6 @@ class BasicMAC:
 
         self.mask_before_softmax = getattr(self.args, "mask_before_softmax", True)
 
-        self.mask_before_softmax = getattr(self.args, "mask_before_softmax", True)
-
     def select_actions(self, ep_batch, t_ep, t_env, bs=slice(None), test_mode=False):
 
         extra_returns = {}
@@ -56,7 +54,7 @@ class BasicMAC:
                 agent_outs[reshaped_avail_actions == 0] = -1e10
             agent_outs = th.nn.functional.softmax(agent_outs, dim=-1)
 
-            return agent_outs.view(ep_batch.batch_size, self.n_agents, -1)
+        return agent_outs.view(ep_batch.batch_size, self.n_agents, -1)
 
     def init_hidden(self, batch_size):
         if self.args.agent == "rnn":
