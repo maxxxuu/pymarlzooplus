@@ -1,6 +1,7 @@
 import time
 import datetime
 
+import torch
 from envs import REGISTRY as env_REGISTRY
 from functools import partial
 from components.episode_buffer import EpisodeBatch
@@ -95,17 +96,28 @@ class ParallelRunner:
         for parent_conn in self.parent_conns:
             parent_conn.send(("reset", None))
 
+        # Reset hidden states
+        self.mac.init_hidden(batch_size=self.batch_size)
+
         pre_transition_data = {
             "state": [],
             "avail_actions": [],
             "obs": []
         }
+
         # Get the obs, state and avail_actions back
         for parent_conn in self.parent_conns:
             data = parent_conn.recv()
             pre_transition_data["state"].append(data["state"])
             pre_transition_data["avail_actions"].append(data["avail_actions"])
             pre_transition_data["obs"].append(data["obs"])
+
+        if "hidden_states" in self.args.extra_in_buffer or "hidden_states_critic" in self.args.extra_in_buffer:
+            hidden_states_dict = self.mac.get_hidden_states()
+            if "hidden_states" in self.args.extra_in_buffer:
+                pre_transition_data["hidden_states"] = hidden_states_dict["hidden_states"]
+            if "hidden_states_critic" in self.args.extra_in_buffer:
+                pre_transition_data["hidden_states_critic"] = hidden_states_dict["hidden_states_critic"]
 
         self.batch.update(pre_transition_data, ts=0)
 
@@ -119,7 +131,6 @@ class ParallelRunner:
 
         episode_returns = [0 for _ in range(self.batch_size)]
         episode_lengths = [0 for _ in range(self.batch_size)]
-        self.mac.init_hidden(batch_size=self.batch_size)
         terminated = [False for _ in range(self.batch_size)]
         envs_not_terminated = [b_idx for b_idx, termed in enumerate(terminated) if not termed]
         final_env_infos = []  # may store extra stats like battle won. this is filled in ORDER OF TERMINATION
@@ -128,11 +139,11 @@ class ParallelRunner:
 
             # Pass the entire batch of experiences up till now to the agents
             # Receive the actions for each agent at this timestep in a batch for each un-terminated env
-            actions = self.mac.select_actions(self.batch,
-                                              t_ep=self.t,
-                                              t_env=self.t_env,
-                                              bs=envs_not_terminated,
-                                              test_mode=test_mode)
+            actions, extra_returns = self.mac.select_actions(self.batch,
+                                                             t_ep=self.t,
+                                                             t_env=self.t_env,
+                                                             bs=envs_not_terminated,
+                                                             test_mode=test_mode)
 
             # Choose actions based on explorer, if applicable. This is for EOI.
             if self.explorer is not None:
@@ -147,6 +158,10 @@ class ParallelRunner:
             actions_chosen = {
                 "actions": actions.unsqueeze(1)
             }
+            if "log_probs" in self.args.extra_in_buffer:
+                actions_chosen["log_probs"] = extra_returns["log_probs"].unsqueeze(1)
+            if "values" in self.args.extra_in_buffer:
+                actions_chosen["values"] = extra_returns["values"].unsqueeze(1)
             self.batch.update(actions_chosen, bs=envs_not_terminated, ts=self.t, mark_filled=False)
 
             # Send actions to each env
@@ -155,7 +170,7 @@ class ParallelRunner:
                 if idx in envs_not_terminated:  # We produced actions for this env
                     if not terminated[idx]:  # Only send the actions to the env if it hasn't terminated
                         parent_conn.send(("step", cpu_actions[action_idx]))
-                    action_idx += 1 # actions is not a list over every env
+                    action_idx += 1  # actions is not a list over every env
                     if idx == 0 and test_mode and self.args.render:
                         parent_conn.send(("render", None))
 
@@ -176,6 +191,16 @@ class ParallelRunner:
                 "avail_actions": [],
                 "obs": []
             }
+            if "hidden_states" in self.args.extra_in_buffer:
+                pre_transition_data["hidden_states"] = \
+                    extra_returns["hidden_states"][
+                        ~torch.tensor(terminated).to(extra_returns["hidden_states"].device)
+                                                  ]
+            if "hidden_states_critic" in self.args.extra_in_buffer:
+                pre_transition_data["hidden_states_critic"] = \
+                    extra_returns["hidden_states_critic"][
+                        ~torch.tensor(terminated).to(extra_returns["hidden_states_critic"].device)
+                                                         ]
 
             # Receive data back for each unterminated env
             for idx, parent_conn in enumerate(self.parent_conns):
