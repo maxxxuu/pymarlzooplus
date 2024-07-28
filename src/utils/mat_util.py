@@ -1,10 +1,12 @@
 import numpy as np
 import math
 import torch
+import torch.nn as nn
+import copy
 
-def check(input):
-    if type(input) == np.ndarray:
-        return torch.from_numpy(input)
+# def check(input):
+#     if type(input) is np.ndarray:
+#         return torch.from_numpy(input)
         
 def get_gard_norm(it):
     sum_grad = 0
@@ -70,3 +72,16 @@ def tile_images(img_nhwc):
     img_HhWwc = img_HWhwc.transpose(0, 2, 1, 3, 4)
     img_Hh_Ww_c = img_HhWwc.reshape(H*h, W*w, c)
     return img_Hh_Ww_c
+
+def init(module, weight_init, bias_init, gain=1):
+    weight_init(module.weight.data, gain=gain)
+    if module.bias is not None:
+        bias_init(module.bias.data)
+    return module
+
+def get_clones(module, N):
+    return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
+
+def check(input):
+    output = torch.from_numpy(input) if type(input) is np.ndarray else input
+    return output

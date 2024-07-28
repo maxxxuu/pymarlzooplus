@@ -3,31 +3,35 @@ import os
 import numpy as np
 import torch
 from tensorboardX import SummaryWriter
-from mat.utils.shared_buffer import SharedReplayBuffer
-from mat.algorithms.mat.mat_trainer import MATTrainer as TrainAlgo
-from mat.algorithms.mat.algorithm.transformer_policy import TransformerPolicy as Policy
+from components.episode_buffer import SharedReplayBuffer
+from learners.mat_learner import MATLearner as TrainAlgo
+from controllers.mat_controller import matMAC as Policy
 
 def _t2n(x):
     """Convert torch tensor to a numpy array."""
     return x.detach().cpu().numpy()
 
-class Runner(object):
+class MatRunner(object):
     """
     Base class for training recurrent policies.
     :param config: (dict) Config dictionary containing parameters for training.
     """
-    def __init__(self, config):
+    # runner = r_REGISTRY[args.runner](args=args, logger=logger)
+    # def __init__(self, config):
+    def __init__(self, args, logger):
 
-        self.all_args = config['all_args']
-        self.envs = config['envs']
-        self.eval_envs = config['eval_envs']
-        self.device = config['device']
-        self.num_agents = config['num_agents']
-        if config.__contains__("render_envs"):
-            self.render_envs = config['render_envs']       
+        self.all_args = args
+        self.logger = logger
+        self.device = self.all_args.device
+        self.num_agents = self.all_args.n_agents
+        
+        # self.envs = config['envs']
+        # self.eval_envs = config['eval_envs']
+        # if config.__contains__("render_envs"):
+        #     self.render_envs = config['render_envs']       
 
         # parameters
-        self.env_name = self.all_args.env_name
+        self.env_name = self.all_args.env
         self.algorithm_name = self.all_args.algorithm_name
         self.experiment_name = self.all_args.experiment_name
         self.use_centralized_V = self.all_args.use_centralized_V
@@ -67,23 +71,25 @@ class Runner(object):
 
         share_observation_space = self.envs.share_observation_space[0] if self.use_centralized_V else self.envs.observation_space[0]
 
-        print("obs_space: ", self.envs.observation_space)
-        print("share_obs_space: ", self.envs.share_observation_space)
-        print("act_space: ", self.envs.action_space)
+        # print("obs_space: ", self.envs.observation_space)
+        # print("share_obs_space: ", self.envs.share_observation_space)
+        # print("act_space: ", self.envs.action_space)
 
         # policy network
-        self.policy = Policy(self.all_args,
-                             self.envs.observation_space[0],
-                             share_observation_space,
-                             self.envs.action_space[0],
-                             self.num_agents,
-                             device=self.device)
+        self.all_args.envs.observation_space = self.envs.observation_space[0]
+        self.all_args.share_observation_space = share_observation_space
+        self.all_args.envs.action_space = self.envs.action_space[0], 
+        groups = self.num_agents
+        scheme = dict()
+        
+        self.policy = Policy(scheme, groups, self.all_args)
+            
 
         if self.model_dir is not None:
             self.restore(self.model_dir)
 
         # algorithm
-        self.trainer = TrainAlgo(self.all_args, self.policy, self.num_agents, device=self.device)
+        self.trainer = TrainAlgo(self.policy, scheme, logger, self.all_args)
         
         # buffer
         self.buffer = SharedReplayBuffer(self.all_args,
@@ -91,7 +97,7 @@ class Runner(object):
                                         self.envs.observation_space[0],
                                         share_observation_space,
                                         self.envs.action_space[0],
-                                         self.all_args.env_name)
+                                         self.all_args.env)
 
     def run(self):
         """Collect training data, perform training updates, and evaluate policy."""

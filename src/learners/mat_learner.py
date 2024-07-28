@@ -1,211 +1,271 @@
-# code heavily adapted from https://github.com/AnujMahajanOxf/MAVEN
-import copy
-from components.episode_buffer import EpisodeBatch
-import torch as th
-from torch.optim import Adam
-from modules.critics import REGISTRY as critic_registry
-from components.standarize_stream import RunningMeanStd
-from learners.mat.runner.shared import base_runner
+import numpy as np
+import torch
+import torch.nn as nn
+from utils.mat_util import get_gard_norm, huber_loss, mse_loss, check
 
+class MATLearner:
+    """
+    Trainer class for MAT to update policies.
+    :param args: (argparse.Namespace) arguments containing relevant model, policy, and env information.
+    :param policy: (R_MAPPO_Policy) policy to update.
+    :param device: (torch.device) specifies the device to run on (cpu/gpu).
+    """
+    def __init__(self, policy, scheme, logger, args):
 
+        self.device = torch.device("cpu")
+        self.tpdv = dict(dtype=torch.float32, device=self.device)
+        self.policy = policy
+        self.num_agents = args.n_agents
 
-class MATLearner: # not modified yet. Still a copy of ppo (CR, 18jul2024)
-    def __init__(self, mac, scheme, logger, args):
-        self.args = args
-        self.n_agents = args.n_agents
-        self.n_actions = args.n_actions
-        self.logger = logger
+        self.clip_param = args.clip_param
+        self.ppo_epoch = args.ppo_epoch
+        self.num_mini_batch = args.num_mini_batch
+        self.data_chunk_length = args.data_chunk_length
+        self.value_loss_coef = args.value_loss_coef
+        self.entropy_coef = args.entropy_coef
+        self.max_grad_norm = args.max_grad_norm       
+        self.huber_delta = args.huber_delta
 
-        self.mac = mac
-        self.old_mac = copy.deepcopy(mac)
-        self.agent_params = list(mac.parameters())
-        self.agent_optimiser = Adam(params=self.agent_params, lr=args.lr)
+        self._use_recurrent_policy = args.use_recurrent_policy
+        self._use_naive_recurrent = args.use_naive_recurrent_policy
+        self._use_max_grad_norm = args.use_max_grad_norm
+        self._use_clipped_value_loss = args.use_clipped_value_loss
+        self._use_huber_loss = args.use_huber_loss
+        self._use_valuenorm = args.use_valuenorm
+        self._use_value_active_masks = args.use_value_active_masks
+        self._use_policy_active_masks = args.use_policy_active_masks
+        self.dec_actor = args.dec_actor
+        
+        if self._use_valuenorm:
+            self.value_normalizer = ValueNorm(1, device=self.device)
+        else:
+            self.value_normalizer = None
 
-        self.critic = critic_registry[args.critic_type](scheme, args)
-        self.target_critic = copy.deepcopy(self.critic)
+    def cal_value_loss(self, values, value_preds_batch, return_batch, active_masks_batch):
+        """
+        Calculate value function loss.
+        :param values: (torch.Tensor) value function predictions.
+        :param value_preds_batch: (torch.Tensor) "old" value  predictions from data batch (used for value clip loss)
+        :param return_batch: (torch.Tensor) reward to go returns.
+        :param active_masks_batch: (torch.Tensor) denotes if agent is active or dead at a given timesep.
 
-        self.critic_params = list(self.critic.parameters())
-        self.critic_optimiser = Adam(params=self.critic_params, lr=args.lr)
+        :return value_loss: (torch.Tensor) value function loss.
+        """
 
-        self.last_target_update_step = 0
-        self.critic_training_steps = 0
-        self.log_stats_t = -self.args.learner_log_interval - 1
+        value_pred_clipped = value_preds_batch + (values - value_preds_batch).clamp(-self.clip_param,
+                                                                                    self.clip_param)
 
-        device = "cuda" if args.use_cuda else "cpu"
-        if self.args.standardise_returns:
-            self.ret_ms = RunningMeanStd(shape=(self.n_agents, ), device=device)
-        if self.args.standardise_rewards:
-            self.rew_ms = RunningMeanStd(shape=(1,), device=device)
+        if self._use_valuenorm:
+            self.value_normalizer.update(return_batch)
+            error_clipped = self.value_normalizer.normalize(return_batch) - value_pred_clipped
+            error_original = self.value_normalizer.normalize(return_batch) - values
+        else:
+            error_clipped = return_batch - value_pred_clipped
+            error_original = return_batch - values
 
-    def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
-        # Get the relevant quantities
+        if self._use_huber_loss:
+            value_loss_clipped = huber_loss(error_clipped, self.huber_delta)
+            value_loss_original = huber_loss(error_original, self.huber_delta)
+        else:
+            value_loss_clipped = mse_loss(error_clipped)
+            value_loss_original = mse_loss(error_original)
 
-        rewards = batch["reward"][:, :-1]
-        actions = batch["actions"][:, :]
-        terminated = batch["terminated"][:, :-1].float()
-        mask = batch["filled"][:, :-1].float()
-        mask[:, 1:] = mask[:, 1:] * (1 - terminated[:, :-1])
-        actions = actions[:, :-1]
-        if self.args.standardise_rewards:
-            self.rew_ms.update(rewards)
-            rewards = (rewards - self.rew_ms.mean) / th.sqrt(self.rew_ms.var)
+        if self._use_clipped_value_loss:
+            value_loss = torch.max(value_loss_original, value_loss_clipped)
+        else:
+            value_loss = value_loss_original
 
-        mask = mask.repeat(1, 1, self.n_agents)
+        # if self._use_value_active_masks and not self.dec_actor:
+        if self._use_value_active_masks:
+            value_loss = (value_loss * active_masks_batch).sum() / active_masks_batch.sum()
+        else:
+            value_loss = value_loss.mean()
 
-        critic_mask = mask.clone()
+        return value_loss
 
-        old_mac_out = []
-        self.old_mac.init_hidden(batch.batch_size)
-        for t in range(batch.max_seq_length - 1):
-            agent_outs = self.old_mac.forward(batch, t=t)
-            old_mac_out.append(agent_outs)
-        old_mac_out = th.stack(old_mac_out, dim=1)  # Concat over time
-        old_pi = old_mac_out
-        old_pi[mask == 0] = 1.0
+    def ppo_update(self, sample):
+        """
+        Update actor and critic networks.
+        :param sample: (Tuple) contains data batch with which to update networks.
+        :update_actor: (bool) whether to update actor network.
 
-        old_pi_taken = th.gather(old_pi, dim=3, index=actions).squeeze(3)
-        old_log_pi_taken = th.log(old_pi_taken + 1e-10)
+        :return value_loss: (torch.Tensor) value function loss.
+        :return critic_grad_norm: (torch.Tensor) gradient norm from critic up9date.
+        ;return policy_loss: (torch.Tensor) actor(policy) loss value.
+        :return dist_entropy: (torch.Tensor) action entropies.
+        :return actor_grad_norm: (torch.Tensor) gradient norm from actor update.
+        :return imp_weights: (torch.Tensor) importance sampling weights.
+        """
+        share_obs_batch, obs_batch, rnn_states_batch, rnn_states_critic_batch, actions_batch, \
+        value_preds_batch, return_batch, masks_batch, active_masks_batch, old_action_log_probs_batch, \
+        adv_targ, available_actions_batch = sample
 
-        for k in range(self.args.epochs):
-            mac_out = []
-            self.mac.init_hidden(batch.batch_size)
-            for t in range(batch.max_seq_length - 1):
-                agent_outs = self.mac.forward(batch, t=t)
-                mac_out.append(agent_outs)
-            mac_out = th.stack(mac_out, dim=1)  # Concat over time
+        old_action_log_probs_batch = check(old_action_log_probs_batch).to(**self.tpdv)
+        adv_targ = check(adv_targ).to(**self.tpdv)
+        value_preds_batch = check(value_preds_batch).to(**self.tpdv)
+        return_batch = check(return_batch).to(**self.tpdv)
+        active_masks_batch = check(active_masks_batch).to(**self.tpdv)
 
-            pi = mac_out
-            advantages, critic_train_stats = self.train_critic_sequential(self.critic, self.target_critic, batch, rewards,
-                                                                          critic_mask)
-            advantages = advantages.detach()
-            # Calculate policy grad with mask
+        # Reshape to do in a single forward pass for all steps
+        values, action_log_probs, dist_entropy = self.policy.evaluate_actions(share_obs_batch,
+                                                                              obs_batch, 
+                                                                              rnn_states_batch, 
+                                                                              rnn_states_critic_batch, 
+                                                                              actions_batch, 
+                                                                              masks_batch, 
+                                                                              available_actions_batch,
+                                                                              active_masks_batch)
+        # actor update
+        imp_weights = torch.exp(action_log_probs - old_action_log_probs_batch)
 
-            pi[mask == 0] = 1.0
+        surr1 = imp_weights * adv_targ
+        surr2 = torch.clamp(imp_weights, 1.0 - self.clip_param, 1.0 + self.clip_param) * adv_targ
 
-            pi_taken = th.gather(pi, dim=3, index=actions).squeeze(3)
-            log_pi_taken = th.log(pi_taken + 1e-10)
+        if self._use_policy_active_masks:
+            policy_loss = (-torch.sum(torch.min(surr1, surr2),
+                                      dim=-1,
+                                      keepdim=True) * active_masks_batch).sum() / active_masks_batch.sum()
+        else:
+            policy_loss = -torch.sum(torch.min(surr1, surr2), dim=-1, keepdim=True).mean()
 
-            ratios = th.exp(log_pi_taken - old_log_pi_taken.detach())
-            surr1 = ratios * advantages
-            surr2 = th.clamp(ratios, 1 - self.args.eps_clip, 1 + self.args.eps_clip) * advantages
+        # critic update
+        value_loss = self.cal_value_loss(values, value_preds_batch, return_batch, active_masks_batch)
 
-            entropy = -th.sum(pi * th.log(pi + 1e-10), dim=-1)
-            pg_loss = -((th.min(surr1, surr2) + self.args.entropy_coef * entropy) * mask).sum() / mask.sum()
+        loss = policy_loss - dist_entropy * self.entropy_coef + value_loss * self.value_loss_coef
 
-            # Optimise agents
-            self.agent_optimiser.zero_grad()
-            pg_loss.backward()
-            grad_norm = th.nn.utils.clip_grad_norm_(self.agent_params, self.args.grad_norm_clip)
-            self.agent_optimiser.step()
-
-        self.old_mac.load_state(self.mac)
-
-        self.critic_training_steps += 1
-        if self.args.target_update_interval_or_tau > 1 and (
-                self.critic_training_steps - self.last_target_update_step) / self.args.target_update_interval_or_tau >= 1.0:
-            self._update_targets_hard()
-            self.last_target_update_step = self.critic_training_steps
-        elif self.args.target_update_interval_or_tau <= 1.0:
-            self._update_targets_soft(self.args.target_update_interval_or_tau)
-
-        if t_env - self.log_stats_t >= self.args.learner_log_interval:
-            ts_logged = len(critic_train_stats["critic_loss"])
-            for key in ["critic_loss", "critic_grad_norm", "td_error_abs", "q_taken_mean", "target_mean"]:
-                self.logger.log_stat(key, sum(critic_train_stats[key]) / ts_logged, t_env)
-
-            self.logger.log_stat("advantage_mean", (advantages * mask).sum().item() / mask.sum().item(), t_env)
-            self.logger.log_stat("pg_loss", pg_loss.item(), t_env)
-            self.logger.log_stat("agent_grad_norm", grad_norm.item(), t_env)
-            self.logger.log_stat("pi_max", (pi.max(dim=-1)[0] * mask).sum().item() / mask.sum().item(), t_env)
-            self.log_stats_t = t_env
-
-    def train_critic_sequential(self, critic, target_critic, batch, rewards, mask):
-        # Optimise critic
-        with th.no_grad():
-            target_vals = target_critic(batch)
-            target_vals = target_vals.squeeze(3)
-
-        if self.args.standardise_returns:
-            target_vals = target_vals * th.sqrt(self.ret_ms.var) + self.ret_ms.mean
-
-        target_returns = self.nstep_returns(rewards, mask, target_vals, self.args.q_nstep)
-        if self.args.standardise_returns:
-            self.ret_ms.update(target_returns)
-            target_returns = (target_returns - self.ret_ms.mean) / th.sqrt(self.ret_ms.var)
-
-        running_log = {
-            "critic_loss": [],
-            "critic_grad_norm": [],
-            "td_error_abs": [],
-            "target_mean": [],
-            "q_taken_mean": [],
-        }
-
-        v = critic(batch)[:, :-1].squeeze(3)
-        td_error = (target_returns.detach() - v)
-        masked_td_error = td_error * mask
-        loss = (masked_td_error ** 2).sum() / mask.sum()
-
-        self.critic_optimiser.zero_grad()
+        self.policy.optimizer.zero_grad()
         loss.backward()
-        grad_norm = th.nn.utils.clip_grad_norm_(self.critic_params, self.args.grad_norm_clip)
-        self.critic_optimiser.step()
 
-        running_log["critic_loss"].append(loss.item())
-        running_log["critic_grad_norm"].append(grad_norm.item())
-        mask_elems = mask.sum().item()
-        running_log["td_error_abs"].append((masked_td_error.abs().sum().item() / mask_elems))
-        running_log["q_taken_mean"].append((v * mask).sum().item() / mask_elems)
-        running_log["target_mean"].append((target_returns * mask).sum().item() / mask_elems)
+        if self._use_max_grad_norm:
+            grad_norm = nn.utils.clip_grad_norm_(self.policy.transformer.parameters(), self.max_grad_norm)
+        else:
+            grad_norm = get_gard_norm(self.policy.transformer.parameters())
 
-        return masked_td_error, running_log
+        self.policy.optimizer.step()
 
-    def nstep_returns(self, rewards, mask, values, nsteps):
-        nstep_values = th.zeros_like(values[:, :-1])
-        for t_start in range(rewards.size(1)):
-            nstep_return_t = th.zeros_like(values[:, 0])
-            for step in range(nsteps + 1):
-                t = t_start + step
-                if t >= rewards.size(1):
-                    break
-                elif step == nsteps:
-                    nstep_return_t += self.args.gamma ** (step) * values[:, t] * mask[:, t]
-                elif t == rewards.size(1) - 1 and self.args.add_value_last_step:
-                    nstep_return_t += self.args.gamma ** (step) * rewards[:, t] * mask[:, t]
-                    nstep_return_t += self.args.gamma ** (step + 1) * values[:, t + 1]
-                else:
-                    nstep_return_t += self.args.gamma ** (step) * rewards[:, t] * mask[:, t]
-            nstep_values[:, t_start, :] = nstep_return_t
-        return nstep_values
+        return value_loss, grad_norm, policy_loss, dist_entropy, grad_norm, imp_weights
 
-    def _update_targets(self):
-        self.target_critic.load_state_dict(self.critic.state_dict())
+    def train(self, buffer):
+        """
+        Perform a training update using minibatch GD.
+        :param buffer: (SharedReplayBuffer) buffer containing training data.
+        :param update_actor: (bool) whether to update actor network.
 
-    def _update_targets_hard(self):
-        self.target_critic.load_state_dict(self.critic.state_dict())
+        :return train_info: (dict) contains information regarding training update (e.g. loss, grad norms, etc).
+        """
+        advantages_copy = buffer.advantages.copy()
+        advantages_copy[buffer.active_masks[:-1] == 0.0] = np.nan
+        mean_advantages = np.nanmean(advantages_copy)
+        std_advantages = np.nanstd(advantages_copy)
+        advantages = (buffer.advantages - mean_advantages) / (std_advantages + 1e-5)
+        
 
-    def _update_targets_soft(self, tau):
-        for target_param, param in zip(self.target_critic.parameters(), self.critic.parameters()):
-            target_param.data.copy_(target_param.data * (1.0 - tau) + param.data * tau)
+        train_info = {}
 
-    def cuda(self):
-        self.old_mac.cuda()
-        self.mac.cuda()
-        self.critic.cuda()
-        self.target_critic.cuda()
+        train_info['value_loss'] = 0
+        train_info['policy_loss'] = 0
+        train_info['dist_entropy'] = 0
+        train_info['actor_grad_norm'] = 0
+        train_info['critic_grad_norm'] = 0
+        train_info['ratio'] = 0
 
-    def save_models(self, path):
-        self.mac.save_models(path)
-        th.save(self.critic.state_dict(), "{}/critic.th".format(path))
-        th.save(self.agent_optimiser.state_dict(), "{}/agent_opt.th".format(path))
-        th.save(self.critic_optimiser.state_dict(), "{}/critic_opt.th".format(path))
+        for _ in range(self.ppo_epoch):
+            data_generator = buffer.feed_forward_generator_transformer(advantages, self.num_mini_batch)
 
-    def load_models(self, path):
-        self.mac.load_models(path)
-        self.critic.load_state_dict(th.load("{}/critic.th".format(path), map_location=lambda storage, loc: storage))
-        # Not quite right but I don't want to save target networks
-        self.target_critic.load_state_dict(self.critic.state_dict())
-        self.agent_optimiser.load_state_dict(
-            th.load("{}/agent_opt.th".format(path), map_location=lambda storage, loc: storage))
-        self.critic_optimiser.load_state_dict(
-            th.load("{}/critic_opt.th".format(path), map_location=lambda storage, loc: storage))
+            for sample in data_generator:
+
+                value_loss, critic_grad_norm, policy_loss, dist_entropy, actor_grad_norm, imp_weights \
+                    = self.ppo_update(sample)
+
+                train_info['value_loss'] += value_loss.item()
+                train_info['policy_loss'] += policy_loss.item()
+                train_info['dist_entropy'] += dist_entropy.item()
+                train_info['actor_grad_norm'] += actor_grad_norm
+                train_info['critic_grad_norm'] += critic_grad_norm
+                train_info['ratio'] += imp_weights.mean()
+
+        num_updates = self.ppo_epoch * self.num_mini_batch
+
+        for k in train_info.keys():
+            train_info[k] /= num_updates
+ 
+        return train_info
+
+    def prep_training(self):
+        self.policy.train()
+
+    def prep_rollout(self):
+        self.policy.eval()
+
+class ValueNorm(nn.Module):
+    """ Normalize a vector of observations - across the first norm_axes dimensions"""
+
+    def __init__(self, input_shape, norm_axes=1, beta=0.99999, per_element_update=False, epsilon=1e-5, device="cpu"):
+        super(ValueNorm, self).__init__()
+
+        self.input_shape = input_shape
+        self.norm_axes = norm_axes
+        self.epsilon = epsilon
+        self.beta = beta
+        self.per_element_update = per_element_update
+        self.tpdv = dict(dtype=torch.float32, device=device)
+
+        self.running_mean = nn.Parameter(torch.zeros(input_shape), requires_grad=False).to(**self.tpdv)
+        self.running_mean_sq = nn.Parameter(torch.zeros(input_shape), requires_grad=False).to(**self.tpdv)
+        self.debiasing_term = nn.Parameter(torch.tensor(0.0), requires_grad=False).to(**self.tpdv)
+        
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        self.running_mean.zero_()
+        self.running_mean_sq.zero_()
+        self.debiasing_term.zero_()
+
+    def running_mean_var(self):
+        debiased_mean = self.running_mean / self.debiasing_term.clamp(min=self.epsilon)
+        debiased_mean_sq = self.running_mean_sq / self.debiasing_term.clamp(min=self.epsilon)
+        debiased_var = (debiased_mean_sq - debiased_mean ** 2).clamp(min=1e-2)
+        return debiased_mean, debiased_var
+
+    @torch.no_grad()
+    def update(self, input_vector):
+        if type(input_vector) is np.ndarray:
+            input_vector = torch.from_numpy(input_vector)
+        input_vector = input_vector.to(**self.tpdv)
+
+        batch_mean = input_vector.mean(dim=tuple(range(self.norm_axes)))
+        batch_sq_mean = (input_vector ** 2).mean(dim=tuple(range(self.norm_axes)))
+
+        if self.per_element_update:
+            batch_size = np.prod(input_vector.size()[:self.norm_axes])
+            weight = self.beta ** batch_size
+        else:
+            weight = self.beta
+
+        self.running_mean.mul_(weight).add_(batch_mean * (1.0 - weight))
+        self.running_mean_sq.mul_(weight).add_(batch_sq_mean * (1.0 - weight))
+        self.debiasing_term.mul_(weight).add_(1.0 * (1.0 - weight))
+
+    def normalize(self, input_vector):
+        # Make sure input is float32
+        if type(input_vector) is np.ndarray:
+            input_vector = torch.from_numpy(input_vector)
+        input_vector = input_vector.to(**self.tpdv)
+
+        mean, var = self.running_mean_var()
+        out = (input_vector - mean[(None,) * self.norm_axes]) / torch.sqrt(var)[(None,) * self.norm_axes]
+        
+        return out
+
+    def denormalize(self, input_vector):
+        """ Transform normalized data back into original distribution """
+        if type(input_vector) is np.ndarray:
+            input_vector = torch.from_numpy(input_vector)
+        input_vector = input_vector.to(**self.tpdv)
+
+        mean, var = self.running_mean_var()
+        out = input_vector * torch.sqrt(var)[(None,) * self.norm_axes] + mean[(None,) * self.norm_axes]
+        
+        out = out.cpu().numpy()
+        
+        return out

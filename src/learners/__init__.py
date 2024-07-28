@@ -9,6 +9,7 @@ from .maddpg_learner import MADDPGLearner
 from .maser_q_learner import MASERQLearner
 from .ppo_learner import PPOLearner
 from .dmaq_qatten_learner import DMAQ_qattenLearner
+from .mat_learner import MATLearner
 
 REGISTRY = {"q_learner": QLearner,
             "coma_learner": COMALearner,
