@@ -111,7 +111,7 @@ class EpisodeBatch:
             if isinstance(v, list):
                 v = th.tensor(np.array(v), dtype=dtype, device=self.device)
 
-            self._check_safe_view(v, target[k][_slices])
+            self._check_safe_view(v, target[k][_slices], k)
             target[k][_slices] = v.view_as(target[k][_slices])
 
             if k in self.preprocess:
@@ -121,12 +121,12 @@ class EpisodeBatch:
                     v = transform.transform(v)
                 target[new_k][_slices] = v.view_as(target[new_k][_slices])
 
-    def _check_safe_view(self, v, dest):
+    def _check_safe_view(self, v, dest, k):
         idx = len(v.shape) - 1
         for s in dest.shape[::-1]:
             if v.shape[idx] != s:
                 if s != 1:
-                    raise ValueError("Unsafe reshape of {} to {}".format(v.shape, dest.shape))
+                    raise ValueError("Unsafe reshape of {} to {} with key={}".format(v.shape, dest.shape, k))
             else:
                 idx -= 1
 
@@ -136,6 +136,10 @@ class EpisodeBatch:
                 return self.data.episode_data[item]
             elif item in self.data.transition_data:
                 return self.data.transition_data[item]
+            elif item == 'batch_size':
+                return self.batch_size
+            elif item == 'max_seq_length':
+                return self.max_seq_length
             else:
                 raise ValueError
         elif isinstance(item, tuple) and all([isinstance(it, str) for it in item]):

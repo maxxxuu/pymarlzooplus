@@ -126,6 +126,22 @@ def run_sequential(args, logger):
     groups = {"agents": args.n_agents}
     preprocess = {"actions": ("actions_onehot", [OneHot(out_dim=args.n_actions)])}
 
+    # Add extra filed in buffer
+    if "log_probs" in args.extra_in_buffer:
+        scheme["log_probs"] = {"vshape": (1,), "group": "agents"}
+    if "values" in args.extra_in_buffer:
+        scheme["values"] = {"vshape": (1,), "group": "agents"}
+    if "hidden_states" in args.extra_in_buffer:
+        if args.use_rnn is True:
+            scheme["hidden_states"] = {"vshape": (args.hidden_dim,), "group": "agents"}
+        else:
+            args.extra_in_buffer = [item for item in args.extra_in_buffer if item != 'hidden_states']
+    if "hidden_states_critic" in args.extra_in_buffer:
+        if args.use_rnn_critic is True:
+            scheme["hidden_states_critic"] = {"vshape": (args.hidden_dim,), "group": "agents"}
+        else:
+            args.extra_in_buffer = [item for item in args.extra_in_buffer if item != 'hidden_states_critic']
+
     buffer = ReplayBuffer(
         scheme,
         groups,
@@ -149,6 +165,7 @@ def run_sequential(args, logger):
 
     # Learner
     learner = le_REGISTRY[args.learner](mac, buffer.scheme, logger, args)
+    mac.learner = learner
 
     if args.use_cuda:
         learner.cuda()

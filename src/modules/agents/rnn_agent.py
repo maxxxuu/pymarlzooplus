@@ -1,5 +1,4 @@
 # code adapted from https://github.com/wendelinboehmer/dcg
-
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
@@ -11,16 +10,19 @@ class RNNAgent(nn.Module):
     def __init__(self, input_shape, args):
         super(RNNAgent, self).__init__()
         self.args = args
+        self.algo_name = args.name
+        self.use_rnn = args.use_rnn
+        self.n_agents = args.n_agents
 
         # Use CNN to encode image observations
         self.is_image = False
-        if isinstance(input_shape, tuple): # image input
-            self.cnn = CNNAgent(input_shape, args) # TODO: image support for 'rnn_feature_agent' and 'rnn_ns_agent'
+        if isinstance(input_shape, tuple):  # image input
+            self.cnn = CNNAgent(input_shape, args)  # TODO: image support for 'rnn_feature_agent' and 'rnn_ns_agent'
             input_shape = self.cnn.features_dim + input_shape[1]
             self.is_image = True
 
         self.fc1 = nn.Linear(input_shape, args.hidden_dim)
-        if self.args.use_rnn:
+        if self.use_rnn is True:
             self.rnn = nn.GRUCell(args.hidden_dim, args.hidden_dim)
         else:
             self.rnn = nn.Linear(args.hidden_dim, args.hidden_dim)
@@ -41,10 +43,10 @@ class RNNAgent(nn.Module):
 
         x = F.relu(self.fc1(inputs))
         h_in = hidden_state.reshape(-1, self.args.hidden_dim)
-        if self.args.use_rnn:
+        if self.use_rnn:
             h = self.rnn(x, h_in)
         else:
             h = F.relu(self.rnn(x))
         q = self.fc2(h)
-        return q, h
 
+        return q, h
