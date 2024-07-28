@@ -16,8 +16,9 @@ from runners import REGISTRY as r_REGISTRY
 from controllers import REGISTRY as mac_REGISTRY
 from modules.explorers import REGISTRY as explorer_REGISTRY
 
-from components.episode_buffer import ReplayBuffer
+from components.episode_buffer import ReplayBuffer, PrioritizedReplayBuffer
 from components.transforms import OneHot
+from components.episodic_memory_buffer import EpisodicMemoryBuffer
 
 from utils.plot_utils import plot_single_experiment_results
 
@@ -109,6 +110,7 @@ def run_sequential(args, logger):
     args.n_agents = env_info["n_agents"]
     args.n_actions = env_info["n_actions"]
     args.state_shape = env_info["state_shape"]
+    args.unit_dim = env_info["obs_shape"]
 
     # Default/Base scheme
     scheme = {
@@ -150,6 +152,30 @@ def run_sequential(args, logger):
         preprocess=preprocess,
         device="cpu" if args.buffer_cpu_only else args.device,
     )
+    if args.prioritized_buffer is True:
+        buffer = PrioritizedReplayBuffer(
+            scheme,
+            groups,
+            args.buffer_size,
+            env_info["episode_limit"] + 1,
+            args.prioritized_buffer_alpha,
+            preprocess=preprocess,
+            device="cpu" if args.buffer_cpu_only else args.device
+        )
+    else:
+        buffer = ReplayBuffer(
+            scheme,
+            groups,
+            args,
+            args.buffer_size,
+            env_info["episode_limit"] + 1,
+            preprocess=preprocess,
+            device="cpu" if args.buffer_cpu_only else args.device,
+        )
+    # Define episode buffer
+    args.use_emdqn = getattr(args, "use_emdqn", False)
+    if args.use_emdqn is True:
+        ec_buffer = EpisodicMemoryBuffer(args, scheme)
 
     # Setup multi-agent controller here
     mac = mac_REGISTRY[args.mac](buffer.scheme, groups, args)
@@ -173,7 +199,6 @@ def run_sequential(args, logger):
     if args.checkpoint_path != "":
 
         timesteps = []
-        timestep_to_load = 0
 
         if not os.path.isdir(args.checkpoint_path):
             logger.console_logger.info(
@@ -224,24 +249,45 @@ def run_sequential(args, logger):
 
         # Run for a whole episode at a time
         episode_batch = runner.run(test_mode=False)
+
+        # Update episode buffer
+        if args.use_emdqn is True:
+            ec_buffer.update_ec(episode_batch)
+
+        # Update replay buffer
         buffer.insert_episode_batch(episode_batch)
 
-        if buffer.can_sample(args.batch_size):
-            episode_sample = buffer.sample(args.batch_size)
+        # Run training iterations
+        for _ in range(args.num_circle):
+            if buffer.can_sample(args.batch_size):
+                if args.prioritized_buffer is True:
+                    sample_indices, episode_sample = buffer.sample(args.batch_size)
+                else:
+                    episode_sample = buffer.sample(args.batch_size)
 
-            # Train explorer. This is for EOI.
-            if has_explorer is True:
-                explorer.train(episode_sample)
+                # Train explorer. This is for EOI.
+                if has_explorer is True:
+                    explorer.train(episode_sample)
 
-            # Truncate batch to only filled timesteps
-            max_ep_t = episode_sample.max_t_filled()
-            episode_sample = episode_sample[:, :max_ep_t]
+                # Truncate batch to only filled timesteps
+                max_ep_t = episode_sample.max_t_filled()
+                episode_sample = episode_sample[:, :max_ep_t]
 
-            if episode_sample.device != args.device:
-                episode_sample.to(args.device)
+                if episode_sample.device != args.device:
+                    episode_sample.to(args.device)
 
-            learner.train(episode_sample, runner.t_env, episode)
-
+                # Learner training
+                if args.prioritized_buffer is True:
+                    if args.use_emdqn is True:
+                        learner.train(episode_sample, runner.t_env, episode, ec_buffer=ec_buffer)
+                    else:
+                        td_error = learner.train(episode_sample, runner.t_env, episode)
+                        buffer.update_priority(sample_indices, td_error)
+                else:
+                    if args.use_emdqn is True:
+                        learner.train(episode_sample, runner.t_env, episode, ec_buffer=ec_buffer)
+                    else:
+                        learner.train(episode_sample, runner.t_env, episode)
         # Execute test runs once in a while
         n_test_runs = max(1, args.test_nepisode // runner.batch_size)
         if (runner.t_env - last_test_T) / args.test_interval >= 1.0:

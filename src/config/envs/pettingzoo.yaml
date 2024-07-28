@@ -4,6 +4,7 @@ env_args:
   key: null
   max_cycles: null
   render_mode: "rgb_array" # Options: "human", "rgb_array
+  partial_observation: False # Choices: True or False. Only applicable to "Entombed Cooperative" and "Space Invaders"
   trainable_cnn: False # When this is True, image encoder parameters do not matter.
   image_encoder: "ResNet18" # Options: "ResNet18", "SlimSAM", "CLIP"
   image_encoder_batch_size: 1

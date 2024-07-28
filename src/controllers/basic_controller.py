@@ -21,6 +21,8 @@ class BasicMAC:
 
         self.mask_before_softmax = getattr(self.args, "mask_before_softmax", True)
 
+        self.mask_before_softmax = getattr(self.args, "mask_before_softmax", True)
+
     def select_actions(self, ep_batch, t_ep, t_env, bs=slice(None), test_mode=False):
 
         extra_returns = {}
