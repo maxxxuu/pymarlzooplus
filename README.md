@@ -32,6 +32,7 @@ git clone ...
 cd fepymarl/installation
 conda create -n epymarl python=3.8.18 -y
 conda activate epymarl
+python3 -m pip install pip==24.0
 pip install wheel==0.38.4 setuptools==65.5.0 einops
 pip install -r requirements.txt
 ``` 
