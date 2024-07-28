@@ -391,9 +391,6 @@ def plot_multiple_experiment_results(paths_to_results, algo_names, env_name, pat
         # Check if the provided path is valid
         assert os.path.exists(path_to_results), \
             f"The provided 'path_to_results' does not exist! 'path_to_results': {path_to_results}"
-        # # Check if the order of paths are on par with the order of the algorithm names
-        # assert os.path.basename(os.path.abspath(os.path.join(path_to_results, '..'))) == algo_names[path_to_results_idx], \
-        #     f"The order of paths should be aligned with the order of algorithm names!"
 
         path_to_exps = [os.path.join(path_to_results, elem) for elem in os.listdir(path_to_results) if elem.isdigit()]
         x_return_data_list = []
