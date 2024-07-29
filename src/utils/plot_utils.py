@@ -567,33 +567,34 @@ if __name__ == '__main__':
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/coordination_ring/"
 
     # PressurePlate - linear-4p-v0
-    # paths_to_results_ = [
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/pressureplate_linear-4p-v0/qmix_linear-4p-v0_results/sacred/qmix/pressureplate-linear-4p-v0",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/pressureplate_linear-4p-v0/maa2c_linear-4p-v0_w_parallel_2_threads_results/sacred/maa2c/pressureplate-linear-4p-v0",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/pressureplate_linear-4p-v0/coma_linear-4p-v0_results/sacred/coma/pressureplate-linear-4p-v0",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/pressureplate_linear-4p-v0/qplex_linear-4p-v0_results/sacred/qplex/pressureplate-linear-4p-v0",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/pressureplate_linear-4p-v0/mappo_linear-4p-v0_w_parallel_2_threads_results/sacred/mappo/pressureplate-linear-4p-v0",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/pressureplate_linear-4p-v0/eoi_linear-4p-v0_w_parallel_2_threads_results/sacred/eoi/pressureplate-linear-4p-v0",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/pressureplate_linear-4p-v0/eoi_linear-4p-v0_w_episode_results/sacred/eoi/pressureplate-linear-4p-v0"
-    # ]
-    # algo_names_ = ["qmix", "maa2c", "coma", "qplex", "mappo", "eoi-parallel-thr=2", "eoi-episode"]
-    # env_name_ = "pressureplate-linear-4p-v0"
-    # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/pressureplate-linear-4p-v0/"
+    paths_to_results_ = [
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/pressureplate_linear-4p-v0/qmix_linear-4p-v0_results/sacred/qmix/pressureplate-linear-4p-v0",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/pressureplate_linear-4p-v0/maa2c_linear-4p-v0_w_parallel_2_threads_results/sacred/maa2c/pressureplate-linear-4p-v0",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/pressureplate_linear-4p-v0/coma_linear-4p-v0_results/sacred/coma/pressureplate-linear-4p-v0",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/pressureplate_linear-4p-v0/qplex_linear-4p-v0_results/sacred/qplex/pressureplate-linear-4p-v0",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/pressureplate_linear-4p-v0/mappo_linear-4p-v0_w_parallel_2_threads_results/sacred/mappo/pressureplate-linear-4p-v0",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/pressureplate_linear-4p-v0/eoi_linear-4p-v0_w_parallel_2_threads_results/sacred/eoi/pressureplate-linear-4p-v0",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/pressureplate_linear-4p-v0/eoi_linear-4p-v0_w_episode_results/sacred/eoi/pressureplate-linear-4p-v0",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/pressureplate_linear-4p-v0/maser_linear-4p-v0_results/sacred/maser/pressureplate-linear-4p-v0"
+    ]
+    algo_names_ = ["qmix", "maa2c", "coma", "qplex", "mappo", "eoi-parallel-thr=2", "eoi-episode", "maser"]
+    env_name_ = "pressureplate-linear-4p-v0"
+    path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/pressureplate-linear-4p-v0/"
 
 
     # PressurePlate - linear-6p-v0
-    paths_to_results_ = [
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/pressureplate_linear-6p-v0/maa2c_linear-6p-v0_w_parallel_2_threads_results/sacred/maa2c/pressureplate-linear-6p-v0",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/pressureplate_linear-6p-v0/qmix_linear-6p-v0_results/sacred/qmix/pressureplate-linear-6p-v0",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/pressureplate_linear-6p-v0/coma_linear-6p-v0_results/sacred/coma/pressureplate-linear-6p-v0",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/pressureplate_linear-6p-v0/qplex_linear-6p-v0_results/sacred/qplex/pressureplate-linear-6p-v0",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/pressureplate_linear-6p-v0/eoi_linear-6p-v0_w_parallel_2_threads_results/sacred/eoi/pressureplate-linear-6p-v0",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/pressureplate_linear-6p-v0/mappo_linear-6p-v0_w_parallel_2_threads_results/sacred/mappo/pressureplate-linear-6p-v0",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/pressureplate_linear-6p-v0/maser_linear-6p-v0_results/sacred/maser/pressureplate-linear-6p-v0"
-    ]
-    algo_names_ = ["maa2c", "qmix", "coma", "qplex", "eoi-parallel", "mappo", "maser"]
-    env_name_ = "pressureplate-linear-6p-v0"
-    path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/pressureplate-linear-6p-v0/"
+    # paths_to_results_ = [
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/pressureplate_linear-6p-v0/maa2c_linear-6p-v0_w_parallel_2_threads_results/sacred/maa2c/pressureplate-linear-6p-v0",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/pressureplate_linear-6p-v0/qmix_linear-6p-v0_results/sacred/qmix/pressureplate-linear-6p-v0",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/pressureplate_linear-6p-v0/coma_linear-6p-v0_results/sacred/coma/pressureplate-linear-6p-v0",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/pressureplate_linear-6p-v0/qplex_linear-6p-v0_results/sacred/qplex/pressureplate-linear-6p-v0",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/pressureplate_linear-6p-v0/eoi_linear-6p-v0_w_parallel_2_threads_results/sacred/eoi/pressureplate-linear-6p-v0",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/pressureplate_linear-6p-v0/mappo_linear-6p-v0_w_parallel_2_threads_results/sacred/mappo/pressureplate-linear-6p-v0",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/pressureplate_linear-6p-v0/maser_linear-6p-v0_results/sacred/maser/pressureplate-linear-6p-v0"
+    # ]
+    # algo_names_ = ["maa2c", "qmix", "coma", "qplex", "eoi-parallel", "mappo", "maser"]
+    # env_name_ = "pressureplate-linear-6p-v0"
+    # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/pressureplate-linear-6p-v0/"
 
     plot_train_ = False
     plot_multiple_experiment_results(paths_to_results_, algo_names_, env_name_, path_to_save_, plot_train_)
