@@ -1,7 +1,6 @@
 # code adapted from https://github.com/wendelinboehmer/dcg
 # and https://github.com/morning9393/HAPPO-HATRPO/tree/master
 
-import torch
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
@@ -95,7 +94,7 @@ class RNNAgentHAPPO(nn.Module):
                 self.fc2 = init_(nn.Linear(args.hidden_dim, args.n_actions))
 
     def init_hidden(self):
-        return torch.zeros((1, self.args.hidden_dim)).to(self.fc1[0].weight.device)
+        return th.zeros((1, self.args.hidden_dim)).to(self.fc1[0].weight.device)
 
     def forward(self, inputs, hidden_states, masks=None):
 

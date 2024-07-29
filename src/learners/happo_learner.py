@@ -1,9 +1,6 @@
 import copy
 import os
-import copy
-
 import numpy as np
-import torch
 import torch as th
 from torch.optim import Adam
 
@@ -48,9 +45,9 @@ class HAPPOLearner:
             if self.learners[agent_id].mac.critic.use_rnn_critic is True:
                 extra_returns["hidden_states_critic"].append(agent_extra_returns["hidden_states_critic"])
 
-        actions = torch.concat(actions, dim=1)
-        extra_returns["log_probs"] = torch.concat(extra_returns["log_probs"], dim=1)
-        extra_returns["values"] = torch.concat(extra_returns["values"], dim=1)
+        actions = th.concat(actions, dim=1)
+        extra_returns["log_probs"] = th.concat(extra_returns["log_probs"], dim=1)
+        extra_returns["values"] = th.concat(extra_returns["values"], dim=1)
         assert (actions.shape ==
                 extra_returns["log_probs"].shape ==
                 extra_returns["values"].shape
@@ -60,9 +57,9 @@ class HAPPOLearner:
                     )
 
         if self.learners[0].mac.agent.use_rnn is True:
-            extra_returns["hidden_states"] = torch.concat(extra_returns["hidden_states"], dim=1)
+            extra_returns["hidden_states"] = th.concat(extra_returns["hidden_states"], dim=1)
         if self.learners[0].mac.critic.use_rnn_critic is True:
-            extra_returns["hidden_states_critic"] = torch.concat(extra_returns["hidden_states_critic"], dim=1)
+            extra_returns["hidden_states_critic"] = th.concat(extra_returns["hidden_states_critic"], dim=1)
 
         return actions, extra_returns
 
@@ -97,9 +94,9 @@ class HAPPOLearner:
                 hidden_states_dict["hidden_states_critic"].append(self.learners[agent_id].critic.hidden_states)
 
         if self.learners[0].mac.agent.use_rnn is True:
-            hidden_states_dict["hidden_states"] = torch.concat(hidden_states_dict["hidden_states"], dim=1)
+            hidden_states_dict["hidden_states"] = th.concat(hidden_states_dict["hidden_states"], dim=1)
         if self.learners[0].mac.critic.use_rnn_critic is True:
-            hidden_states_dict["hidden_states_critic"] = torch.concat(hidden_states_dict["hidden_states_critic"], dim=1)
+            hidden_states_dict["hidden_states_critic"] = th.concat(hidden_states_dict["hidden_states_critic"], dim=1)
 
         return hidden_states_dict
 
@@ -270,7 +267,7 @@ class HAPPO:
         return log_pi_taken, entropy, pi
 
     def train(self, batch, t_env, factor):
-        torch.autograd.set_detect_anomaly(True)
+        th.autograd.set_detect_anomaly(True)
         # Calculate GAE returns
         returns = self.compute_returns(batch)
 
@@ -287,7 +284,7 @@ class HAPPO:
             data_chunks = batch_size // self.data_chunk_length
             if self.mac.agent.use_rnn is True:
                 mini_batch_size = data_chunks // self.num_mini_batch
-                rand = torch.randperm(data_chunks).numpy()
+                rand = th.randperm(data_chunks).numpy()
             else:
                 mini_batch_size = batch_size // self.num_mini_batch
                 rand = th.randperm(batch_size).numpy()
@@ -337,7 +334,7 @@ class HAPPO:
         surr1 = ratios * adv_targ
         surr2 = th.clamp(ratios, 1 - self.args.eps_clip, 1 + self.args.eps_clip) * adv_targ
         pg_loss = -(
-                torch.sum(factor.detach() * th.min(surr1, surr2),
+                th.sum(factor.detach() * th.min(surr1, surr2),
                           dim=-1,
                           keepdim=True
                           ) * mask
@@ -398,7 +395,7 @@ class HAPPO:
             value_loss_original = self.mse_loss(error_original)
 
         # Clip value loss
-        value_loss = torch.max(value_loss_original, value_loss_clipped)
+        value_loss = th.max(value_loss_original, value_loss_clipped)
 
         # Take mean over batch
         value_loss = value_loss.mean() * self.value_loss_coef
@@ -501,24 +498,24 @@ class HAPPO:
             def _flatten(x):
                 return x.transpose(0, 1).reshape(self.data_chunk_length * mini_batch_size, *x.shape[2:])
 
-            mini_batch["obs"] = _flatten(torch.stack(mini_batch["obs"]))
-            mini_batch["state"] = _flatten(torch.stack(mini_batch["state"]))
-            mini_batch["actions"] = _flatten(torch.stack(mini_batch["actions"]))
-            mini_batch["actions_onehot"] = _flatten(torch.stack(mini_batch["actions_onehot"]))
-            mini_batch["avail_actions"] = _flatten(torch.stack(mini_batch["avail_actions"]))
-            mini_batch["reward"] = _flatten(torch.stack(mini_batch["reward"]))
-            mini_batch["terminated"] = _flatten(torch.stack(mini_batch["terminated"]))
-            mini_batch["filled"] = _flatten(torch.stack(mini_batch["filled"]))
-            mini_batch["mask"] = _flatten(torch.stack(mini_batch["mask"]))
-            mini_batch["log_probs"] = _flatten(torch.stack(mini_batch["log_probs"]))
-            mini_batch["values"] = _flatten(torch.stack(mini_batch["values"]))
-            mini_batch["returns"] = _flatten(torch.stack(mini_batch["returns"]))
-            mini_batch["advantages"] = _flatten(torch.stack(mini_batch["advantages"]))
-            mini_batch["factor"] = _flatten(torch.stack(mini_batch["factor"]))
-            mini_batch["hidden_states"] = torch.stack(mini_batch["hidden_states"])
+            mini_batch["obs"] = _flatten(th.stack(mini_batch["obs"]))
+            mini_batch["state"] = _flatten(th.stack(mini_batch["state"]))
+            mini_batch["actions"] = _flatten(th.stack(mini_batch["actions"]))
+            mini_batch["actions_onehot"] = _flatten(th.stack(mini_batch["actions_onehot"]))
+            mini_batch["avail_actions"] = _flatten(th.stack(mini_batch["avail_actions"]))
+            mini_batch["reward"] = _flatten(th.stack(mini_batch["reward"]))
+            mini_batch["terminated"] = _flatten(th.stack(mini_batch["terminated"]))
+            mini_batch["filled"] = _flatten(th.stack(mini_batch["filled"]))
+            mini_batch["mask"] = _flatten(th.stack(mini_batch["mask"]))
+            mini_batch["log_probs"] = _flatten(th.stack(mini_batch["log_probs"]))
+            mini_batch["values"] = _flatten(th.stack(mini_batch["values"]))
+            mini_batch["returns"] = _flatten(th.stack(mini_batch["returns"]))
+            mini_batch["advantages"] = _flatten(th.stack(mini_batch["advantages"]))
+            mini_batch["factor"] = _flatten(th.stack(mini_batch["factor"]))
+            mini_batch["hidden_states"] = th.stack(mini_batch["hidden_states"])
             mini_batch["hidden_states"] = mini_batch["hidden_states"].\
                 reshape(mini_batch_size, *mini_batch["hidden_states"].shape[2:])
-            mini_batch["hidden_states_critic"] = torch.stack(mini_batch["hidden_states_critic"])
+            mini_batch["hidden_states_critic"] = th.stack(mini_batch["hidden_states_critic"])
             mini_batch["hidden_states_critic"] = mini_batch["hidden_states_critic"].\
                 reshape(mini_batch_size, *mini_batch["hidden_states_critic"].shape[2:])
 

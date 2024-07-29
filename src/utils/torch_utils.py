@@ -1,6 +1,4 @@
 
-import torch
-
 def to_cuda(module, device=None):
     """Assume module in cpu"""
     if device is None:
