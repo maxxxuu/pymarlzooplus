@@ -3,34 +3,36 @@
 action_selector: "multinomial"
 mask_before_softmax: True                           
 
-runner: "matrunner"
+runner: "episode"
 
-buffer_size: 2 # 10                                 
-batch_size_run: 2 # 10                              
-batch_size: 2 # 10                                  
+buffer_size: 10 # 10                                 
+batch_size_run: 10 # 10                              
+batch_size: 10 # 10                                  
 
 # update the target network every {} training steps
 target_update_interval_or_tau: 200                  
 
-lr: 0.0005                                          
+lr: 0.0003                                          
 
-obs_agent_id: True                                  
-obs_last_action: True                               
+obs_agent_id: False                                  
+obs_last_action: False                               
 obs_individual_obs: False                           
 
+mac: "non_shared_mac"
+agent: "rnn_ns"
 agent_output_type: "pi_logits"                      
 learner: "mat_learner"
 entropy_coef: 0.01                                  
-use_rnn: True                                       
+use_rnn: False                                       
 standardise_returns: False                          
 standardise_rewards: True                           
 q_nstep: 5                              # 1 corresponds to normal r + gammaV     
-critic_type: "cv_critic"                            
+#critic_type: "cv_critic"                            
 epochs: 4                                           
 eps_clip: 0.2                           # !!same as clip parameter!!                                      
-name: "mat"                             # !!same as algorithmeps_clip parameter
+name: "mat_dec"                             # !!same as algorithmeps_clip parameter
 
-t_max: 5050000 # 20050000                           
+t_max: 20050000 # 20050000                           
 
 ##    SEE MORE INFO AT THE END OF FILE
 #     prepare parameters

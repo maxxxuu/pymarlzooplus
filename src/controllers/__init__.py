@@ -8,4 +8,4 @@ REGISTRY = {"basic_mac": BasicMAC,
             "non_shared_mac": NonSharedMAC,
             "maddpg_mac": MADDPGMAC,
             "emc_mac": EMCMAC,
-            "mat_mac": matMAC}
+           }

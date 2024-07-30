@@ -373,7 +373,7 @@ class SharedReplayBuffer(object):
             obs_shape = obs_shape[:1]
 
         if type(share_obs_shape[-1]) == list:
-            share_obs_shape = share_obs_shape[:1]
+           share_obs_shape = share_obs_shape[:1]
 
         self.share_obs = np.zeros((self.episode_length + 1, self.n_rollout_threads, num_agents, *share_obs_shape),
                                   dtype=np.float32)
@@ -553,7 +553,7 @@ class SharedReplayBuffer(object):
                           num_mini_batch))
             mini_batch_size = batch_size // num_mini_batch
 
-        rand = torch.randperm(batch_size).numpy()
+        rand = th.randperm(batch_size).numpy()
         sampler = [rand[i * mini_batch_size:(i + 1) * mini_batch_size] for i in range(num_mini_batch)]
         rows, cols = _shuffle_agent_grid(batch_size, num_agents)
 
