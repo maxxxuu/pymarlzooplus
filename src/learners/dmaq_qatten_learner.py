@@ -19,11 +19,10 @@ class DMAQ_qattenLearner:
         self.args = args
         self.mac = mac
         self.logger = logger
+        self.algo_name = args.nameself.algo_name = args.name
 
         self.params = list(mac.parameters())
         self.last_target_update_episode = 0
-        ## check if cds algorithm chosen
-        self.algo_name = args.name
 
         self.mixer = None
         if args.mixer is not None:
@@ -38,6 +37,8 @@ class DMAQ_qattenLearner:
 
         if self.algo_name == "cds":
             self.explorer = CDSExplorer(args, scheme)
+            assert self.args.obs_agent_id is False
+            assert self.args.obs_last_action is True
 
         self.optimiser = RMSprop(
             params=self.params, lr=args.lr, alpha=args.optim_alpha, eps=args.optim_eps)
