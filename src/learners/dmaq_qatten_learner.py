@@ -70,8 +70,9 @@ class DMAQ_qattenLearner:
         avail_actions = batch["avail_actions"]
         actions_onehot = batch["actions_onehot"][:, :-1]
         if self.algo_name == "cds":
-            last_actions_onehot = th.cat([th.zeros_like(
-                actions_onehot[:, 0].unsqueeze(1)), actions_onehot], dim=1)
+            last_actions_onehot = th.cat([th.zeros_like(actions_onehot[:, 0].unsqueeze(1)), actions_onehot],
+                                         dim=1
+                                         )
         if self.args.standardise_rewards:
             self.rew_ms.update(rewards)
             rewards = (rewards - self.rew_ms.mean) / th.sqrt(self.rew_ms.var)
@@ -83,15 +84,15 @@ class DMAQ_qattenLearner:
         # while non cds calculates hidden states all at once per batch
         if self.algo_name == "cds":
             initial_hidden = mac.hidden_states.clone().detach()
-            initial_hidden = initial_hidden.reshape(
-                -1, initial_hidden.shape[-1]).to(self.args.device)
-            input_here = th.cat((batch["obs"], last_actions_onehot),
-                                dim=-1).permute(0, 2, 1, 3).to(self.args.device)
+            initial_hidden = initial_hidden.reshape(-1, initial_hidden.shape[-1]).to(self.args.device)
+            input_here = th.cat((batch["obs"], last_actions_onehot), dim=-1). \
+                permute(0, 2, 1, 3).to(self.args.device)
 
             mac_out, hidden_store, local_qs = mac.agent.forward(
                 input_here.clone().detach(), initial_hidden.clone().detach())
-            hidden_store = hidden_store.reshape(
-                -1, input_here.shape[1], hidden_store.shape[-2], hidden_store.shape[-1]).permute(0, 2, 1, 3)
+            hidden_store = hidden_store.\
+                reshape(-1, input_here.shape[1], hidden_store.shape[-2], hidden_store.shape[-1]). \
+                permute(0, 2, 1, 3)
         else:
             for t in range(batch.max_seq_length):
                 agent_outs = mac.forward(batch, t=t)
@@ -113,10 +114,12 @@ class DMAQ_qattenLearner:
         self.target_mac.init_hidden(batch.batch_size)
         if self.algo_name == "cds":
             initial_hidden_target = self.target_mac.hidden_states.clone().detach()
-            initial_hidden_target = initial_hidden_target.reshape(
-                -1, initial_hidden_target.shape[-1]).to(self.args.device)
-            target_mac_out, _, _ = self.target_mac.agent.forward(
-                input_here.clone().detach(), initial_hidden_target.clone().detach())
+            initial_hidden_target = initial_hidden_target. \
+                reshape(-1, initial_hidden_target.shape[-1]). \
+                to(self.args.device)
+            target_mac_out, _, _ = self.target_mac.agent.forward(input_here.clone().detach(),
+                                                                 initial_hidden_target.clone().detach()
+                                                                 )
             target_mac_out = target_mac_out[:, 1:]
         else:
             for t in range(batch.max_seq_length):
@@ -158,109 +161,128 @@ class DMAQ_qattenLearner:
                 mask_clone = mask.detach().clone(
                 ).unsqueeze(-2).expand(obs.shape[:-1] + mask.shape[-1:])
                 mask_clone = mask_clone.permute(0, 2, 1, 3)
-                mask_clone = mask_clone.reshape(-1,
-                                                mask_clone.shape[-2], mask_clone.shape[-1])
+                mask_clone = mask_clone.reshape(-1, mask_clone.shape[-2], mask_clone.shape[-1])
                 mask_clone = mask_clone.reshape(-1, mask_clone.shape[-1])
 
                 obs_intrinsic = obs.clone().permute(0, 2, 1, 3)
-                obs_intrinsic = obs_intrinsic.reshape(
-                    -1, obs_intrinsic.shape[-2], obs_intrinsic.shape[-1])
+                obs_intrinsic = obs_intrinsic.reshape(-1, obs_intrinsic.shape[-2], obs_intrinsic.shape[-1])
                 eval_h_intrinsic = hidden_store.clone().permute(0, 2, 1, 3)
-                eval_h_intrinsic = eval_h_intrinsic.reshape(
-                    -1, eval_h_intrinsic.shape[-2], eval_h_intrinsic.shape[-1])
-                h_cat = th.cat([initial_hidden.reshape(-1, initial_hidden.shape[-1]
-                                                       ).unsqueeze(1), eval_h_intrinsic[:, :-2]], dim=1)
-                add_id = th.eye(self.args.n_agents).to(obs.device).expand(
-                    [obs.shape[0], obs.shape[1], self.args.n_agents,
-                     self.args.n_agents]).permute(0, 2, 1, 3)
+                eval_h_intrinsic = eval_h_intrinsic.reshape(-1, eval_h_intrinsic.shape[-2], eval_h_intrinsic.shape[-1])
+                h_cat = th.cat([
+                    initial_hidden.reshape(-1, initial_hidden.shape[-1]).unsqueeze(1),
+                    eval_h_intrinsic[:, :-2]
+                                        ], dim=1)
+                add_id = th.eye(self.args.n_agents). \
+                    to(obs.device). \
+                    expand([obs.shape[0], obs.shape[1], self.args.n_agents, self.args.n_agents]). \
+                    permute(0, 2, 1, 3)
 
                 actions_onehot_clone = actions_onehot.clone().permute(0, 2, 1, 3)
 
-                intrinsic_input_1 = th.cat(
-                    [h_cat, obs_intrinsic,
-                     actions_onehot_clone.reshape(-1, actions_onehot_clone.shape[-2], actions_onehot_clone.shape[-1])],
-                    dim=-1)
+                intrinsic_input_1 = th.cat([
+                    h_cat,
+                    obs_intrinsic,
+                    actions_onehot_clone.reshape(-1, actions_onehot_clone.shape[-2], actions_onehot_clone.shape[-1])
+                                                    ], dim=-1)
 
-                intrinsic_input_2 = th.cat(
-                    [intrinsic_input_1, add_id.reshape(-1, add_id.shape[-2], add_id.shape[-1])], dim=-1)
+                intrinsic_input_2 = th.cat([
+                    intrinsic_input_1,
+                    add_id.reshape(-1, add_id.shape[-2], add_id.shape[-1])
+                                                    ], dim=-1)
 
-                intrinsic_input_1 = intrinsic_input_1.reshape(
-                    -1, intrinsic_input_1.shape[-1])
-                intrinsic_input_2 = intrinsic_input_2.reshape(
-                    -1, intrinsic_input_2.shape[-1])
+                intrinsic_input_1 = intrinsic_input_1.reshape(-1, intrinsic_input_1.shape[-1])
+                intrinsic_input_2 = intrinsic_input_2.reshape(-1, intrinsic_input_2.shape[-1])
 
                 next_obs_intrinsic = obs_next.clone().permute(0, 2, 1, 3)
-                next_obs_intrinsic = next_obs_intrinsic.reshape(
-                    -1, next_obs_intrinsic.shape[-2], next_obs_intrinsic.shape[-1])
-                next_obs_intrinsic = next_obs_intrinsic.reshape(
-                    -1, next_obs_intrinsic.shape[-1])
+                next_obs_intrinsic = next_obs_intrinsic. \
+                    reshape(-1, next_obs_intrinsic.shape[-2], next_obs_intrinsic.shape[-1])
+                next_obs_intrinsic = next_obs_intrinsic. \
+                    reshape(-1, next_obs_intrinsic.shape[-1])
 
-                log_p_o = self.explorer.target_predict_without_id.get_log_pi(
-                    intrinsic_input_1, next_obs_intrinsic)
-                log_q_o = self.explorer.target_predict_with_id.get_log_pi(
-                    intrinsic_input_2, next_obs_intrinsic, add_id.reshape([-1, add_id.shape[-1]]))
+                log_p_o = self.explorer.target_predict_without_id.get_log_pi(intrinsic_input_1, next_obs_intrinsic)
+                log_q_o = self.explorer.target_predict_with_id.get_log_pi(intrinsic_input_2,
+                                                                          next_obs_intrinsic,
+                                                                          add_id.reshape([-1, add_id.shape[-1]])
+                                                                          )
 
                 mean_p = th.softmax(mac_out[:, :-1], dim=-1).mean(dim=2)
                 q_pi = th.softmax(self.args.beta1 * mac_out[:, :-1], dim=-1)
 
-                pi_diverge = th.cat(
-                    [(q_pi[:, :, id] * th.log(q_pi[:, :, id] / mean_p)).sum(dim=-
-                    1, keepdim=True) for id in range(self.args.n_agents)],
-                    dim=-1).permute(0, 2, 1).unsqueeze(-1)
+                pi_diverge = th.cat([
+                    (q_pi[:, :, id] * th.log(q_pi[:, :, id] / mean_p)).sum(dim=-1, keepdim=True)
+                    for id in range(self.args.n_agents)
+                                    ], dim=-1).permute(0, 2, 1).unsqueeze(-1)
 
                 intrinsic_rewards = self.args.beta1 * log_q_o - log_p_o
-                intrinsic_rewards = intrinsic_rewards.reshape(
-                    -1, obs_intrinsic.shape[1], intrinsic_rewards.shape[-1])
-                intrinsic_rewards = intrinsic_rewards.reshape(
-                    -1, obs.shape[2], obs_intrinsic.shape[1], intrinsic_rewards.shape[-1])
+                intrinsic_rewards = intrinsic_rewards.reshape(-1, obs_intrinsic.shape[1], intrinsic_rewards.shape[-1])
+                intrinsic_rewards = intrinsic_rewards. \
+                    reshape(-1, obs.shape[2], obs_intrinsic.shape[1], intrinsic_rewards.shape[-1])
                 intrinsic_rewards = intrinsic_rewards + self.args.beta2 * pi_diverge
 
             # update predict network
             add_id = add_id.reshape([-1, add_id.shape[-1]])
-            for index in BatchSampler(SubsetRandomSampler(range(intrinsic_input_1.shape[0])), 256, False):
-                self.explorer.eval_predict_without_id.update(
-                    intrinsic_input_1[index], next_obs_intrinsic[index], mask_clone[index])
-                self.explorer.eval_predict_with_id.update(
-                    intrinsic_input_2[index], next_obs_intrinsic[index], add_id[index], mask_clone[index])
+            for index in BatchSampler(SubsetRandomSampler(range(intrinsic_input_1.shape[0])),
+                                      256,
+                                      False
+                                      ):
+                self.explorer.eval_predict_without_id.update(intrinsic_input_1[index],
+                                                             next_obs_intrinsic[index],
+                                                             mask_clone[index]
+                                                             )
+                self.explorer.eval_predict_with_id.update(intrinsic_input_2[index],
+                                                          next_obs_intrinsic[index],
+                                                          add_id[index],
+                                                          mask_clone[index]
+                                                          )
         # Mix
         if mixer is not None:
             if self.args.mixer == "dmaq_qatten":
                 ans_chosen, q_attend_regs, head_entropies = \
-                    mixer(chosen_action_qvals,
-                          batch["state"][:, :-1], is_v=True)
-                ans_adv, _, _ = mixer(
-                    chosen_action_qvals, batch["state"][:, :-1], actions=actions_onehot, max_q_i=max_action_qvals,
-                    is_v=False)
+                    mixer(chosen_action_qvals, batch["state"][:, :-1], is_v=True)
+                ans_adv, _, _ = mixer(chosen_action_qvals,
+                                      batch["state"][:, :-1],
+                                      actions=actions_onehot,
+                                      max_q_i=max_action_qvals,
+                                      is_v=False
+                                      )
             else:
                 ans_chosen = mixer(chosen_action_qvals,
-                                   batch["state"][:, :-1], is_v=True)
-                ans_adv = mixer(chosen_action_qvals, batch["state"][:, :-1],
-                                actions=actions_onehot, max_q_i=max_action_qvals, is_v=False)
+                                   batch["state"][:, :-1],
+                                   is_v=True
+                                   )
+                ans_adv = mixer(chosen_action_qvals,
+                                batch["state"][:, :-1],
+                                actions=actions_onehot,
+                                max_q_i=max_action_qvals,
+                                is_v=False
+                                )
             chosen_action_qvals = ans_chosen + ans_adv
 
             if self.args.double_q:
                 if self.args.mixer == "dmaq_qatten":
-                    target_chosen, _, _ = self.target_mixer(
-                        target_chosen_qvals, batch["state"][:, 1:], is_v=True)
-                    target_adv, _, _ = self.target_mixer(
-                        target_chosen_qvals, batch["state"][:, 1:], actions=cur_max_actions_onehot,
-                        max_q_i=target_max_qvals, is_v=False)
+                    target_chosen, _, _ = self.target_mixer(target_chosen_qvals, batch["state"][:, 1:], is_v=True)
+                    target_adv, _, _ = self.target_mixer(target_chosen_qvals,
+                                                         batch["state"][:, 1:],
+                                                         actions=cur_max_actions_onehot,
+                                                         max_q_i=target_max_qvals,
+                                                         is_v=False
+                                                         )
                 else:
                     target_chosen = self.target_mixer(target_chosen_qvals, batch["state"][:, 1:], is_v=True)
                     target_adv = self.target_mixer(target_chosen_qvals,
                                                    batch["state"][:, 1:],
                                                    actions=cur_max_actions_onehot,
                                                    max_q_i=target_max_qvals,
-                                                   is_v=False)
+                                                   is_v=False
+                                                   )
                 target_max_qvals = target_chosen + target_adv
             else:
                 target_max_qvals = self.target_mixer(target_max_qvals, batch["state"][:, 1:], is_v=True)
 
         # Calculate 1-step Q-Learning targets
         if self.algo_name == "cds":
-            targets = rewards + self.args.beta * \
-                      intrinsic_rewards.mean(dim=1) + self.args.gamma * \
-                      (1 - terminated) * target_max_qvals
+            targets = rewards + self.args.beta * intrinsic_rewards.mean(dim=1) + \
+                      self.args.gamma * (1 - terminated) * target_max_qvals
         else:
             targets = rewards + self.args.gamma * (1 - terminated) * target_max_qvals
 
@@ -297,13 +319,16 @@ class DMAQ_qattenLearner:
             mask_elems = mask.sum().item()
             self.logger.log_stat("td_error_abs",
                                  (masked_td_error.abs().sum().item() / mask_elems),
-                                 t_env)
+                                 t_env
+                                 )
             self.logger.log_stat("q_taken_mean",
                                  (chosen_action_qvals * mask).sum().item() / (mask_elems * self.args.n_agents),
-                                 t_env)
+                                 t_env
+                                 )
             self.logger.log_stat("target_mean",
                                  (targets * mask).sum().item() / (mask_elems * self.args.n_agents),
-                                 t_env)
+                                 t_env
+                                 )
             self.log_stats_t = t_env
 
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
