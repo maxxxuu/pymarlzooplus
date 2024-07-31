@@ -20,7 +20,8 @@ def _t2n(x):
     """Convert torch tensor to a numpy array."""
     return x.detach().cpu().numpy()
 
-class MatLearner(object):
+# class MATLearner(object):
+class MATLearner():
     """
     Base class for training recurrent policies.
     :param config: (dict) Config dictionary containing parameters for training.

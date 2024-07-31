@@ -1,12 +1,12 @@
 # --- MAT specific parameters ---
 
-action_selector: "multinomial"
+action_selector: "soft_policies"
 mask_before_softmax: True                           
 
 runner: "episode"
 
 buffer_size: 10 # 10                                 
-batch_size_run: 10 # 10                              
+batch_size_run: 1 # 10                              
 batch_size: 10 # 10                                  
 
 # update the target network every {} training steps

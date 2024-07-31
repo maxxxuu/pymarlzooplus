@@ -2,7 +2,7 @@ from .basic_controller import BasicMAC
 from .emc_controller import EMCMAC
 from .non_shared_controller import NonSharedMAC
 from .maddpg_controller import MADDPGMAC
-from .mat_controller import matMAC
+
 
 REGISTRY = {"basic_mac": BasicMAC,
             "non_shared_mac": NonSharedMAC,
