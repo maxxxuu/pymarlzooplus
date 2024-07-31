@@ -341,7 +341,7 @@ class PrioritizedReplayBuffer(EpisodeBatch):
                                                                                    self.scheme.keys(),
                                                                                    self.groups.keys())
 
-class SharedReplayBuffer(object):
+class SharedReplayBuffer(EpisodeBatch):
     """
     Buffer to store training data.
     :param args: (argparse.Namespace) arguments containing relevant model, policy, and env information.
