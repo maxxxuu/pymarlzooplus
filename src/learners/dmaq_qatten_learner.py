@@ -19,7 +19,7 @@ class DMAQ_qattenLearner:
         self.args = args
         self.mac = mac
         self.logger = logger
-        self.algo_name = args.nameself.algo_name = args.name
+        self.algo_name = args.name
 
         self.params = list(mac.parameters())
         self.last_target_update_episode = 0
