@@ -1,6 +1,7 @@
 import copy
 import os
 import numpy as np
+import torch
 import torch as th
 from torch.optim import Adam
 
@@ -13,6 +14,8 @@ class HAPPOLearner:
         self.args = args
         self.current_episode = 0
         self.n_agents = args.n_agents
+        self.device = "cuda" if args.use_cuda else "cpu"
+
         # We don't use environments with heterogeneous agents, so just copying the same mac is ok
         self.learners = [HAPPO(copy.deepcopy(mac), agent_id, scheme, logger, args) for agent_id in range(self.n_agents)]
 
@@ -104,7 +107,7 @@ class HAPPOLearner:
 
         bs = batch.batch_size
         max_t = batch.max_seq_length
-        factor = th.ones((bs, max_t-1, 1))
+        factor = th.ones((bs, max_t-1, 1), device=self.device)
 
         for agent_id in th.randperm(self.n_agents):
             old_log_pi_taken, _, _ = self.learners[agent_id].evaluate_actions(batch)
@@ -196,10 +199,10 @@ class HAPPO:
         mask[:, 1:] = mask[:, 1:] * (1 - terminated[:, :-1])
         values = batch["values"]
         advantages = returns - self.value_normalizer.denormalize(values[:, :-1, self.agent_id])
-        advantages_copy = advantages.clone().detach()
-        advantages_copy[mask == 0.0] = np.nan
-        mean_advantages = np.nanmean(advantages_copy)
-        std_advantages = np.nanstd(advantages_copy)
+        advantages_copy = advantages.clone().detach().cpu().numpy()
+        advantages_copy[mask.detach().cpu().numpy() == 0.0] = np.nan
+        mean_advantages = th.from_numpy(np.nanmean(advantages_copy, keepdims=True)).to(self.device)
+        std_advantages = th.from_numpy(np.nanstd(advantages_copy, keepdims=True)).to(self.device)
         advantages = (advantages - mean_advantages) / (std_advantages + 1e-5)
 
         return advantages
