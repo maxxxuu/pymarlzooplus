@@ -270,7 +270,7 @@ class HAPPO:
         return log_pi_taken, entropy, pi
 
     def train(self, batch, t_env, factor):
-        th.autograd.set_detect_anomaly(True)
+
         # Calculate GAE returns
         returns = self.compute_returns(batch)
 
@@ -338,9 +338,9 @@ class HAPPO:
         surr2 = th.clamp(ratios, 1 - self.args.eps_clip, 1 + self.args.eps_clip) * adv_targ
         pg_loss = -(
                 th.sum(factor.detach() * th.min(surr1, surr2),
-                          dim=-1,
-                          keepdim=True
-                          ) * mask
+                       dim=-1,
+                       keepdim=True
+                       ) * mask
         ).sum() / mask.sum()
         entropy = entropy.mean()
         pg_loss -= self.args.entropy_coef * entropy
