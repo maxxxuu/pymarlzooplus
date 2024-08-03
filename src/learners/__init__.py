@@ -10,6 +10,7 @@ from .ppo_learner import PPOLearner
 from .happo_learner import HAPPOLearner
 from .dmaq_qatten_learner import DMAQ_qattenLearner
 from .mat_learner import MATLearner
+from .maser_q_learner import  MASERQLearner
 
 REGISTRY = {"q_learner": QLearner,
             "coma_learner": COMALearner,
@@ -22,5 +23,6 @@ REGISTRY = {"q_learner": QLearner,
             "pac_dcg_learner": PACDCGLearner,
             "dmaq_qatten_learner": DMAQ_qattenLearner,
             "mat_learner": MATLearner,
-            "emc_qplex_curiosity_vdn_learner": EMC_qplex_curiosity_vdn_Learner
+            "emc_qplex_curiosity_vdn_learner": EMC_qplex_curiosity_vdn_Learner,
+            "maser_q_learner": MASERQLearner
             }

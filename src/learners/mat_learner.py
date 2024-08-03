@@ -257,7 +257,8 @@ class MATLearner:
 
         return advantages
 
-    def create_mini_batch(self, batch, returns, advantages, indices, mini_batch_size):
+    @staticmethod
+    def create_mini_batch(batch, returns, advantages, indices, mini_batch_size):
 
         max_ts = batch["max_seq_length"]-1
 
