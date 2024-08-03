@@ -3,13 +3,14 @@
 cd epymarl/installation
 conda create -n epymarl python=3.8.18 -y
 conda activate epymarl
+python3 -m pip install pip==24.0
 pip install wheel==0.38.4 setuptools==65.5.0 einops
 pip install -r requirements.txt
 
 # For torch and torch-scatter installation
 pip install protobuf==3.20.*
 if you have GPU:
-    - pip3 install torch==2.1.2 torchvision==0.16.2--index-url https://download.pytorch.org/whl/cu121
+    - pip3 install torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cu121
 otherwise:
     - pip3 install torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cpu
 sh ./install_torch_scatter.sh

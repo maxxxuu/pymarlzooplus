@@ -1,7 +1,7 @@
 # Further Extended Python MARL framework - EPyMARL
 
 FEPyMARL is  an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), and includes
-- Additional algorithms: HAPPO, CDS, MAT, QPLEX, EOI, MASER
+- Additional algorithms: HAPPO, MAT, QPLEX, EOI, EMC, MASER, CDS
 - Support for [PettingZoo](https://github.com/Farama-Foundation/PettingZoo) environments (on top of the existing gym support)
 - Support for [Overcooked](https://github.com/HumanCompatibleAI/overcooked_ai) environments.
 - Support for [Pressure plate](https://github.com/uoe-agents/pressureplate) environments.
@@ -38,9 +38,18 @@ git clone ...
 cd fepymarl/installation
 conda create -n epymarl python=3.8.18 -y
 conda activate epymarl
+python3 -m pip install pip==24.0
 pip install wheel==0.38.4 setuptools==65.5.0 einops
 pip install -r requirements.txt
 ``` 
+openCV:
+```sh
+pip install opencv-python==4.9.0.80
+```
+or, openCV for headless machines:
+```sh
+pip install opencv-python==4.9.0.80
+```
 
 ## Torch installation
 Then, run the following to install torch:
@@ -111,15 +120,9 @@ python3 src/main.py --config=qmix --env-config=gymma with env_args.time_limit=25
 ### PettingZoo
 To install PettinZoo run:
 ```sh
-pip install opencv-python==4.9.0.80
 pip install transformers==4.38.2 pettingzoo==1.24.3 'pettingzoo[atari]'==1.24.3 autorom==0.6.1 'pettingzoo[butterfly]'==1.24.3 
 AutoROM -y
 ```
-NOTE: For headless machines install opencv with the following command:
-```sh
-pip install opencv-python==4.9.0.80
-```
-
 Example of using PettingZoo:
 ```sh
 python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.max_cycles=25 env_args.key="pistonball_v6" env_args.kwargs="('n_pistons',4),"

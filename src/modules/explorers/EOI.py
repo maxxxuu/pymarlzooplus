@@ -245,7 +245,7 @@ class Explorer(object):
                     self.ivf_flag.append(False)
                 self.ivf_flag[batch_idx] = (np.random.rand() < self.episode_ratio)
             else:
-                assert len(self.ivf_flag) == bs, f"len(self.ivf_flag): {len(self.ivf_flag)}, bs: {len(self.ivf_flag)}"
+                assert len(self.ivf_flag) >= bs, f"len(self.ivf_flag): {len(self.ivf_flag)}, bs: {bs}"
 
             if (test_mode is False) & (self.ivf_flag[batch_idx] is True):
                 if np.random.rand() < self.explore_ratio:
