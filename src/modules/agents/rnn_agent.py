@@ -14,8 +14,8 @@ class RNNAgent(nn.Module):
 
         # Use CNN to encode image observations
         self.is_image = False
-        if isinstance(input_shape, tuple): # image input
-            self.cnn = CNNAgent(input_shape, args) # TODO: image support for 'rnn_feature_agent' and 'rnn_ns_agent'
+        if isinstance(input_shape, tuple):  # image input
+            self.cnn = CNNAgent(input_shape, args) #  TODO: image support for 'rnn_feature_agent' and 'rnn_ns_agent'
             input_shape = self.cnn.features_dim + input_shape[1]
             self.is_image = True
 

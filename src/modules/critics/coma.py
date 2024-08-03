@@ -89,7 +89,8 @@ class COMACritic(nn.Module):
             inputs.append(batch["state"][:, ts])
 
         # observation
-        assert self.args.obs_individual_obs is False, "In case of state image, obs_individual_obs is not supported."
+        assert not (self.is_image is True and self.args.obs_individual_obs is True), \
+            "In case of state image, obs_individual_obs is not supported."
         if self.args.obs_individual_obs:
             inputs.append(batch["obs"][:, ts])
 

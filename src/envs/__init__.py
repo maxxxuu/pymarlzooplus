@@ -872,7 +872,9 @@ class _PettingZooWrapper(MultiAgentEnv):
     def step(self, actions):
         """ Returns reward, terminated, info """
         # Apply action for each agent
-        actions = {f"{self.action_prefix[action_idx]}": action.item() if isinstance(action, np.int64)
+        actions = {f"{self.action_prefix[action_idx]}": action.item() if isinstance(action, np.int64) or
+                                                                         (isinstance(action, np.ndarray) and
+                                                                          str(action.dtype) == "int64")
                                                                       else
                                                         action.detach().cpu().item()
                    for action_idx, action in enumerate(actions)}

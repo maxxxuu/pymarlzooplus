@@ -85,10 +85,16 @@ class SoftPoliciesSelector:
 
     def __init__(self, args):
         self.args = args
+        self.algo_name = args.name
 
     def select_action(self, agent_inputs, avail_actions, t_env, test_mode=False):
         m = Categorical(agent_inputs)
         picked_actions = m.sample().long()
+
+        if self.algo_name == "happo":
+            log_probs = m.log_prob(picked_actions)
+            return picked_actions, log_probs
+
         return picked_actions
 
 

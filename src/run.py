@@ -128,6 +128,23 @@ def run_sequential(args, logger):
     groups = {"agents": args.n_agents}
     preprocess = {"actions": ("actions_onehot", [OneHot(out_dim=args.n_actions)])}
 
+    # Add extra filed in buffer
+    if "log_probs" in args.extra_in_buffer:
+        scheme["log_probs"] = {"vshape": (1,), "group": "agents"}
+    if "values" in args.extra_in_buffer:
+        scheme["values"] = {"vshape": (1,), "group": "agents"}
+    if "hidden_states" in args.extra_in_buffer:
+        if args.use_rnn is True:
+            scheme["hidden_states"] = {"vshape": (args.hidden_dim,), "group": "agents"}
+        else:
+            args.extra_in_buffer = [item for item in args.extra_in_buffer if item != 'hidden_states']
+    if "hidden_states_critic" in args.extra_in_buffer:
+        if args.use_rnn_critic is True:
+            scheme["hidden_states_critic"] = {"vshape": (args.hidden_dim,), "group": "agents"}
+        else:
+            args.extra_in_buffer = [item for item in args.extra_in_buffer if item != 'hidden_states_critic']
+
+    # Define buffer
     if args.prioritized_buffer is True:
         buffer = PrioritizedReplayBuffer(
             scheme,
@@ -142,12 +159,15 @@ def run_sequential(args, logger):
         buffer = ReplayBuffer(
             scheme,
             groups,
+            args,
             args.buffer_size,
             env_info["episode_limit"] + 1,
             preprocess=preprocess,
             device="cpu" if args.buffer_cpu_only else args.device,
         )
-    if getattr(args, "use_emdqn", False):
+    # Define episode buffer
+    args.use_emdqn = getattr(args, "use_emdqn", False)
+    if args.use_emdqn is True:
         ec_buffer = EpisodicMemoryBuffer(args, scheme)
 
     # Setup multi-agent controller here
@@ -164,6 +184,7 @@ def run_sequential(args, logger):
 
     # Learner
     learner = le_REGISTRY[args.learner](mac, buffer.scheme, logger, args)
+    mac.learner = learner
 
     if args.use_cuda:
         learner.cuda()
@@ -221,8 +242,12 @@ def run_sequential(args, logger):
 
         # Run for a whole episode at a time
         episode_batch = runner.run(test_mode=False)
-        if getattr(args, "use_emdqn", False):
+
+        # Update episode buffer
+        if args.use_emdqn is True:
             ec_buffer.update_ec(episode_batch)
+
+        # Update replay buffer
         buffer.insert_episode_batch(episode_batch)
 
         # Run training iterations
@@ -244,18 +269,18 @@ def run_sequential(args, logger):
                 if episode_sample.device != args.device:
                     episode_sample.to(args.device)
 
+                # Learner training
                 if args.prioritized_buffer is True:
-                    if getattr(args, "use_emdqn", False):
+                    if args.use_emdqn is True:
                         learner.train(episode_sample, runner.t_env, episode, ec_buffer=ec_buffer)
                     else:
                         td_error = learner.train(episode_sample, runner.t_env, episode)
                         buffer.update_priority(sample_indices, td_error)
                 else:
-                    if getattr(args, "use_emdqn", False):
+                    if args.use_emdqn is True:
                         learner.train(episode_sample, runner.t_env, episode, ec_buffer=ec_buffer)
                     else:
                         learner.train(episode_sample, runner.t_env, episode)
-
         # Execute test runs once in a while
         n_test_runs = max(1, args.test_nepisode // runner.batch_size)
         if (runner.t_env - last_test_T) / args.test_interval >= 1.0:
