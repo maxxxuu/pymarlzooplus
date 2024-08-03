@@ -7,26 +7,20 @@ FEPyMARL is  an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), a
 - Support for [Pressure plate](https://github.com/uoe-agents/pressureplate) environments.
 
 # Table of Contents
-- [Further Extended Python MARL framework - EPyMARL](#further-extended-python-marl-framework---epymarl)
+- [Further Extended Python MARL framework - FEPyMARL](#further-extended-python-marl-framework---epymarl)
 - [Table of Contents](#table-of-contents)
-- [Installation \& Run instructions](#installation--run-instructions)
+- [Installation & Run instructions](#installation--run-instructions)
   - [Base requirements installation](#base-requirements-installation)
   - [Torch installation](#torch-installation)
   - [Torch-scatter installation](#torch-scatter-installation)
-  - [Installing LBF, RWARE, MPE, PettingZoo, and Overcooked](#installing-lbf-rware-mpe-pettingzoo-and-overcooked)
-    - [LBF](#lbf)
-    - [RWARE](#rware)
-    - [MPE](#mpe)
-    - [PettingZoo](#pettingzoo)
-    - [Overcooked](#overcooked)
-    - [Pressure plate](#pressure-plate)
+  - [Installing LBF, RWARE, MPE, PettingZoo, Overcooked, and Pressure plate](#installing-lbf-rware-mpe-pettingzoo-and-overcooked)
   - [Using A Custom Gym Environment](#using-a-custom-gym-environment)
 - [Run an experiment on a Gym environment](#run-an-experiment-on-a-gym-environment)
 - [Run a hyperparameter search](#run-a-hyperparameter-search)
 - [Saving and loading learnt models](#saving-and-loading-learnt-models)
   - [Saving models](#saving-models)
   - [Loading models](#loading-models)
-- [Citing FEPyMARL, EPyMARL and PyMARL](#citing-fepymarl-epymarl-and-pymarl)
+- [Citing FEPyMARL, PyMARL, and EPyMARL](#citing-fepymarl-epymarl-and-pymarl)
 - [License](#license)
 
 # Installation & Run instructions
