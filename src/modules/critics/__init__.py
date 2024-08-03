@@ -8,6 +8,7 @@ from .ac import ACCritic
 from .ac_ns import ACCriticNS
 from .pac_ac_ns import PACCriticNS
 from .pac_dcg_ns import DCGCriticNS
+from .mat import MATCritic
 from .happo import HAPPOCritic
 
 REGISTRY = {"coma_critic": COMACritic,
@@ -20,6 +21,7 @@ REGISTRY = {"coma_critic": COMACritic,
             "ac_critic_ns": ACCriticNS,
             "pac_critic_ns": PACCriticNS,
             "pac_dcg_critic_ns": DCGCriticNS,
+            "mat_critic": MATCritic,
             "happo_critic": HAPPOCritic
             }
 

@@ -142,6 +142,8 @@ class EpisodeBatch:
                 return self.batch_size
             elif item == 'max_seq_length':
                 return self.max_seq_length
+            elif item == 'device':
+                return self.device
             else:
                 raise ValueError
         elif isinstance(item, tuple) and all([isinstance(it, str) for it in item]):

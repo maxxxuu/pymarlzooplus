@@ -8,13 +8,12 @@ import numpy as np
 class EpisodeRunner:
 
     def __init__(self, args, logger):
-        
+
         self.batch = None
         self.new_batch = None
         self.mac = None
         self.explorer = None
 
-        
         self.args = args
         self.logger = logger
         self.batch_size = self.args.batch_size_run
@@ -46,12 +45,11 @@ class EpisodeRunner:
                                  scheme,
                                  groups,
                                  self.batch_size,
-                                 self.episode_limit+1,
+                                 self.episode_limit + 1,
                                  preprocess=preprocess,
                                  device=self.args.device)
         self.mac = mac
         self.explorer = explorer
-
 
     def get_env_info(self):
         return self.env.get_env_info()
@@ -157,5 +155,5 @@ class EpisodeRunner:
 
         for k, v in stats.items():
             if k != "n_episodes":
-                self.logger.log_stat(prefix + k + "_mean", v/stats["n_episodes"], self.t_env)
+                self.logger.log_stat(prefix + k + "_mean", v / stats["n_episodes"], self.t_env)
         stats.clear()
