@@ -1,14 +1,17 @@
 import copy
+
+import numpy as np
+import torch as th
+from torch.optim import RMSprop
+from torch.optim import Adam
+import torch.nn.functional as func
+
 from components.episode_buffer import EpisodeBatch
 from modules.mixers.vdn import VDNMixer
 from modules.mixers.qmix import QMixer
-import torch as th
-from torch.optim import RMSprop
 from utils.torch_utils import to_cuda
-from torch.optim import Adam
-import torch.nn.functional as func
 from controllers import REGISTRY as mac_REGISTRY
-import numpy as np
+from components.standarize_stream import RunningMeanStd
 
 
 class vdn_Learner:
@@ -38,8 +41,12 @@ class vdn_Learner:
         self.predict_optimiser = Adam(params=self.predict_params, lr=args.lr)
 
         self.log_stats_t = -self.args.learner_log_interval - 1
+        self._device = "cuda" if args.use_cuda and th.cuda.is_available() else "cpu"
+        if self.args.standardise_rewards:
+            self.rew_ms = RunningMeanStd(shape=(1,), device=self._device)
 
     def subtrain(self, batch: EpisodeBatch, t_env: int, episode_num: int, mac, imac=None, timac=None):
+
         # Get the relevant quantities
         rewards = batch["reward"][:, :-1]
         actions = batch["actions"][:, :-1]
@@ -47,6 +54,10 @@ class vdn_Learner:
         mask = batch["filled"][:, :-1].float()
         mask[:, 1:] = mask[:, 1:] * (1 - terminated[:, :-1])
         avail_actions = batch["avail_actions"]
+
+        if self.args.standardise_rewards:
+            self.rew_ms.update(rewards)
+            rewards = (rewards - self.rew_ms.mean) / th.sqrt(self.rew_ms.var)
 
         # Calculate estimated Q-Values
         mac.init_hidden(batch.batch_size)

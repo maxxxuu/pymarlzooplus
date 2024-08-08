@@ -1,14 +1,15 @@
 import copy
+
+import torch as th
+from torch.optim import RMSprop
+import numpy as np
+
 from components.episode_buffer import EpisodeBatch
 from modules.mixers.dmaq_general import DMAQer
 from modules.mixers.dmaq_qatten import DMAQ_QattenMixer
-import torch as th
-from torch.optim import RMSprop
 from utils.torch_utils import to_cuda
-import numpy as np
 from .vdn_learner import vdn_Learner
-import os
-
+from components.standarize_stream import RunningMeanStd
 
 class EMC_qplex_curiosity_vdn_Learner:
     def __init__(self, mac, scheme, logger, args):
@@ -41,8 +42,21 @@ class EMC_qplex_curiosity_vdn_Learner:
 
         self.n_actions = self.args.n_actions
 
-    def sub_train(self, batch: EpisodeBatch, t_env: int, episode_num: int, mac, mixer, optimiser, params,
-                  intrinsic_rewards, ec_buffer=None):
+        self._device = "cuda" if args.use_cuda and th.cuda.is_available() else "cpu"
+        if self.args.standardise_rewards:
+            self.rew_ms = RunningMeanStd(shape=(1,), device=self._device)
+
+    def sub_train(self,
+                  batch: EpisodeBatch,
+                  t_env: int,
+                  episode_num: int,
+                  mac,
+                  mixer,
+                  optimiser,
+                  params,
+                  intrinsic_rewards,
+                  ec_buffer=None):
+
         # Get the relevant quantities
         rewards = batch["reward"][:, :-1]
         actions = batch["actions"][:, :-1]
@@ -51,6 +65,10 @@ class EMC_qplex_curiosity_vdn_Learner:
         mask[:, 1:] = mask[:, 1:] * (1 - terminated[:, :-1])
         avail_actions = batch["avail_actions"]
         actions_onehot = batch["actions_onehot"][:, :-1]
+
+        if self.args.standardise_rewards:
+            self.rew_ms.update(rewards)
+            rewards = (rewards - self.rew_ms.mean) / th.sqrt(self.rew_ms.var)
 
         # Calculate estimated Q-Values
         mac.init_hidden(batch.batch_size)

@@ -24,6 +24,7 @@ mixing_embed_dim: 32
 hypernet_embed: 64
 adv_hypernet_layers: 1
 adv_hypernet_embed: 64
+standardise_rewards: True
 
 num_kernel: 4
 is_minus_one: True
