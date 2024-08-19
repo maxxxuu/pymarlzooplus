@@ -1,6 +1,7 @@
 from functools import partial
 import sys
 import os
+import warnings
 
 from smac.env import MultiAgentEnv, StarCraft2Env
 
@@ -1228,7 +1229,200 @@ REGISTRY["overcooked"] = partial(env_fn, env=_OvercookedWrapper)
 
 
 ############################################
-# Registration for LBF
+# Registration for PressurePlate
+
+# wraps original environment and adds the extra var "elapsed_time"
+# to keep track of when an episode starts
+class TimeLimitPressurePlate(GymTimeLimit):
+
+    def __init__(self, env, max_episode_steps=None):
+        super().__init__(env)
+
+        assert max_episode_steps is not None, "'max_episode_steps' is None!"
+        self._max_episode_steps = max_episode_steps
+        self._elapsed_steps = None
+
+    def step(self, action):
+        assert (self._elapsed_steps is not None), "Cannot call env.step() before calling reset()"
+        observations, rewards, terminations, infos = self.env.step(action)
+
+        self._elapsed_steps += 1
+        infos["TimeLimit.truncated"] = False  # dummy var, there is no truncation in PressurePlate
+        if self._elapsed_steps >= self._max_episode_steps:
+            terminations = [True for _ in terminations]
+
+        return observations, rewards, terminations, infos
+
+
+class ObservationPressurePlate(ObservationWrapper):
+    """
+    Observation wrapper that fixes the order of agents' observations.
+    """
+
+    def __init__(self, env):
+        super(ObservationPressurePlate, self).__init__(env)
+        self._env = env
+        self.observation_space = self._env.observation_space[0].shape
+
+    def observation(self, observation):
+        return [
+            obs for obs in observation
+        ]
+
+
+PRESSUREPLATE_KEY_CHOICES = [
+    "pressureplate-linear-4p-v0",
+    "pressureplate-linear-5p-v0",
+    "pressureplate-linear-6p-v0"
+    ]
+
+PRESSUREPLATE_N_AGENTS_CHOICES = [4, 5, 6]
+
+
+class _PressurePlateWrapper(MultiAgentEnv):
+
+    def __init__(self,
+                 key,
+                 horizon,
+                 seed,
+                 ):
+
+        # Check key validity
+        assert key in PRESSUREPLATE_KEY_CHOICES, \
+            f"Invalid 'key': {key}! \nChoose one of the following: \n{PRESSUREPLATE_KEY_CHOICES}"
+        self.key = key
+
+        # Check horizon validity
+        assert isinstance(horizon, int), f"Invalid horizon type: {type(horizon)}, 'horizon': {horizon}, is not 'int'!"
+
+        # Default horizon
+        if not horizon:
+            horizon = 500 
+
+        self.horizon = horizon
+        self._seed = seed
+
+        # Placeholders
+        self.original_env = None
+        self.episode_limit = None
+        self._env = None
+        self._obs = None
+        self._info = None
+        self.observation_space = None
+        self.action_space = None
+
+        # Gym make
+        # base env sourced by gym.make with all its args
+        from pressureplate.environment import PressurePlate
+        self.original_env = gym.make(f"{key}")
+
+        # Use the wrappers for handling the time limit and the environment observations properly.
+        self.n_agents = self.original_env.n_agents
+        self.episode_limit = self.horizon
+        # now create the wrapped env
+        self._env = TimeLimitPressurePlate(self.original_env, max_episode_steps=self.episode_limit)
+        self._env = ObservationPressurePlate(self._env)
+
+        # Define the observation space
+        self.observation_space = self._env.observation_space
+        # Define the action space
+        self.action_space = self._env.action_space[0].n
+        # Placeholders
+        self._obs = None
+        self._info = None
+        # By setting the "seed" in "np.random.seed" in "src/main.py" we control the randomness of the environment.
+        self._seed = seed
+
+        # Needed for rendering
+        import cv2
+        self.cv2 = cv2
+
+    def step(self, actions):
+        """ Returns reward, terminated, info """
+
+        # Apply actions for each agent
+        actions = [int(a) for a in actions]    
+        # Make the environment step
+        self._obs, rewards, terminations, self._info = self._env.step(actions)
+
+        # Add all rewards together
+        reward = sum(rewards)
+        # Keep only 'TimeLimit.truncated' in 'self._info'
+        self._info = {"TimeLimit.truncated": self._info["TimeLimit.truncated"]}
+        # The episode ends when all agents have reached their positions ("terminations" are all True) or
+        # "self._elapsed_steps >= self._max_episode_steps" is True
+        done = all(terminations)
+
+        return float(reward), done, {}
+
+    def get_obs(self):
+        """ Returns all agent observations in a list """
+        return self._obs
+
+    def get_obs_agent(self, agent_id):
+        """ Returns observation for agent_id """
+        raise self._obs[agent_id]
+
+    def get_obs_size(self):
+        """ Returns the shape of the observation """
+        return self.observation_space[0]
+
+    def get_state(self):
+        return np.concatenate(self._obs, axis=0).astype(np.float32)
+
+    def get_state_size(self):
+        """ Returns the shape of the state """
+        
+        assert len(self.observation_space) == 1, \
+            f"'self.observation_space' has not only one dimension! \n'self.observation_space': {self.observation_space}" 
+        
+        return self.n_agents * self.observation_space[0]
+
+    def get_avail_actions(self):
+        avail_actions = []
+        for agent_id in range(self.n_agents):
+            avail_agent = self.get_avail_agent_actions(agent_id)
+            avail_actions.append(avail_agent)
+
+        return avail_actions
+
+    def get_avail_agent_actions(self, agent_id):
+        """ Returns the available actions for agent_id (both agents have the same action space) """
+        return self.action_space * [1]  # 1 indicates availability of action
+
+    def get_total_actions(self):
+        """ Returns the total number of actions an agent could ever take """
+        return self.action_space
+
+    def reset(self):
+        """ Returns initial observations and states """
+        self._obs = self._env.reset()
+        return self.get_obs(), self.get_state()
+
+    def render(self):
+        self._env.render()
+
+    def close(self):
+        self._env.close()
+
+    def seed(self):
+        return self._seed
+
+    def save_replay(self):
+        pass
+
+    def get_stats(self):
+        return {}
+
+
+REGISTRY["pressureplate"] = partial(env_fn, env=_PressurePlateWrapper)
+############################################
+
+
+############################################
+## Registration for LBF
+
+warnings.filterwarnings("ignore", category=UserWarning)
 
 register(
     id="Foraging-8x8-5p-1f-coop-v2",
@@ -1890,193 +2084,3 @@ register(
 
 ############################################
 
-
-############################################
-# Registration for PressurePlate
-
-# wraps original environment and adds the extra var "elapsed_time"
-# to keep track of when an episode starts
-class TimeLimitPressurePlate(GymTimeLimit):
-
-    def __init__(self, env, max_episode_steps=None):
-        super().__init__(env)
-
-        assert max_episode_steps is not None, "'max_episode_steps' is None!"
-        self._max_episode_steps = max_episode_steps
-        self._elapsed_steps = None
-
-    def step(self, action):
-        assert (self._elapsed_steps is not None), "Cannot call env.step() before calling reset()"
-        observations, rewards, terminations, infos = self.env.step(action)
-
-        self._elapsed_steps += 1
-        infos["TimeLimit.truncated"] = False  # dummy var, there is no truncation in PressurePlate
-        if self._elapsed_steps >= self._max_episode_steps:
-            terminations = [True for _ in terminations]
-
-        return observations, rewards, terminations, infos
-
-
-class ObservationPressurePlate(ObservationWrapper):
-    """
-    Observation wrapper that fixes the order of agents' observations.
-    """
-
-    def __init__(self, env):
-        super(ObservationPressurePlate, self).__init__(env)
-        self._env = env
-        self.observation_space = self._env.observation_space[0].shape
-
-    def observation(self, observation):
-        return [
-            obs for obs in observation
-        ]
-
-
-PRESSUREPLATE_KEY_CHOICES = [
-    "pressureplate-linear-4p-v0",
-    "pressureplate-linear-5p-v0",
-    "pressureplate-linear-6p-v0"
-    ]
-
-PRESSUREPLATE_N_AGENTS_CHOICES = [4, 5, 6]
-
-
-class _PressurePlateWrapper(MultiAgentEnv):
-
-    def __init__(self,
-                 key,
-                 horizon,
-                 seed,
-                 ):
-
-        # Check key validity
-        assert key in PRESSUREPLATE_KEY_CHOICES, \
-            f"Invalid 'key': {key}! \nChoose one of the following: \n{PRESSUREPLATE_KEY_CHOICES}"
-        self.key = key
-
-        # Check horizon validity
-        assert isinstance(horizon, int), f"Invalid horizon type: {type(horizon)}, 'horizon': {horizon}, is not 'int'!"
-
-        # Default horizon
-        if not horizon:
-            horizon = 500 
-
-        self.horizon = horizon
-        self._seed = seed
-
-        # Placeholders
-        self.original_env = None
-        self.episode_limit = None
-        self._env = None
-        self._obs = None
-        self._info = None
-        self.observation_space = None
-        self.action_space = None
-
-        # Gym make
-        # base env sourced by gym.make with all its args
-        from pressureplate.environment import PressurePlate
-        self.original_env = gym.make(f"{key}")
-
-        # Use the wrappers for handling the time limit and the environment observations properly.
-        self.n_agents = self.original_env.n_agents
-        self.episode_limit = self.horizon
-        # now create the wrapped env
-        self._env = TimeLimitPressurePlate(self.original_env, max_episode_steps=self.episode_limit)
-        self._env = ObservationPressurePlate(self._env)
-
-        # Define the observation space
-        self.observation_space = self._env.observation_space
-        # Define the action space
-        self.action_space = self._env.action_space[0].n
-        # Placeholders
-        self._obs = None
-        self._info = None
-        # By setting the "seed" in "np.random.seed" in "src/main.py" we control the randomness of the environment.
-        self._seed = seed
-
-        # Needed for rendering
-        import cv2
-        self.cv2 = cv2
-
-    def step(self, actions):
-        """ Returns reward, terminated, info """
-
-        # Apply actions for each agent
-        actions = [int(a) for a in actions]    
-        # Make the environment step
-        self._obs, rewards, terminations, self._info = self._env.step(actions)
-
-        # Add all rewards together
-        reward = sum(rewards)
-        # Keep only 'TimeLimit.truncated' in 'self._info'
-        self._info = {"TimeLimit.truncated": self._info["TimeLimit.truncated"]}
-        # The episode ends when all agents have reached their positions ("terminations" are all True) or
-        # "self._elapsed_steps >= self._max_episode_steps" is True
-        done = all(terminations)
-
-        return float(reward), done, {}
-
-    def get_obs(self):
-        """ Returns all agent observations in a list """
-        return self._obs
-
-    def get_obs_agent(self, agent_id):
-        """ Returns observation for agent_id """
-        raise self._obs[agent_id]
-
-    def get_obs_size(self):
-        """ Returns the shape of the observation """
-        return self.observation_space[0]
-
-    def get_state(self):
-        return np.concatenate(self._obs, axis=0).astype(np.float32)
-
-    def get_state_size(self):
-        """ Returns the shape of the state """
-        
-        assert len(self.observation_space) == 1, \
-            f"'self.observation_space' has not only one dimension! \n'self.observation_space': {self.observation_space}" 
-        
-        return self.n_agents * self.observation_space[0]
-
-    def get_avail_actions(self):
-        avail_actions = []
-        for agent_id in range(self.n_agents):
-            avail_agent = self.get_avail_agent_actions(agent_id)
-            avail_actions.append(avail_agent)
-
-        return avail_actions
-
-    def get_avail_agent_actions(self, agent_id):
-        """ Returns the available actions for agent_id (both agents have the same action space) """
-        return self.action_space * [1]  # 1 indicates availability of action
-
-    def get_total_actions(self):
-        """ Returns the total number of actions an agent could ever take """
-        return self.action_space
-
-    def reset(self):
-        """ Returns initial observations and states """
-        self._obs = self._env.reset()
-        return self.get_obs(), self.get_state()
-
-    def render(self):
-        self._env.render()
-
-    def close(self):
-        self._env.close()
-
-    def seed(self):
-        return self._seed
-
-    def save_replay(self):
-        pass
-
-    def get_stats(self):
-        return {}
-
-
-REGISTRY["pressureplate"] = partial(env_fn, env=_PressurePlateWrapper)
-############################################
