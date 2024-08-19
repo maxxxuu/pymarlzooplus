@@ -488,21 +488,22 @@ if __name__ == '__main__':
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/pistonball_v6/"
 
     # Cooperative pong
-    # paths_to_results_ = [
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/cooperative_pong_v5/coma_cooperative_pong_v5_w_parallel_2_threads_w_resnet18_results/sacred/coma/cooperative_pong_v5",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/cooperative_pong_v5/cooperative_pong_v5_w_parallel_2_threads_w_resnet18_results/sacred/maa2c/cooperative_pong_v5",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/cooperative_pong_v5/cooperative_pong_v5_w_parallel_5_threads_w_resnet18_results/sacred/maa2c/cooperative_pong_v5",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/cooperative_pong_v5/cooperative_pong_v5_w_parallel_2_threads_w_trainable_cnn_results/sacred/maa2c/cooperative_pong_v5",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/cooperative_pong_v5/mappo_cooperative_pong_v5_w_parallel_2_threads_w_resnet18_results/sacred/mappo/cooperative_pong_v5",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/cooperative_pong_v5/cooperative_pong_v5_w_resnet18_results/sacred/qmix/cooperative_pong_v5",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/cooperative_pong_v5/eoi_cooperative_pong_v5_w_episode_w_resnet18_results/sacred/eoi/cooperative_pong_v5",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/cooperative_pong_v5/cooperative_pong_v5_w_resnet18_results/sacred/qplex/cooperative_pong_v5",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/cooperative_pong_v5/maser_cooperative_pong_v5_w_resnet18_results/sacred/maser/cooperative_pong_v5",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EMC/cooperative_pong_v5_w_resnet18_results/sacred/emc/cooperative_pong_v5"
-    #                    ]
-    # algo_names_ = ["coma", "maa2c-thr=2", "maa2c-thr=5", "maa2c-cnn-thr=2", "mappo", "qmix", "eoi", "qplex", "maser", "emc"]
-    # env_name_ = "cooperative_pong_v5"
-    # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/cooperative_pong_v5/"
+    paths_to_results_ = [
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/cooperative_pong_v5/coma_cooperative_pong_v5_w_parallel_2_threads_w_resnet18_results/sacred/coma/cooperative_pong_v5",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/cooperative_pong_v5/cooperative_pong_v5_w_parallel_2_threads_w_resnet18_results/sacred/maa2c/cooperative_pong_v5",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/cooperative_pong_v5/cooperative_pong_v5_w_parallel_5_threads_w_resnet18_results/sacred/maa2c/cooperative_pong_v5",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/cooperative_pong_v5/cooperative_pong_v5_w_parallel_2_threads_w_trainable_cnn_results/sacred/maa2c/cooperative_pong_v5",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/cooperative_pong_v5/mappo_cooperative_pong_v5_w_parallel_2_threads_w_resnet18_results/sacred/mappo/cooperative_pong_v5",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/cooperative_pong_v5/cooperative_pong_v5_w_resnet18_results/sacred/qmix/cooperative_pong_v5",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/cooperative_pong_v5/eoi_cooperative_pong_v5_w_episode_w_resnet18_results/sacred/eoi/cooperative_pong_v5",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/cooperative_pong_v5/cooperative_pong_v5_w_resnet18_results/sacred/qplex/cooperative_pong_v5",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/cooperative_pong_v5/maser_cooperative_pong_v5_w_resnet18_results/sacred/maser/cooperative_pong_v5",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EMC/cooperative_pong_v5_w_resnet18_wo_rew_stand_results/sacred/emc/cooperative_pong_v5",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/cooperative_pong_v5/cooperative_pong_v5_w_parallel_2_threads_w_resnet18_results/sacred/happo/cooperative_pong_v5"
+                       ]
+    algo_names_ = ["coma", "maa2c-thr=2", "maa2c-thr=5", "maa2c-cnn-thr=2", "mappo", "qmix", "eoi", "qplex", "maser", "emc-wo_rew_stand", "happo"]
+    env_name_ = "cooperative_pong_v5"
+    path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/cooperative_pong_v5/"
 
     # Entombed cooperative
     # paths_to_results_ = [
@@ -557,18 +558,18 @@ if __name__ == '__main__':
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/assymetric_advantages/"
 
     # Coordination ring
-    paths_to_results_ = [
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/coordination_ring/maa2c_coordination_ring_w_max_steps=100M_w_parallel_2_threads_results/sacred/maa2c/coordination_ring",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/coordination_ring/mappo_coordination_ring_w_max_steps=100M_w_parallel_2_threads_results/sacred/mappo/coordination_ring",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/coordination_ring/coma_coordination_ring_w_max_steps=100M_w_parallel_2_threads_results/sacred/coma/coordination_ring",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/coordination_ring/coordination_ring_w_max_steps=100M_results/sacred/qmix/coordination_ring",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/coordination_ring/coordination_ring_w_max_steps=100M_results/sacred/qplex/coordination_ring",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/coordination_ring/eoi_coordination_ring_w_max_steps=100M_w_episode_results/sacred/eoi/coordination_ring",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/coordination_ring/maser_coordination_ring_w_max_steps=100M_results/sacred/maser/coordination_ring"
-    ]
-    algo_names_ = ["maa2c", "mappo", "coma", "qmix", "qplex", "eoi", "maser"]
-    env_name_ = "coordination_ring"
-    path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/coordination_ring/"
+    # paths_to_results_ = [
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/coordination_ring/maa2c_coordination_ring_w_max_steps=100M_w_parallel_2_threads_results/sacred/maa2c/coordination_ring",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/coordination_ring/mappo_coordination_ring_w_max_steps=100M_w_parallel_2_threads_results/sacred/mappo/coordination_ring",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/coordination_ring/coma_coordination_ring_w_max_steps=100M_w_parallel_2_threads_results/sacred/coma/coordination_ring",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/coordination_ring/coordination_ring_w_max_steps=100M_results/sacred/qmix/coordination_ring",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/coordination_ring/coordination_ring_w_max_steps=100M_results/sacred/qplex/coordination_ring",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/coordination_ring/eoi_coordination_ring_w_max_steps=100M_w_episode_results/sacred/eoi/coordination_ring",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/coordination_ring/maser_coordination_ring_w_max_steps=100M_results/sacred/maser/coordination_ring"
+    # ]
+    # algo_names_ = ["maa2c", "mappo", "coma", "qmix", "qplex", "eoi", "maser"]
+    # env_name_ = "coordination_ring"
+    # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/coordination_ring/"
 
     # PressurePlate - linear-4p-v0
     # paths_to_results_ = [
@@ -579,9 +580,10 @@ if __name__ == '__main__':
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/pressureplate_linear-4p-v0/mappo_linear-4p-v0_w_parallel_2_threads_results/sacred/mappo/pressureplate-linear-4p-v0",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/pressureplate_linear-4p-v0/eoi_linear-4p-v0_w_parallel_2_threads_results/sacred/eoi/pressureplate-linear-4p-v0",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/pressureplate_linear-4p-v0/eoi_linear-4p-v0_w_episode_results/sacred/eoi/pressureplate-linear-4p-v0",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/pressureplate_linear-4p-v0/maser_linear-4p-v0_results/sacred/maser/pressureplate-linear-4p-v0"
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/pressureplate_linear-4p-v0/maser_linear-4p-v0_results/sacred/maser/pressureplate-linear-4p-v0",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/CDS/pressureplate_linear-4p-v0/cds_linear-4p-v0_results/sacred/cds/pressureplate-linear-4p-v0"
     # ]
-    # algo_names_ = ["qmix", "maa2c", "coma", "qplex", "mappo", "eoi-parallel-thr=2", "eoi-episode", "maser"]
+    # algo_names_ = ["qmix", "maa2c", "coma", "qplex", "mappo", "eoi-parallel-thr=2", "eoi-episode", "maser", "cds"]
     # env_name_ = "pressureplate-linear-4p-v0"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/pressureplate-linear-4p-v0/"
 

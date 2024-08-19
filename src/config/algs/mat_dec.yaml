@@ -47,12 +47,9 @@ use_gae: True                           # help='use generalized advantage estima
 gamma: 0.99                             # help='discount factor for rewards (default: 0.99)'
 gae_lambda: 0.95                        # help='gae lambda parameter (default: 0.95)'
 use_huber_loss: True                    # help="by default, use huber loss. If set, do not use huber loss."
-use_value_active_masks: True            # help="by default True, whether to mask useless data in value loss."
-use_policy_active_masks: True           # help="by default True, whether to mask useless data in policy loss."
 huber_delta: 10.0                       # help=" coefficience of huber loss."
 
 # transformer
-encode_state: False
 n_block: 1
 n_embd: 64
 n_head: 1
