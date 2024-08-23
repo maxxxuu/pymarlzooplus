@@ -9,6 +9,7 @@ env_args:
   image_encoder: "ResNet18" # Options: "ResNet18", "SlimSAM", "CLIP"
   image_encoder_batch_size: 1
   image_encoder_use_cuda: True
+  centralized_image_encoding: True
   kwargs: "" # Use in terminal: env_args.kwargs="('arg1',arg1_value), ('arg2',arg2_value)"
 
 test_greedy: True

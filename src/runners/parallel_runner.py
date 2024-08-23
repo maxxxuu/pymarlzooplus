@@ -9,6 +9,9 @@ from torch.multiprocessing import Pipe, Process
 import numpy as np
 import torch as th
 
+from utils.image_encoder import ImageEncoder
+
+
 # Based (very) heavily on SubprocVecEnv from OpenAI Baselines
 # https://github.com/openai/baselines/blob/master/baselines/common/vec_env/subproc_vec_env.py
 class ParallelRunner:
@@ -28,6 +31,29 @@ class ParallelRunner:
         self.logger = logger
         self.batch_size = self.args.batch_size_run
 
+        # In case of pettingzoo and centralized image encoding, initialize image encoder here
+        # to pass the observation space in the parallel environments as an argument
+        image_encoder_args = None
+        image_encoder = None
+        if self.args.env == 'pettingzoo' and self.args.env_args['centralized_image_encoding'] is True:
+            image_encoder_args = ["parallel_env",
+                                  self.args.env_args['centralized_image_encoding'],
+                                  self.args.env_args['trainable_cnn'],
+                                  self.args.env_args['image_encoder'],
+                                  self.args.env_args['image_encoder_batch_size'],
+                                  self.args.env_args['image_encoder_use_cuda']
+                                  ]
+            image_encoder = ImageEncoder(*image_encoder_args)
+            self.args.env_args['given_observation_space'] = image_encoder.observation_space
+            # Explicitly delete the temporary image encoder and clear cuda if needed
+            image_encoder_device = image_encoder.device
+            del image_encoder
+            if image_encoder_device == "cuda":
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
+            # Pass the image encoder in the 'CloudpickleWrapper'
+            image_encoder = CloudpickleWrapper(partial(ImageEncoder, *image_encoder_args))
+
         # Make subprocesses for the envs
         self.parent_conns, self.worker_conns = zip(*[Pipe() for _ in range(self.batch_size)])
         env_fn = env_REGISTRY[self.args.env]
@@ -37,7 +63,11 @@ class ParallelRunner:
 
         th.multiprocessing.set_start_method('spawn')
         self.ps = [Process(target=env_worker,
-                           args=(worker_conn, CloudpickleWrapper(partial(env_fn, **env_arg))))
+                           args=(worker_conn,
+                                 CloudpickleWrapper(partial(env_fn, **env_arg)),
+                                 image_encoder
+                                 )
+                           )
                    for env_arg, worker_conn in zip(env_args, self.worker_conns)]
 
         for p in self.ps:
@@ -283,9 +313,14 @@ class ParallelRunner:
         stats.clear()
 
 
-def env_worker(remote, env_fn):
+def env_worker(remote, env_fn, image_encoder_fn):
     # Make environment
     env = env_fn.x()
+
+    # Make the image encoder
+    image_encoder = None
+    if image_encoder_fn is not None:
+        image_encoder = image_encoder_fn.x()
 
     while True:
         cmd, data = remote.recv()
@@ -294,9 +329,13 @@ def env_worker(remote, env_fn):
             # Take a step in the environment
             reward, terminated, env_info = env.step(actions)
             # Return the observations, avail_actions and state to make the next action
-            state = env.get_state()
             avail_actions = env.get_avail_actions()
+            state = env.get_state()
             obs = env.get_obs()
+            if image_encoder is not None:
+                # 'obs' is tuple with a single element - a dictionary of observations, so we keep only this
+                obs = image_encoder.observation(obs[0])
+                state = np.concatenate(obs, axis=0).astype(np.float32)  # Concatenate the encoded observations (vectors)
             remote.send({
                 # Data for the next timestep needed to pick an action
                 "state": state,
@@ -309,10 +348,19 @@ def env_worker(remote, env_fn):
             })
         elif cmd == "reset":
             env.reset()
+            avail_actions = env.get_avail_actions()
+            state = env.get_state()
+            obs = env.get_obs()
+            if image_encoder is not None:
+                # 'obs' is tuple with a single element - a dictionary of observations, so we let it as is since
+                # the observations are in this format when coming from reset
+                obs = image_encoder.observation(obs)
+                # Concatenate the encoded observations (vectors)
+                state = np.concatenate(obs, axis=0).astype(np.float32)
             remote.send({
-                "state": env.get_state(),
-                "avail_actions": env.get_avail_actions(),
-                "obs": env.get_obs()
+                "state": state,
+                "avail_actions": avail_actions,
+                "obs": obs
             })
         elif cmd == "close":
             env.close()
@@ -330,7 +378,7 @@ def env_worker(remote, env_fn):
             if "PettingZoo" in type(env).__name__:
                 # Simulate the message format of the logger defined in _logging.py
                 current_time = datetime.datetime.now().strftime('%H:%M:%S')
-                print_info = (f"\n[INFO {current_time}] episode_runner " +
+                print_info = (f"\n[INFO {current_time}] parallel_runner " +
                               ("None" if env.get_print_info() is None else env.get_print_info()))
                 remote.send(print_info)
             else:

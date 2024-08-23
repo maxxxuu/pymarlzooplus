@@ -20,8 +20,11 @@ class EpisodeRunner:
         assert self.batch_size == 1
 
         # Initialize environment
+        assert not (self.args.env == 'pettingzoo' and self.args.env_args['centralized_image_encoding'] is True), \
+            ("In 'episode_runner', the argument 'centralized_image_encoding' of pettingzoo should be False "
+             "since there is only one environment, and thus the encoding can be considered as centralized.")
         self.env = env_REGISTRY[self.args.env](**self.args.env_args)
-        if "PettingZoo" in type(self.env).__name__:
+        if self.args.env == 'pettingzoo':
             # Get info from environment to be printed
             print_info = self.env.get_print_info()
             # Simulate the message format of the logger defined in _logging.py

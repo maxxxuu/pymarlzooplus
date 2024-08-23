@@ -4,6 +4,7 @@ import os
 import warnings
 
 from smac.env import MultiAgentEnv, StarCraft2Env
+from utils.image_encoder import ImageEncoder
 
 import numpy as np
 import gym
@@ -343,7 +344,7 @@ class TimeLimitPZ(GymTimeLimit):
         return observations, rewards, terminations, truncations, info
 
 
-class ObservationPZ(ObservationWrapper):
+class ObservationPZ(ObservationWrapper, ImageEncoder):
     """
     Observation wrapper for converting images to vectors (using a pretrained image encoder) or
     for preparing images to be fed to a CNN.
@@ -355,236 +356,38 @@ class ObservationPZ(ObservationWrapper):
                  trainable_cnn,
                  image_encoder,
                  image_encoder_batch_size,
-                 image_encoder_use_cuda):
+                 image_encoder_use_cuda,
+                 centralized_image_encoding,
+                 given_observation_space):
 
-        super(ObservationPZ, self).__init__(env)
+        ObservationWrapper.__init__(self, env)
+        ImageEncoder.__init__(self,
+                              "env",
+                              centralized_image_encoding,
+                              trainable_cnn,
+                              image_encoder,
+                              image_encoder_batch_size,
+                              image_encoder_use_cuda
+                              )
 
-        self.print_info = None
         self.partial_observation = partial_observation
-        self.trainable_cnn = trainable_cnn
         self.original_observation_space = self.env.observation_space(self.env.possible_agents[0])
         self.original_observation_space_shape = self.original_observation_space.shape
         self.is_image = len(self.original_observation_space_shape) == 3 and self.original_observation_space_shape[2] == 3
         assert self.is_image, f"Only images are supported, shape: {self.original_observation_space_shape}"
 
-        # Import pettingzoo specific requirements
-        import torch
-        self.torch = torch
-        import cv2
-        self.cv2 = cv2
-
-        ## Define image encoder. In this case, a pretrained model is used frozen, i.e., without further training.
-        self.image_encoder = None
-        if self.is_image and self.trainable_cnn is False:
-
-            # Define the device to be used
-            self.device = "cpu"
-            if image_encoder_use_cuda is True and self.torch.cuda.is_available() is True:
-                self.device = "cuda"
-
-            # Define the batch size of the image encoder
-            self.image_encoder_batch_size = image_encoder_batch_size
-
-            # Encoder
-            self.image_encoder = None
-            self.image_encoder_predict = None
-            if image_encoder == "ResNet18":
-
-                # Imports
-                import albumentations as A
-                from albumentations.pytorch import ToTensorV2
-                from torch import nn
-                from torchvision.models import resnet18
-
-                # Define ResNet18
-                self.print_info = "Loading pretrained ResNet18 model..."
-                self.image_encoder = resnet18(weights='IMAGENET1K_V1')
-                self.image_encoder.fc = nn.Identity()
-                self.image_encoder = self.image_encoder.to(self.device)
-                self.image_encoder.eval()
-
-                # Image transformations
-                img_size = 224
-                self.transform = A.Compose([
-                    A.LongestMaxSize(max_size=img_size, interpolation=1), # Resize the longest side to 224
-                    A.PadIfNeeded(min_height=img_size, min_width=img_size, border_mode=0, value=(0, 0, 0)), # Pad to make the image square
-                    A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-                    ToTensorV2()
-                                            ])
-
-                # Get the number of features by feeding the model with a dummy input
-                dummy_input = np.ones((1, img_size, img_size, 3), dtype=np.uint8)*255
-                dummy_output = self.resnet18_predict(dummy_input)
-                n_features = dummy_output.shape[1]
-
-                # Define the function to get predictions
-                self.image_encoder_predict = self.resnet18_predict
-
-            elif image_encoder == "SlimSAM":
-
-                # Imports
-                from transformers import SamModel, SamProcessor
-
-                # Define SAM
-                self.print_info = "Loading pretrained SlimSAM model..."
-                self.image_encoder = SamModel.from_pretrained("Zigeng/SlimSAM-uniform-50").to(self.device) # Original SAM: facebook/sam-vit-base, options: huge, large, base
-                self.image_encoder.eval()
-
-                # Image transformations
-                self.processor = SamProcessor.from_pretrained("Zigeng/SlimSAM-uniform-50")
-
-                # Get the number of features by feeding the model with a dummy input
-                img_size = 224
-                dummy_input = np.ones((1, img_size, img_size, 3), dtype=np.uint8) * 255
-                dummy_output = self.sam_predict(dummy_input)
-                n_features = dummy_output.shape[1]
-
-                # Define the function to get predictions
-                self.image_encoder_predict = self.resnet18_predict
-
-            elif image_encoder == "CLIP":
-
-                # Imports
-                from transformers import AutoProcessor, CLIPVisionModel
-
-                # Define CLIP-image-encoder
-                self.print_info = "Loading pretrained CLIP-image-encoder model..."
-                self.image_encoder = CLIPVisionModel.from_pretrained("openai/clip-vit-base-patch32").to(self.device)
-                self.image_encoder.eval()
-
-                # Image transformations
-                self.processor = AutoProcessor.from_pretrained("openai/clip-vit-base-patch32")
-
-                # Get the number of features by feeding the model with a dummy input
-                img_size = 224
-                dummy_input = np.ones((1, img_size, img_size, 3), dtype=np.uint8) * 255
-                dummy_output = self.clip_predict(dummy_input)
-                n_features = dummy_output.shape[1]
-
-                # Define the function to get predictions
-                self.image_encoder_predict = self.clip_predict
-
-            else:
-                raise NotImplementedError(f"Invalid image encoder: {image_encoder}")
-
-            # Define the observation space
-            self.observation_space = (n_features,)
-
-        elif self.is_image and self.trainable_cnn is True:
-            # In this case, we use NatureCNN, adopted from openAI:
-            # https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/torch_layers.py
-
-            # Image transformations.
-            # Images will be downscaled to 224 max size, reducing the complexity,
-            # and will be padded (if needed) to become square.
-            # Images will be normalized simply by dividing by 255 (as in the original Nature paper,
-            # but without converting to gray scale).
-            import albumentations as A
-            from albumentations.pytorch import ToTensorV2
-            img_size = 224
-            self.transform = A.Compose([
-                A.LongestMaxSize(max_size=img_size, interpolation=1),  # Resize the longest side to 224
-                A.PadIfNeeded(min_height=img_size, min_width=img_size, border_mode=0, value=(0, 0, 0)),  # Pad to make the image square
-                ToTensorV2()
-            ])
-
-            # Define the observation space
-            self.observation_space = (3, img_size, img_size)
-        else:
-            raise NotImplementedError("Only images are supported!")
-
-    def resnet18_predict(self, observation):
-        """
-        observation: np.array of shape [batch_size, height, width, 3]
-        """
-
-        assert isinstance(observation, np.ndarray), \
-            f"'observation' is not a numpy array! 'type(observation)': {type(observation)} "
-        assert observation.ndim == 4 and observation.shape[3] == 3, \
-            f"'observation' has not the right dimensions! 'observation.shape': {observation.shape}"
-
-        observation = [self.transform(image=obs)["image"][None] for obs in observation]
-        observation = self.torch.concatenate(observation, dim=0)
-        observation = observation.to(self.device)
-        with self.torch.no_grad():
-            observation = self.image_encoder(observation)
-            observation = observation.detach().cpu().numpy()
-
-        return observation
-
-    def sam_predict(self, observation):
-        """
-        observation: np.array of shape [batch_size, height, width, 3]
-        """
-
-        assert isinstance(observation, np.ndarray), \
-            f"'observation' is not a numpy array! 'type(observation)': {type(observation)} "
-        assert observation.ndim == 4 and observation.shape[3] == 3, \
-            f"'observation' has not the right dimensions! 'observation.shape': {observation.shape}"
-
-        observation = self.processor(observation, return_tensors="pt")['pixel_values'].to(self.device)
-        with self.torch.no_grad():
-            observation = self.image_encoder.get_image_embeddings(pixel_values=observation)
-            bs = observation.shape[0]
-            observation = observation.view((bs, -1)).detach().cpu().numpy()
-
-        return observation
-
-    def clip_predict(self, observation):
-        """
-        observation: np.array of shape [batch_size, height, width, 3]
-        """
-
-        assert isinstance(observation, np.ndarray), \
-            f"'observation' is not a numpy array! 'type(observation)': {type(observation)} "
-        assert observation.ndim == 4 and observation.shape[3] == 3, \
-            f"'observation' has not the right dimensions! 'observation.shape': {observation.shape}"
-
-        observation = self.processor(images=observation, return_tensors="pt").to(self.device)
-        with self.torch.no_grad():
-            observation = self.image_encoder(**observation).pooler_output
-            observation = observation.detach().cpu().numpy()
-
-        return observation
+        self.given_observation_space = given_observation_space
+        if given_observation_space is not None:
+            self.observation_space = given_observation_space
+        assert not (given_observation_space is None and centralized_image_encoding is True)
+        assert not (given_observation_space is not None and centralized_image_encoding is False)
 
     def step(self, actions):
         observations, rewards, terminations, truncations, infos = self.env.step(actions)
         return self.observation(observations), rewards, terminations, truncations, infos
 
     def observation(self, observations):
-
-        if isinstance(observations, tuple):
-            # When 'observations' is tuple it means that it has been called from gym reset()
-            # and it carries pettingzoo observations and info
-            observations = observations[0]
-
-        observations_ = []
-        if self.is_image and self.trainable_cnn is False:
-            # Get image representations
-            observations_tmp = []
-            observations_tmp_counter = 0
-            observations_tmp_counter_total = 0
-            for observation_ in observations.values():
-                observations_tmp.append(observation_[None])
-                observations_tmp_counter += 1
-                observations_tmp_counter_total += 1
-                if observations_tmp_counter == self.image_encoder_batch_size or \
-                   observations_tmp_counter_total == len(observations.values()):
-                    # Predict in batches. When GPU is used, this is faster than inference over single images.
-                    observations_tmp = np.concatenate(observations_tmp, axis=0)
-                    observations_tmp = self.image_encoder_predict(observations_tmp)
-                    observations_.extend([obs for obs in observations_tmp])
-                    # Reset tmp
-                    observations_tmp = []
-                    observations_tmp_counter = 0
-        elif self.is_image and self.trainable_cnn is True:
-            # Preprocess images for a CNN network.
-            observations_ = [self.transform(image=observation_)["image"].detach().cpu().numpy()
-                             for observation_ in observations.values()]
-        else:
-            raise NotImplementedError("Only images are supported!")
-
-        return tuple(observations_,)
+        return ImageEncoder.observation(self, observations)
 
     @staticmethod
     def replace_color(image_, target_color, replacement_color):
@@ -677,7 +480,9 @@ class _PettingZooWrapper(MultiAgentEnv):
                  image_encoder,
                  image_encoder_batch_size,
                  image_encoder_use_cuda,
-                 kwargs):
+                 centralized_image_encoding,
+                 kwargs,
+                 given_observation_space=None):
 
         assert (partial_observation is False) or (key in ["entombed_cooperative_v3", "space_invaders_v2"]), \
             ("'partial_observation' should False when the selected game is other than "
@@ -692,7 +497,9 @@ class _PettingZooWrapper(MultiAgentEnv):
         self._image_encoder = image_encoder
         self.image_encoder_batch_size = image_encoder_batch_size
         self.image_encoder_use_cuda = image_encoder_use_cuda
+        self.centralized_image_encoding = centralized_image_encoding
         self._kwargs = kwargs
+        self.given_observation_space = given_observation_space
 
         # Placeholders
         self.kwargs = None
@@ -717,7 +524,9 @@ class _PettingZooWrapper(MultiAgentEnv):
                              self._image_encoder,
                              self.image_encoder_batch_size,
                              self.image_encoder_use_cuda,
-                             self._kwargs)
+                             self.centralized_image_encoding,
+                             self._kwargs,
+                             self.given_observation_space)
 
     def set_environment(self,
                         key,
@@ -728,7 +537,9 @@ class _PettingZooWrapper(MultiAgentEnv):
                         image_encoder,
                         image_encoder_batch_size,
                         image_encoder_use_cuda,
-                        kwargs):
+                        centralized_image_encoding,
+                        kwargs,
+                        given_observation_space):
 
         # Convert list of kwargs to dictionary
         self.kwargs = kwargs
@@ -755,11 +566,11 @@ class _PettingZooWrapper(MultiAgentEnv):
         # In case of "entombed_cooperative_v3" and "space_invaders_v2" games,
         # fix the "self.episode_limit" after passing it to the "TimeLimitPZ"
         if key == "entombed_cooperative_v3":
-            # At each timestep we apply 4 pettingzoo timesteps,
+            # At each timestep, we apply 4 pettingzoo timesteps,
             # in order to synchronize actions and obs
             self.episode_limit = int(self.episode_limit / 4)
         elif key == "space_invaders_v2":
-            # At each timestep we apply 2 pettingzoo timesteps,
+            # At each timestep, we apply 2 pettingzoo timesteps,
             # in order to synchronize actions and obs
             self.episode_limit = int(self.episode_limit / 2)
 
@@ -768,7 +579,9 @@ class _PettingZooWrapper(MultiAgentEnv):
                                   trainable_cnn,
                                   image_encoder,
                                   image_encoder_batch_size,
-                                  image_encoder_use_cuda)
+                                  image_encoder_use_cuda,
+                                  centralized_image_encoding,
+                                  given_observation_space)
         self.__env._obs_wrapper = self._env
 
         self._obs = None
@@ -907,10 +720,15 @@ class _PettingZooWrapper(MultiAgentEnv):
 
     def get_state(self):
 
-        if self.trainable_cnn is False:
+        if self.trainable_cnn is False and self.centralized_image_encoding is False:
             return np.concatenate(self._obs, axis=0).astype(np.float32)
-        else:
+        elif self.trainable_cnn is True and self.centralized_image_encoding is False:
             return np.stack(self._obs, axis=0).astype(np.float32)
+        elif self.trainable_cnn is False and self.centralized_image_encoding is True:
+            # In this case, the centralized encoder will encode observations and combine them to create the state
+            return None
+        else:
+            raise NotImplementedError()
 
     def get_state_size(self):
         """ Returns the shape of the state"""
