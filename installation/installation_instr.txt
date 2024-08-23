@@ -1,8 +1,7 @@
-# For base epymarl with gym support
-# git clone https://github.com/uoe-agents/epymarl.git
-cd epymarl/installation
-conda create -n epymarl python=3.8.18 -y
-conda activate epymarl
+# For base fepymarl
+cd fepymarl/installation
+conda create -n fepymarl python=3.8.18 -y
+conda activate fepymarl
 python3 -m pip install pip==24.0
 pip install wheel==0.38.4 setuptools==65.5.0 einops
 pip install -r requirements.txt
@@ -19,10 +18,10 @@ sh ./install_torch_scatter.sh
 bash install_sc2.sh
 
 # For LBF
-pip install lbforaging
+pip install lbforaging==1.1.1
 
 # For RWARE
-pip install rware
+pip install rware==1.0.3
 
 # For installing matrix-games
 pip install git+https://github.com/semitable/matrix-games.git
