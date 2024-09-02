@@ -690,7 +690,10 @@ class _PettingZooWrapper(MultiAgentEnv):
                                                                          (isinstance(action, np.ndarray) and
                                                                           str(action.dtype) == "int64")
                                                                       else
-                                                        action.detach().cpu().item()
+                                                         (action if isinstance(action, int)
+                                                                 else
+                                                          action.detach().cpu().item()
+                                                          )
                    for action_idx, action in enumerate(actions)}
 
         self._obs, rewards, terminations, truncations, self._info = self._env.step(actions)
