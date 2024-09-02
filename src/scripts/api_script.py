@@ -8,25 +8,25 @@ if str(ROOT) not in sys.path:
 
 # Import packages
 from envs import REGISTRY as env_REGISTRY
-import random
+import random as rnd
 
 # Arguments for PettingZoo
-# args = {
-#   "env": "pettingzoo",
-#   "env_args": {
-#       "key": "pistonball_v6",
-#       "max_cycles": 900,
-#       "render_mode": "rgb_array",
-#       "image_encoder": "ResNet18",
-#       "image_encoder_use_cuda": True,
-#       "image_encoder_batch_size": 10,
-#       "centralized_image_encoding": False,
-#       "partial_observation": False,
-#       "trainable_cnn": False,
-#       "kwargs": "('n_pistons',10),",
-#       "seed": 2024
-#   }
-# }
+args = {
+  "env": "pettingzoo",
+  "env_args": {
+      "key": "pistonball_v6",
+      "max_cycles": 900,
+      "render_mode": "rgb_array",
+      "image_encoder": "ResNet18",
+      "image_encoder_use_cuda": True,
+      "image_encoder_batch_size": 10,
+      "centralized_image_encoding": False,
+      "partial_observation": False,
+      "trainable_cnn": False,
+      "kwargs": "('n_pistons',10),",
+      "seed": 2024
+  }
+}
 
 # Arguments for Overcooked
 # args = {
@@ -70,19 +70,19 @@ import random
 # }
 
 # Arguments for MPE
-args = {
-  "env": "gymma",
-  "env_args": {
-      "key": "mpe:SimpleSpread-v0",
-      "time_limit": 25,
-      "seed": 2024
-  }
-}
+# args = {
+#   "env": "gymma",
+#   "env_args": {
+#       "key": "mpe:SimpleSpread-v0",
+#       "time_limit": 25,
+#       "seed": 2024
+#   }
+# }
 
 # Initialize environment
 env = env_REGISTRY[args["env"]](**args["env_args"])
-num_agents = env.n_agents
-n_actions = env.get_total_actions()
+n_agns = env.n_agents
+n_acts = env.get_total_actions()
 # Reset the environment
 obs, state = env.reset()
 done = False
@@ -90,8 +90,8 @@ done = False
 while not done:
     # Render the environment
     env.render()
-    # This is where you should insert the policy's actions
-    actions = [random.randint(0, n_actions-1) for _ in range(num_agents)]
+    # Insert the policy's actions here
+    actions = rnd.choices(range(0, n_acts), k=n_agns)
     # Apply an environment step
     reward, done, info = env.step(actions)
     obs = env.get_obs()
