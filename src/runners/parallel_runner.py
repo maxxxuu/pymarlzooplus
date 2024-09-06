@@ -31,9 +31,10 @@ class ParallelRunner:
         self.logger = logger
         self.batch_size = self.args.batch_size_run
 
+        # Enable multithreading access to GPU
+        th.multiprocessing.set_start_method('spawn')
+
         # In case of pettingzoo and centralized image encoding, initialize image encoder here
-        # to pass the observation space in the parallel environments as an argument
-        image_encoder_args = None
         image_encoder = None
         if self.args.env == 'pettingzoo' and self.args.env_args['centralized_image_encoding'] is True:
             image_encoder_args = ["parallel_env",
@@ -44,15 +45,8 @@ class ParallelRunner:
                                   self.args.env_args['image_encoder_use_cuda']
                                   ]
             image_encoder = ImageEncoder(*image_encoder_args)
+            image_encoder.share_memory()  # Make model parameters shareable across processes
             self.args.env_args['given_observation_space'] = image_encoder.observation_space
-            # Explicitly delete the temporary image encoder and clear cuda if needed
-            image_encoder_device = image_encoder.device
-            del image_encoder
-            if image_encoder_device == "cuda":
-                torch.cuda.empty_cache()
-                torch.cuda.ipc_collect()
-            # Pass the image encoder in the 'CloudpickleWrapper'
-            image_encoder = CloudpickleWrapper(partial(ImageEncoder, *image_encoder_args))
 
         # Make subprocesses for the envs
         self.parent_conns, self.worker_conns = zip(*[Pipe() for _ in range(self.batch_size)])
@@ -61,7 +55,6 @@ class ParallelRunner:
         for i in range(self.batch_size):
             env_args[i]["seed"] += i
 
-        th.multiprocessing.set_start_method('spawn')
         self.ps = [Process(target=env_worker,
                            args=(worker_conn,
                                  CloudpickleWrapper(partial(env_fn, **env_arg)),
@@ -313,14 +306,9 @@ class ParallelRunner:
         stats.clear()
 
 
-def env_worker(remote, env_fn, image_encoder_fn):
+def env_worker(remote, env_fn, image_encoder):
     # Make environment
     env = env_fn.x()
-
-    # Make the image encoder
-    image_encoder = None
-    if image_encoder_fn is not None:
-        image_encoder = image_encoder_fn.x()
 
     while True:
         cmd, data = remote.recv()

@@ -1,7 +1,9 @@
 import numpy as np
+import torch
+from torch import nn
 
 
-class ImageEncoder:
+class ImageEncoder(nn.Module):
     """
     Observation wrapper for converting images to vectors (using a pretrained image encoder) or
     for preparing images to be fed to a CNN.
@@ -15,6 +17,8 @@ class ImageEncoder:
                  image_encoder_batch_size,
                  image_encoder_use_cuda):
 
+        super(ImageEncoder, self).__init__()
+
         self.called_from = called_from
         self.centralized_image_encoding = centralized_image_encoding
         self.trainable_cnn = trainable_cnn
@@ -22,12 +26,6 @@ class ImageEncoder:
 
         assert not (centralized_image_encoding is True and trainable_cnn is True), \
             "'centralized_image_encoding' and 'trainable_cnn' cannot be both True!"
-
-        # Import pettingzoo specific requirements
-        import torch
-        self.torch = torch
-        import cv2
-        self.cv2 = cv2
 
         ## Define image encoder. In this case, a pretrained model is used frozen, i.e., without further training.
         self.image_encoder = None
@@ -39,7 +37,7 @@ class ImageEncoder:
 
                 # Define the device to be used
                 self.device = "cpu"
-                if image_encoder_use_cuda is True and self.torch.cuda.is_available() is True:
+                if image_encoder_use_cuda is True and torch.cuda.is_available() is True:
                     self.device = "cuda"
 
                 # Define the batch size of the image encoder
@@ -100,7 +98,7 @@ class ImageEncoder:
                     n_features = dummy_output.shape[1]
 
                     # Define the function to get predictions
-                    self.image_encoder_predict = self.resnet18_predict
+                    self.image_encoder_predict = self.sam_predict
 
                 elif image_encoder == "CLIP":
 
@@ -164,9 +162,9 @@ class ImageEncoder:
             f"'observation' has not the right dimensions! 'observation.shape': {observation.shape}"
 
         observation = [self.transform(image=obs)["image"][None] for obs in observation]
-        observation = self.torch.concatenate(observation, dim=0)
+        observation = torch.concatenate(observation, dim=0)
         observation = observation.to(self.device)
-        with self.torch.no_grad():
+        with torch.no_grad():
             observation = self.image_encoder(observation)
             observation = observation.detach().cpu().numpy()
 
@@ -183,7 +181,7 @@ class ImageEncoder:
             f"'observation' has not the right dimensions! 'observation.shape': {observation.shape}"
 
         observation = self.processor(observation, return_tensors="pt")['pixel_values'].to(self.device)
-        with self.torch.no_grad():
+        with torch.no_grad():
             observation = self.image_encoder.get_image_embeddings(pixel_values=observation)
             bs = observation.shape[0]
             observation = observation.view((bs, -1)).detach().cpu().numpy()
@@ -201,7 +199,7 @@ class ImageEncoder:
             f"'observation' has not the right dimensions! 'observation.shape': {observation.shape}"
 
         observation = self.processor(images=observation, return_tensors="pt").to(self.device)
-        with self.torch.no_grad():
+        with torch.no_grad():
             observation = self.image_encoder(**observation).pooler_output
             observation = observation.detach().cpu().numpy()
 

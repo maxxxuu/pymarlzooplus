@@ -542,9 +542,10 @@ if __name__ == '__main__':
         "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/cramped_room/cramped_room_w_episode_results/sacred/eoi/cramped_room",
         "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/cramped_room/maser_cramped_room_results/sacred/maser/cramped_room",
         "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/CDS/cramped_room/cds_cramped_room_results/sacred/cds/cramped_room",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/cramped_room/happo_cramped_room_w_parallel_2_threads_results/sacred/happo/cramped_room"
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/cramped_room/happo_cramped_room_w_parallel_2_threads_results/sacred/happo/cramped_room",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/cramped_room/happo_cramped_room_w_parallel_10_threads_results/sacred/happo/cramped_room"
     ]
-    algo_names_ = ["maa2c", "mappo", "coma", "qmix", "qplex", "eoi", "maser", "cds", "happo"]
+    algo_names_ = ["maa2c", "mappo", "coma", "qmix", "qplex", "eoi", "maser", "cds", "happo-thr=2", "happo-thr=10"]
     env_name_ = "cramped_room"
     path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/cramped_room/"
 
@@ -630,6 +631,14 @@ if __name__ == '__main__':
     # algo_names_ = ["cds"]
     # env_name_ = "lbf_2s-9x9-3p-2f"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/lbf_2s-9x9-3p-2f/"
+
+    # LBF - 2s-12x12-2p-2f
+    # paths_to_results_ = [
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/CDS/lbf_2s-12x12-2p-2f/cds_lbf_2s-12x12-2p-2f_results/sacred/cds/lbforaging:Foraging-2s-12x12-2p-2f-coop-v2"
+    # ]
+    # algo_names_ = ["cds"]
+    # env_name_ = "2s-12x12-2p-2f"
+    # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/lbf_2s-12x12-2p-2f/"
 
     plot_train_ = False
     plot_multiple_experiment_results(paths_to_results_, algo_names_, env_name_, path_to_save_, plot_train_)
