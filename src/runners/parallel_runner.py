@@ -37,7 +37,7 @@ class ParallelRunner:
         # In case of pettingzoo and centralized image encoding, initialize image encoder here
         image_encoder = None
         if self.args.env == 'pettingzoo' and self.args.env_args['centralized_image_encoding'] is True:
-            image_encoder_args = ["parallel_env",
+            image_encoder_args = ["parallel_runner",
                                   self.args.env_args['centralized_image_encoding'],
                                   self.args.env_args['trainable_cnn'],
                                   self.args.env_args['image_encoder'],

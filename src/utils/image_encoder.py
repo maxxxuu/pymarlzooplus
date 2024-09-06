@@ -31,7 +31,7 @@ class ImageEncoder(nn.Module):
         self.image_encoder = None
         self.observation_space = None
         if self.centralized_image_encoding is False or \
-           (self.centralized_image_encoding is True and self.called_from == "parallel_env"):
+           (self.centralized_image_encoding is True and self.called_from == "parallel_runner"):
 
             if self.trainable_cnn is False:
 
@@ -215,7 +215,7 @@ class ImageEncoder(nn.Module):
         observations_ = []
         if self.trainable_cnn is False and \
            (self.centralized_image_encoding is False or
-            (self.centralized_image_encoding is True and self.called_from == "parallel_env")):
+            (self.centralized_image_encoding is True and self.called_from == "parallel_runner")):
             # Get image representations
             observations_tmp = []
             observations_tmp_counter = 0
