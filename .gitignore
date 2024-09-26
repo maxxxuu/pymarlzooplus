@@ -4,6 +4,7 @@ results/
 3rdparty/
 **/overcooked_ai.egg-info/
 **/pressureplate.egg-info/
+**/mpe.egg-info/
 **/.DS_Store
 
 

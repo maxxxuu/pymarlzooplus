@@ -14,23 +14,17 @@ otherwise:
     - pip3 install torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cpu
 sh ./install_torch_scatter.sh
 
-# For SMAC
-bash install_sc2.sh
-
 # For LBF
 pip install lbforaging==1.1.1
 
 # For RWARE
 pip install rware==1.0.3
 
-# For installing matrix-games
-pip install git+https://github.com/semitable/matrix-games.git
-
-# For installing and compatibility with MPE
-pip install seaborn git+https://github.com/semitable/multiagent-particle-envs.git
-
-# For MARBLER (assumming already in "epymarl/installation" directory)
-bash install_MARBLER.sh
+# For MPE
+# Being in fepymarl/ directory:
+cd src/envs/multiagent-particle-envs/
+pip install -e .
+pip install seaborn==0.13.2  # Required for colors of landmarks
 
 
 ############################## For pettingzoo ##############################
@@ -52,7 +46,7 @@ AutoROM -y
 pip install 'pettingzoo[butterfly]'==1.24.3
 # Classic
 pip install 'pettingzoo[classic]'==1.24.3
-# MPE
+# MPE (not used here)
 pip install 'pettingzoo[mpe]'==1.24.3
 # SISL
 sudo apt-get install swig
@@ -60,12 +54,12 @@ pip install 'pettingzoo[sisl]'==1.24.3
 ################################################################################
 
 # For Overcooked
-# Assuming being in epymarl/ directory:
+# Being in fepymarl/ directory:
 cd src/envs/overcooked_ai/
 pip install -e .
 
 # For pressureplate
-# Assuming being in epymarl/ directory:
+# Being in fepymarl/ directory:
 cd src/envs/pressureplate_ai/
 pip install -e .
 pip install pyglet==1.5.29 # For rendering

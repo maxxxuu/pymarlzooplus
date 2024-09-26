@@ -3,7 +3,7 @@ env: "overcooked"
 env_args:
   key: null
   horizon: null
-  reward_type: "shaped" # Options: "shaped", "sparse"
+  reward_type: null # Options: "shaped", "sparse"
 
 test_greedy: True
 test_nepisode: 10 # 100
@@ -19,9 +19,31 @@ t_max: 10000 # 2050000
 # RUN: python3 src/main.py --config=qmix --env-config=overcooked with env_args.horizon=500 env_args.key="asymmetric_advantages"
 
 # layouts (which is the "key" in the "env_args") options:
+
+#   "cramped_room"                                              Popular (1): presents low-level coordination challenges: in this shared, confined space it is very easy for the agents to collide
+# All orders:
+# - ('onion', 'onion', 'onion'), value: 20, bonus: 2, final value: value*bonus=40 (received by a single agent)
+
+#   "asymmetric_advantages"                                     Popular (2): tests whether players can choose high-level strategies that play to their strengths
+# All orders:
+# - ('onion', 'onion', 'onion'), value: 20, bonus: 2, final value: value*bonus=40 (received by a single agent)
+
+#   "coordination_ring"                                         Popular (3): players must coordinate to travel between the bottom left and top right corners of the layout
+# All orders:
+# - ('onion', 'onion', 'onion'), value: 20, bonus: 2, final value: value*bonus=40 (received by a single agent)
+
+#   "counter_circuit"                                           Popular (4): involves a non-obvious coordination strategy, where onions are passed over the counter to the pot, rather than being carried around.
+# All orders:
+# - ('onion', 'tomato', 'tomato')
+# - ('onion', 'onion', 'tomato')
+# - ('onion', 'tomato')
+# Bonus orders:
+# - ('onion', 'tomato')
+
 #   "random3"                                                   Popular: require that agents are capable of not blocking each other
 #   "random0"                                                   Popular: has different elements at each side of the layout division so cooperation is mandatory for winning
 #   "unident"                                                   Popular: has enough elements at each side of the kitchen for each agent to serve soups by themselves without the need of the other, so cooperation is not mandatory for winning, but desirable for optimality
+#   "forced_coordination"                                       Popular: removes collision coordination problems, and forces players to develop a high-level joint strategy, since neither player can serve a dish by themselves
 #   "soup_coordination"
 #   "small_corridor"
 #   "simple_tomato"
@@ -33,40 +55,15 @@ t_max: 10000 # 2050000
 #   "long_cook_time"
 #   "large_room"
 #   "forced_coordination_tomato"
-#   "forced_coordination"                                       Popular: removes collision coordination problems, and forces players to develop a high-level joint strategy, since neither player can serve a dish by themselves
 #   "cramped_room_tomato"
 #   "cramped_room_o_3orders"
-
-#   "cramped_room"                                              Popular (1): presents low-level coordination challenges: in this shared, confined space it is very easy for the agents to collide
-# All orders:
-# - ('onion', 'onion', 'onion'), value: 20, bonus: 2, final value: value*bonus=40 (received by a single agent)
-
-#   "cramped_corridor"
-#   "counter_circuit_o_1order"
-
-#   "counter_circuit"                                           Popular (4): involves a non-obvious coordination strategy, where onions are passed over the counter to the pot, rather than being carried around.
-# All orders:
-# - ('onion', 'tomato', 'tomato')
-# - ('onion', 'onion', 'tomato')
-# - ('onion', 'tomato')
-# Bonus orders:
-# - ('onion', 'tomato')
-
-#   "corridor" --> the first time wait ~10 minutes
-
-#   "coordination_ring"                                         Popular (3): players must coordinate to travel between the bottom left and top right corners of the layout
-# All orders:
-# - ('onion', 'onion', 'onion'), value: 20, bonus: 2, final value: value*bonus=40 (received by a single agent)
-
-#   "centre_objects" --> the first time wait 3-4 minutes
-#   "centre_pots"--> the first time wait 20-30 seconds
-
-#   "asymmetric_advantages"                                     Popular (2): tests whether players can choose high-level strategies that play to their strengths
-# All orders:
-# - ('onion', 'onion', 'onion'), value: 20, bonus: 2, final value: value*bonus=40 (received by a single agent)
-
 #   "asymmetric_advantages_tomato"
 #   "bottleneck"
+#   "cramped_corridor"
+#   "counter_circuit_o_1order"
+#   "corridor"                                                    NOTE: the first time wait ~10 minutes
+#   "centre_objects"                                              NOTE: the first time wait 3-4 minutes
+#   "centre_pots"                                                 NOTE: the first time wait 20-30 seconds
 
 # The reward provided is the sum of the mdp_infos["sparse_reward_by_agent"].
 
@@ -86,9 +83,6 @@ t_max: 10000 # 2050000
 #  - is_dish_pickup_useful --> "DISH_PICKUP_REWARD"
 #  - soup_ready_at_location --> "SOUP_PICKUP_REWARD" (conditional on the agent position)
 #  - not soup.is_full --> "PLACEMENT_IN_POT_REW" (conditional on the agent position)
-
-# All orders:
-# - ('onion', 'onion', 'onion'), value: 20, bonus: 2, final value: value*bonus=40 (received by a single agent)
 
 # All recipes:
 # - ('onion',), ('onion', 'onion'),

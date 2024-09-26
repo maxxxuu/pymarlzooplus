@@ -1,10 +1,28 @@
 # Further Extended Python MARL framework - EPyMARL
 
 FEPyMARL is  an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), and includes
-- Additional algorithms: HAPPO, MAT, QPLEX, EOI, EMC, MASER, CDS
-- Support for [PettingZoo](https://github.com/Farama-Foundation/PettingZoo) environments (on top of the existing gym support)
+- Additional (7) algorithms: 
+  - HAPPO, 
+  - MAT-DEC, 
+  - QPLEX, 
+  - EOI, 
+  - EMC, 
+  - MASER, 
+  - CDS
+- Support for [PettingZoo](https://github.com/Farama-Foundation/PettingZoo) environments
 - Support for [Overcooked](https://github.com/HumanCompatibleAI/overcooked_ai) environments.
 - Support for [Pressure plate](https://github.com/uoe-agents/pressureplate) environments.
+
+Algorithms (9) maintained from EPyMARL:
+- COMA
+- QMIX
+- MAA2C
+- MAPPO
+- VDN
+- MADDPG
+- IQL
+- IPPO
+- IA2C
 
 # Table of Contents
 - [Further Extended Python MARL framework - FEPyMARL](#further-extended-python-marl-framework---epymarl)
@@ -13,7 +31,7 @@ FEPyMARL is  an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), a
   - [Base requirements installation](#base-requirements-installation)
   - [Torch installation](#torch-installation)
   - [Torch-scatter installation](#torch-scatter-installation)
-  - [Installing LBF, RWARE, MPE, PettingZoo, Overcooked, and Pressure plate](#installing-lbf-rware-mpe-pettingzoo-and-overcooked)
+  - [Installing LBF, RWARE, MPE, PettingZoo, Overcooked, and Pressure plate](#installing-lbf-rware-mpe-pettingzoo-overcooked-and-pressureplate)
   - [Using A Custom Gym Environment](#using-a-custom-gym-environment)
 - [Run an experiment on a Gym environment](#run-an-experiment-on-a-gym-environment)
 - [Run a hyperparameter search](#run-a-hyperparameter-search)
@@ -60,100 +78,163 @@ pip3 install torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytor
 ```
 
 ## Torch-scatter installation
-Finally, run the following for torch-scatter installation (which is needed for the most Actor-Critic algorithms):
+Finally, run the following for torch-scatter installation (which is needed for most of the Actor-Critic algorithms):
 ```sh
 sh ./install_torch_scatter.sh
 ```
 
-## Installing LBF, RWARE, MPE, PettingZoo, and Overcooked
+## Installing LBF, RWARE, MPE, PettingZoo, Overcooked, and PressurePlate
 
 ### LBF
 To install [Level Based Foraging](https://github.com/uoe-agents/lb-foraging), run:
 ```sh
-pip install lbforaging
+pip install lbforaging==1.1.1
 ```
 
-Example of using LBF:
+Example of using LBF (replace ```<algo>``` and ```<scenario>```):
 ```sh
-python3 src/main.py --config=qmix --env-config=gymma with env_args.time_limit=25 env_args.key="lbforaging:Foraging-8x8-2p-3f-v1"
+python3 src/main.py --config=<algo> --env-config=gymma with env_args.time_limit=25 env_args.key=<scenario>
 ```
+
+Available scenarios we run experiments:
+- "lbforaging:Foraging-4s-11x11-3p-2f-coop-v2",
+- "lbforaging:Foraging-2s-11x11-3p-2f-coop-v2",
+- "lbforaging:Foraging-2s-8x8-3p-2f-coop-v2",
+- "lbforaging:Foraging-2s-9x9-3p-2f-coop-v2",
+- "lbforaging:Foraging-7s-20x20-5p-3f-coop-v2",
+- "lbforaging:Foraging-2s-12x12-2p-2f-coop-v2",
+- "lbforaging:Foraging-8s-25x25-8p-5f-coop-v2",
+- "lbforaging:Foraging-7s-30x30-7p-4f-coop-v2"
 
 ### RWARE
 To install [Multi-Robot Warehouse](https://github.com/uoe-agents/robotic-warehouse), run:
 ```sh
-pip install rware
+pip install rware==1.0.3
 ```
 
-Example of using RWARE:
+Example of using RWARE (replace ```<algo>``` and ```<scenario>```):
 ```sh
-python3 src/main.py --config=qmix --env-config=gymma with env_args.time_limit=500 env_args.key="rware:rware-tiny-2ag-v1"
+python3 src/main.py --config=<algo> --env-config=gymma with env_args.time_limit=500 env_args.key=<scenario>
 ```
+
+Available scenarios we run experiments:
+- "rware:rware-small-4ag-hard-v1",
+- "rware:rware-tiny-4ag-hard-v1",
+- "rware:rware-tiny-2ag-hard-v1"
 
 ### MPE
-To install [MPE](https://github.com/semitable/multiagent-particle-envs), run:
+To install [Multi-agent Particle Environment](https://github.com/semitable/multiagent-particle-envs), being in ```fepymarl/``` directory, run:
 ```sh
-pip install seaborn git+https://github.com/semitable/multiagent-particle-envs.git
+cd src/envs/multiagent-particle-envs/
+pip install -e .
+pip install seaborn==0.13.2  # Required for colors of landmarks
 ```
 
-For MPE, the fork ... is needed. Essentially all it does (other than fixing some gym compatibility issues) is i) registering the environments with the gym interface when imported as a package and ii) correctly seeding the environments iii) makes the action space compatible with Gym (I think MPE originally does a weird one-hot encoding of the actions).
-
-The environments names in MPE are:
-```
-...
-    "multi_speaker_listener": "MultiSpeakerListener-v0",
-    "simple_speaker_listener": "SimpleSpeakerListener-v0",
-    "simple_spread": "SimpleSpread-v0",
-    "simple_tag": "SimpleTag-v0"
-...
-```
-Therefore, after installing them you can run it using:
+Example of using MPE (replace ```<algo>``` and ```<scenario>```):
 ```sh
-python3 src/main.py --config=qmix --env-config=gymma with env_args.time_limit=25 env_args.key="mpe:SimpleSpeakerListener-v0"
+python3 src/main.py --config=<algo> --env-config=gymma with env_args.time_limit=25 env_args.key=<scenario>
 ```
+
+Available scenarios we run experiments:
+- "mpe:SimpleSpeakerListener-v0", 
+- "mpe:SimpleSpread-3-v0",
+- "mpe:SimpleSpread-4-v0",
+- "mpe:SimpleSpread-5-v0",
+- "mpe:SimpleSpread-8-v0"
+
+More available scenarios:
+- "mpe:MultiSpeakerListener-v0"
+- "mpe:SimpleAdversary-v0",
+- "mpe:SimpleCrypto-v0",
+- "mpe:SimplePush-v0",
+- "mpe:SimpleReference-v0",
+- "mpe:SimpleTag-v0"
+- "mpe:SimpleWorldComm-v0",
+- "mpe:ClimbingSpread-v0"
 
 ### PettingZoo
-To install PettinZoo run:
+To install PettingZoo run:
 ```sh
 pip install transformers==4.38.2 pettingzoo==1.24.3 'pettingzoo[atari]'==1.24.3 autorom==0.6.1 'pettingzoo[butterfly]'==1.24.3 
 AutoROM -y
 ```
 Example of using PettingZoo:
 ```sh
-python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.max_cycles=25 env_args.key="pistonball_v6" env_args.kwargs="('n_pistons',4),"
+python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.max_cycles=25 env_args.key="pistonball_v6" env_args.kwargs="('n_pistons',10),"
 ```
 
 ### Overcooked
-To install Overcooked, assuming being in ```fepymarl/``` directory run:
+To install Overcooked, being in ```fepymarl/``` directory, run:
 ```sh
 cd src/envs/overcooked_ai/
 pip install -e .
 ```
 
-Example of using Overcooked:
+Example of using Overcooked (replace ```<algo>```, ```<scenario>```, and ```<reward_type>```):
 ```sh
-python3 src/main.py --config=qmix --env-config=overcooked with env_args.horizon=500 env_args.key="asymmetric_advantages"
+python3 src/main.py --config=<algo> --env-config=overcooked with env_args.horizon=500 env_args.key=<scenario> env_args.reward_type=<reward_type>
 ```
 
+Available scenarios we run experiments:
+- "cramped_room"
+- "asymmetric_advantages"
+- "coordination_ring"
+
+More available scenarios:
+- "counter_circuit"
+- "random3"
+- "random0"
+- "unident"
+- "forced_coordination"
+- "soup_coordination"
+- "small_corridor"
+- "simple_tomato"
+- "simple_o_t"
+- "simple_o"
+- "schelling_s"
+- "schelling"
+- "m_shaped_s"
+- "long_cook_time"
+- "large_room"
+- "forced_coordination_tomato"
+- "cramped_room_tomato"
+- "cramped_room_o_3orders"
+- "asymmetric_advantages_tomato"
+- "bottleneck"
+- "cramped_corridor"
+- "counter_circuit_o_1order"
+
+Reward types available:
+- "sparse" (we used it to run our experiments)
+- "shaped"
+
 ### Pressure plate
-To install Pressure plate, assuming being in ```fepymarl/``` directory run:
+To install Pressure plate, being in ```fepymarl/``` directory, run:
 ```sh
 cd src/envs/pressureplate_ai/
 pip install -e .
 pip install pyglet==1.5.29 # For rendering
-pip install gym==0.21.0
+pip install gym==0.21.0  # To avoid installing other gym version
 ```
 
-Example of using Pressure plate:
+Example of using Pressure plate (replace ```<algo>``` and ```<scenario>```):
 ```sh
-python3 src/main.py --config=qmix --env-config=pressureplate with env_args.key="pressureplate-linear-4p-v0" env_args.horizon=500
+python3 src/main.py --config=<algo> --env-config=pressureplate with env_args.key=<scenario> env_args.horizon=500
 ```
+
+Available scenarios we run experiments:
+- "pressureplate-linear-4p-v0"
+- "pressureplate-linear-6p-v0"
+
+More available scenarios:
+- "pressureplate-linear-5p-v0"
 
 ## Using A Custom Gym Environment
 
 EPyMARL supports environments that have been registered with Gym. 
 The only difference with the Gym framework would be that the returned rewards should be a tuple (one reward for each agent). In this cooperative framework we sum these rewards together.
 
-Environments that are supported out of the box are the ones that are registered in Gym automatically. Examples are: [Level-Based Foraging](https://github.com/semitable/lb-foraging) and [RWARE](https://github.com/semitable/robotic-warehouse). 
+Environments that are supported out of the box are the ones that are registered in Gym automatically. Examples are: [LBF](https://github.com/semitable/lb-foraging) and [RWARE](https://github.com/semitable/robotic-warehouse). 
 
 To register a custom environment with Gym, use the template below (taken from Level-Based Foraging).
 ```python
