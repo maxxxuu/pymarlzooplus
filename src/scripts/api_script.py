@@ -11,19 +11,29 @@ from envs import REGISTRY as env_REGISTRY
 import random as rnd
 
 # Arguments for PettingZoo
+# args = {
+#   "env": "pettingzoo",
+#   "env_args": {
+#       "key": "pistonball_v6",
+#       "max_cycles": 900,
+#       "render_mode": "rgb_array",
+#       "image_encoder": "ResNet18",
+#       "image_encoder_use_cuda": True,
+#       "image_encoder_batch_size": 10,
+#       "centralized_image_encoding": False,
+#       "partial_observation": False,
+#       "trainable_cnn": False,
+#       "kwargs": "('n_pistons',10),",
+#       "seed": 2024
+#   }
+# }
+
 args = {
   "env": "pettingzoo",
   "env_args": {
-      "key": "pistonball_v6",
-      "max_cycles": 900,
-      "render_mode": "rgb_array",
-      "image_encoder": "ResNet18",
-      "image_encoder_use_cuda": True,
-      "image_encoder_batch_size": 10,
-      "centralized_image_encoding": False,
-      "partial_observation": False,
-      "trainable_cnn": False,
-      "kwargs": "('n_pistons',10),",
+      "key": "basketball_pong_v3",
+      "max_cycles": None,
+      "kwargs": "",
       "seed": 2024
   }
 }

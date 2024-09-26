@@ -155,7 +155,7 @@ class TimeLimitPZ(GymTimeLimit):
         return observations, rewards, terminations, truncations, info
 
 
-class ObservationPZ(ObservationWrapper, ImageEncoder):
+class ObservationPZ(ObservationWrapper):
     """
     Observation wrapper for converting images to vectors (using a pretrained image encoder) or
     for preparing images to be fed to a CNN.
@@ -171,8 +171,11 @@ class ObservationPZ(ObservationWrapper, ImageEncoder):
                  centralized_image_encoding,
                  given_observation_space):
 
-        ObservationWrapper.__init__(self, env)
-        ImageEncoder.__init__(self,
+        # Initialize 'ObservationWrapper'
+        super().__init__(env)
+
+        # Initialize 'ImageEncoder' and get useful attributes
+        self.image_encoder = ImageEncoder(
                               "env",
                               centralized_image_encoding,
                               trainable_cnn,
@@ -180,6 +183,8 @@ class ObservationPZ(ObservationWrapper, ImageEncoder):
                               image_encoder_batch_size,
                               image_encoder_use_cuda
                               )
+        self.print_info = self.image_encoder.print_info
+        self.observation_space = self.image_encoder.observation_space
 
         self.partial_observation = partial_observation
         self.original_observation_space = self.env.observation_space(self.env.possible_agents[0])
@@ -198,7 +203,7 @@ class ObservationPZ(ObservationWrapper, ImageEncoder):
         return self.observation(observations), rewards, terminations, truncations, infos
 
     def observation(self, observations):
-        return ImageEncoder.observation(self, observations)
+        return self.image_encoder.observation(observations)
 
     @staticmethod
     def replace_color(image_, target_color, replacement_color):
@@ -285,14 +290,14 @@ class _PettingZooWrapper(MultiAgentEnv):
                  key,
                  max_cycles,
                  seed,
-                 render_mode,
-                 partial_observation,
-                 trainable_cnn,
-                 image_encoder,
-                 image_encoder_batch_size,
-                 image_encoder_use_cuda,
-                 centralized_image_encoding,
-                 kwargs,
+                 render_mode="rgb_array",
+                 partial_observation=False,
+                 trainable_cnn=False,
+                 image_encoder="ResNet18",
+                 image_encoder_batch_size=1,
+                 image_encoder_use_cuda=False,
+                 centralized_image_encoding=False,
+                 kwargs="",
                  given_observation_space=None):
 
         assert (partial_observation is False) or (key in ["entombed_cooperative_v3", "space_invaders_v2"]), \
@@ -325,6 +330,7 @@ class _PettingZooWrapper(MultiAgentEnv):
         self.action_space = None
         self.action_prefix = None
         self.cv2 = None
+        self.sum_rewards = None
 
         # Environment
         self.set_environment(self.key,
@@ -355,6 +361,12 @@ class _PettingZooWrapper(MultiAgentEnv):
         # Convert list of kwargs to dictionary
         self.kwargs = kwargs
         self.get_kwargs(max_cycles, render_mode)
+
+        # Assign value to 'self.sum_rewards' based on the env key
+        self.sum_rewards = True
+        if key not in ["pistonball_v6", "cooperative_pong_v5", "entombed_cooperative_v3", "space_invaders_v2"]:
+            # Only these environments refer to fully cooperation, thus we can sum the rewards.
+            self.sum_rewards = False
 
         # Define the environment
         self.original_env = self.pettingzoo_make(key, self.kwargs)
@@ -488,6 +500,19 @@ class _PettingZooWrapper(MultiAgentEnv):
 
             return space_invaders_v2.parallel_env(**kwargs)
 
+        elif env_name == "basketball_pong_v3":
+            try:
+                from pettingzoo.atari import basketball_pong_v3
+            except:
+                raise ImportError("pettingzoo[atari] is not installed! "
+                                  "\nInstall it running: \npip install 'pettingzoo[atari]'")
+
+            if 'num_players' not in kwargs.keys():
+                kwargs['num_players'] = 2
+            assert kwargs['num_players'] in [2, 4], "'num_players' should be 2 or 4!"
+
+            return basketball_pong_v3.parallel_env(**kwargs)
+
         else:
             raise ValueError(f"Environment '{env_name}' is not supported.")
 
@@ -496,6 +521,7 @@ class _PettingZooWrapper(MultiAgentEnv):
 
     def step(self, actions):
         """ Returns reward, terminated, info """
+
         # Apply action for each agent
         actions = {f"{self.action_prefix[action_idx]}": action.item() if isinstance(action, np.int64) or
                                                                          (isinstance(action, np.ndarray) and
@@ -508,12 +534,17 @@ class _PettingZooWrapper(MultiAgentEnv):
                    for action_idx, action in enumerate(actions)}
 
         self._obs, rewards, terminations, truncations, self._info = self._env.step(actions)
-        # Add all rewards together
-        reward = sum(rewards.values())
+
+        if self.sum_rewards is True:
+            # Add all rewards together
+            reward = float(sum(rewards.values()))
+        else:
+            reward = list(rewards.values())
+
         done = (any([termination for termination in terminations.values()])
                 or any([truncation for truncation in truncations.values()]))
 
-        return float(reward), done, {}
+        return reward, done, {}
 
     def get_obs(self):
         """ Returns all agent observations in a list """

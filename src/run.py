@@ -328,7 +328,7 @@ def run_sequential(args, logger):
 
 def args_sanity_check(config, _log):
 
-    # set CUDA flags
+    # Set CUDA flags
     if config["use_cuda"] and not th.cuda.is_available():
         config["use_cuda"] = False
         _log.warning(
@@ -339,9 +339,19 @@ def args_sanity_check(config, _log):
         _log.warning(
             "CUDA flag use_cuda_cnn_modules was switched OFF automatically because no CUDA devices are available!"
         )
-    assert not (config["use_cuda_cnn_modules"] is False and config["use_cuda"] is True), \
-        ("When 'use_cuda' is True, 'use_cuda_cnn_modules' should also be True!"
-         f"\n'use_cuda': {config['use_cuda']}, 'use_cuda_cnn_modules': {config['use_cuda_cnn_modules']}")
+    if config["use_cuda_cnn_modules"] is False and config["use_cuda"] is True:
+        config["use_cuda_cnn_modules"] = True
+        _log.warning(
+            "'use_cuda_cnn_modules' was turned to True since 'use_cuda' is also True!"
+        )
+
+    # Set 'centralized_image_encoding' arg
+    if "centralized_image_encoding" in list(config["env_args"].keys()):
+        if config["env_args"]["centralized_image_encoding"] is True and config["batch_size_run"] == 1:
+            config["env_args"]["centralized_image_encoding"] = False
+            _log.warning(
+                "'centralized_image_encoding' was turned to False since only 1 env process is running!"
+            )
 
     if config["test_nepisode"] < config["batch_size_run"]:
         config["test_nepisode"] = config["batch_size_run"]

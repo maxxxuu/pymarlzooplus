@@ -44,7 +44,6 @@ class ImageEncoder(nn.Module):
                 self.image_encoder_batch_size = image_encoder_batch_size
 
                 # Encoder
-                self.image_encoder = None
                 self.image_encoder_predict = None
                 if image_encoder == "ResNet18":
 
