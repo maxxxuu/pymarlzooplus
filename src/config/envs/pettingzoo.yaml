@@ -33,13 +33,14 @@ t_max: 2000 # 2050000
 # All (the following) atari games have these default args: obs_type='rgb_image', full_action_space=True, max_cycles=100000, auto_rom_install_path=None)
 # Entombed Cooperative
 # https://pettingzoo.farama.org/environments/atari/entombed_cooperative/
-# RUN: python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.max_cycles=10000 env_args.key="entombed_cooperative_v3"
+# RUN: python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.key="entombed_cooperative_v3"
 
 # Space Invaders
 # https://pettingzoo.farama.org/environments/atari/space_invaders/
 # args: alternating_control=False, moving_shields=True, zigzaging_bombs=False, fast_bomb=False, invisible_invaders=False
-# RUN: python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.max_cycles=10000 env_args.key="space_invaders_v2"
+# RUN: python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.key="space_invaders_v2"
 
 # Basketball Pong
 # https://pettingzoo.farama.org/environments/atari/basketball_pong/
 # args: num_players=2 or 4
+# RUN: Not compatible with our training framework, but it can be used with the environment API.
