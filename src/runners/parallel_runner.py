@@ -1,15 +1,14 @@
 import time
-import datetime
-
-import torch
-from envs import REGISTRY as env_REGISTRY
 from functools import partial
-from components.episode_buffer import EpisodeBatch
-from torch.multiprocessing import Pipe, Process
+import datetime
 import numpy as np
 import torch as th
+from torch.multiprocessing import Pipe, Process
 
+from envs import REGISTRY as env_REGISTRY
+from components.episode_buffer import EpisodeBatch
 from utils.image_encoder import ImageEncoder
+from utils.handle_import_errors import check_env_installation
 
 
 # Based (very) heavily on SubprocVecEnv from OpenAI Baselines
@@ -17,6 +16,9 @@ from utils.image_encoder import ImageEncoder
 class ParallelRunner:
 
     def __init__(self, args, logger):
+
+        # Check if the requirements for the selected environment are installed
+        check_env_installation(args.env, env_REGISTRY, logger)
 
         self.preprocess = None
         self.groups = None
@@ -47,6 +49,7 @@ class ParallelRunner:
             image_encoder = ImageEncoder(*image_encoder_args)
             image_encoder.share_memory()  # Make model parameters shareable across processes
             self.args.env_args['given_observation_space'] = image_encoder.observation_space
+            self.logger.console_logger.info(image_encoder.print_info)
 
         # Make subprocesses for the envs
         self.parent_conns, self.worker_conns = zip(*[Pipe() for _ in range(self.batch_size)])
@@ -217,12 +220,12 @@ class ParallelRunner:
             if "hidden_states" in self.args.extra_in_buffer:
                 pre_transition_data["hidden_states"] = \
                     extra_returns["hidden_states"][
-                        ~torch.tensor(terminated).to(extra_returns["hidden_states"].device)
+                        ~th.tensor(terminated).to(extra_returns["hidden_states"].device)
                                                   ]
             if "hidden_states_critic" in self.args.extra_in_buffer:
                 pre_transition_data["hidden_states_critic"] = \
                     extra_returns["hidden_states_critic"][
-                        ~torch.tensor(terminated).to(extra_returns["hidden_states_critic"].device)
+                        ~th.tensor(terminated).to(extra_returns["hidden_states_critic"].device)
                                                          ]
 
             # Receive data back for each unterminated env
@@ -364,11 +367,13 @@ def env_worker(remote, env_fn, image_encoder):
             env.save_replay()
         elif cmd == "get_print_info":
             if "PettingZoo" in type(env).__name__:
-                # Simulate the message format of the logger defined in _logging.py
-                current_time = datetime.datetime.now().strftime('%H:%M:%S')
-                print_info = (f"\n[INFO {current_time}] parallel_runner " +
-                              ("None" if env.get_print_info() is None else env.get_print_info()))
-                remote.send(print_info)
+                if env.get_print_info() is None:
+                    remote.send("None")
+                else:
+                    # Simulate the message format of the logger defined in _logging.py
+                    current_time = datetime.datetime.now().strftime('%H:%M:%S')
+                    print_info = f"\n[INFO {current_time}] parallel_runner " + env.get_print_info()
+                    remote.send(print_info)
             else:
                 remote.send("None")
         else:

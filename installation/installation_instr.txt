@@ -53,12 +53,15 @@ sudo apt-get install swig
 pip install 'pettingzoo[sisl]'==1.24.3
 ################################################################################
 
-# For Overcooked
+## For Overcooked
 # Being in fepymarl/ directory:
 cd src/envs/overcooked_ai/
 pip install -e .
+# Uninstall opencv because it installs newer version
+pip uninstall opencv-python opencv-python-headless -y
+pip install opencv-python-headless==4.9.0.80 # or pip install opencv-python==4.9.0.80 # only for rendering
 
-# For pressureplate
+## For pressureplate
 # Being in fepymarl/ directory:
 cd src/envs/pressureplate_ai/
 pip install -e .
