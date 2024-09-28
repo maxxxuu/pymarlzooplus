@@ -1,6 +1,6 @@
 # Further Extended Python MARL framework - EPyMARL
 
-FEPyMARL is  an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), and includes
+FEPyMARL is an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), and includes
 - Additional (7) algorithms: 
   - HAPPO, 
   - MAT-DEC, 
@@ -12,7 +12,7 @@ FEPyMARL is  an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), a
 - Support for [PettingZoo](https://github.com/Farama-Foundation/PettingZoo) environments
 - Support for [Overcooked](https://github.com/HumanCompatibleAI/overcooked_ai) environments.
 - Support for [Pressure plate](https://github.com/uoe-agents/pressureplate) environments.
-- Support for [Capture Target](https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/capture_target.py) environments.
+- Support for [Capture Target](https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/capture_target.py) environment.
 
 Algorithms (9) maintained from EPyMARL:
 - COMA
@@ -154,7 +154,7 @@ More available scenarios:
 - "mpe:ClimbingSpread-v0"
 
 ### PettingZoo
-To install PettingZoo run:
+To install [PettingZoo](https://github.com/Farama-Foundation/PettingZoo) run:
 ```sh
 pip install opencv-python-headless==4.9.0.80
 # or
@@ -169,7 +169,7 @@ python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.max_cycl
 ```
 
 ### Overcooked
-To install Overcooked, being in ```fepymarl/``` directory, run:
+To install [Overcooked](https://github.com/HumanCompatibleAI/overcooked_ai), being in ```fepymarl/``` directory, run:
 ```sh
 cd src/envs/overcooked_ai/
 pip install -e .
@@ -217,7 +217,7 @@ Reward types available:
 - "shaped"
 
 ### Pressure plate
-To install Pressure plate, being in ```fepymarl/``` directory, run:
+To install [Pressure Plate](https://github.com/uoe-agents/pressureplate/), being in ```fepymarl/``` directory, run:
 ```sh
 cd src/envs/pressureplate_ai/
 pip install -e .
@@ -237,7 +237,7 @@ More available scenarios:
 - "pressureplate-linear-5p-v0"
 
 ### Capture Target
-To install capture target, being in ```fepymarl/``` directory run:
+To install [Capture Target](https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/capture_target.py), being in ```fepymarl/``` directory run:
 ```sh
 cd src/envs/capture_target/
 pip install -e .

@@ -1,6 +1,10 @@
 """
 2D rendering framework
+
+Code adapted dy:
+https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/rendering.py
 """
+
 from __future__ import division
 import os
 import six

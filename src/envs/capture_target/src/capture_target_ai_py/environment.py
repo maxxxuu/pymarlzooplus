@@ -1,5 +1,6 @@
 """
-Code adapted by https://github.com/yuchen-x/MacDeepMARL/
+Code adapted by:
+https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/capture_target.py
 """
 
 import numpy as np
