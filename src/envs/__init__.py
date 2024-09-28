@@ -38,7 +38,14 @@ except:
   
 try:
     from envs.capturetarget_wrapper import _CaptureTargetWrapper
-    REGISTRY["capture_target"] = partial(env_fn, env=_CaptureTargetWrapper)
+    REGISTRY["capturetarget"] = partial(env_fn, env=_CaptureTargetWrapper)
 except:
     pass
 
+REGISTRY_availability = [
+    "gymma",
+    "pettingzoo",
+    "overcooked",
+    "pressureplate",
+    "capturetarget"
+]

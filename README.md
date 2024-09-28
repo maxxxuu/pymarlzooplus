@@ -221,7 +221,7 @@ To install Pressure plate, being in ```fepymarl/``` directory, run:
 ```sh
 cd src/envs/pressureplate_ai/
 pip install -e .
-pip install pyglet==1.5.29 # For rendering
+pip install pyglet==1.5.27 # For rendering
 ```
 
 Example of using Pressure plate (replace ```<algo>``` and ```<scenario>```):
@@ -242,13 +242,15 @@ To install capture target, being in ```fepymarl/``` directory run:
 cd src/envs/capture_target/
 pip install -e .
 pip install pyglet==1.5.27 # For rendering
-pip install gym==0.21.0  # To avoid installing other gym version
 ```
 
 Example of using Capture Target (replace ```<algo>```):
 ```sh
-python3 src/main.py --config=<algo> --env-config=capture_target with env_args.terminate_step=60
+python3 src/main.py --config=<algo> --env-config=capturetarget with env_args.key=<scenario> env_args.terminate_step=60
 ```
+
+Available scenarios:
+- "CaptureTarget-6x6-1t-2a-v0"
 
 ## Using A Custom Gym Environment
 

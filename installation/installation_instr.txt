@@ -65,7 +65,7 @@ pip install opencv-python-headless==4.9.0.80 # or pip install opencv-python==4.9
 # Being in fepymarl/ directory:
 cd src/envs/pressureplate_ai/
 pip install -e .
-pip install pyglet==1.5.29 # For rendering
+pip install pyglet==1.5.27 # For rendering
 
 # For Capture Target
 # Assuming being in epymarl/ directory:

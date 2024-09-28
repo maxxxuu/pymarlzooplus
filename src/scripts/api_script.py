@@ -79,6 +79,16 @@ import random as rnd
 #   }
 # }
 
+# Arguments for Capture Target
+args = {
+  "env": "capturetarget",
+  "env_args": {
+      "key": "CaptureTarget-6x6-1t-2a-v0",
+      "terminate_step": 60,
+      "seed": 2024
+  }
+}
+
 # Initialize environment
 env = env_REGISTRY[args["env"]](**args["env_args"])
 n_agns = env.n_agents

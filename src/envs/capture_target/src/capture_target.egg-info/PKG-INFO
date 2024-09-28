@@ -1,0 +1,8 @@
+Metadata-Version: 2.1
+Name: capture-target
+Version: 1.0.0
+Summary: Multi-agent-single-target (MAST) environment based on Capture Target
+Home-page: https://github.com/yuchen-x/MacDeepMARL
+Keywords: Capture Target,AI,Reinforcement Learning
+Description-Content-Type: text/markdown
+License-File: LICENSE

@@ -1,6 +1,7 @@
 import gym
 from gym import ObservationWrapper
 from gym.wrappers import TimeLimit as GymTimeLimit
+from gym.envs.registration import register
 
 from smac.env import MultiAgentEnv
 
@@ -17,6 +18,8 @@ class TimeLimitCT(GymTimeLimit):
         assert (self._elapsed_steps is not None), "Cannot call env.step() before calling reset()"
 
         observations, rewards, done, info = self.env.step(actions)
+        done = bool(done)  # From int to bool
+
         self._elapsed_steps += 1
         info = {"TimeLimit.truncated": False}
 
@@ -25,10 +28,12 @@ class TimeLimitCT(GymTimeLimit):
 
         return observations, rewards, done, info
 
+
 class ObservationCT(ObservationWrapper):
 
     def __init__(self, env):
         super(ObservationCT, self).__init__(env)
+
         self._env = env
 
     def step(self, actions):
@@ -38,10 +43,15 @@ class ObservationCT(ObservationWrapper):
     def observation(self, observations):
         return observations
 
+
 class _CaptureTargetWrapper(MultiAgentEnv):
 
     def __init__(self, key, seed, **kwargs):
+
+        # Import and register
         from capture_target_ai_py.environment import CaptureTarget
+        self.gym_registration()
+
         self.original_env = gym.make(f"{key}", **kwargs)
         self.episode_limit = self.original_env.terminate_step
 
@@ -53,23 +63,38 @@ class _CaptureTargetWrapper(MultiAgentEnv):
         self._info = {"TimeLimit.truncated": False}
         self._seed = seed
         self._obs_size = self._env.obs_size[0]
-        # assert that obs_size is the same for every agent
-        assert all([self._obs_size == obs_size for obs_size in self._env.obs_size])
-
         self.action_space = self._env.n_action[0]
-        # assert that n_action is the same for every agent
+
+        # Check if n_agents is 2
+        assert self.n_agents == 2
+        # Check if obs_size is the same for every agent
+        assert all([self._obs_size == obs_size for obs_size in self._env.obs_size])
+        # Check if n_action is the same for every agent
         assert all([self.action_space == n_action for n_action in self._env.n_action])
+
+    @staticmethod
+    def gym_registration():
+        register(
+            id="CaptureTarget-6x6-1t-2a-v0",
+            entry_point="capture_target_ai_py.environment:CaptureTarget",
+            kwargs={
+                "n_target": 1,
+                "n_agent": 2,
+                "grid_dim": [6, 6]
+            },
+        )
 
     def step(self, actions):
         """ Returns reward, terminated, info """
 
+        # From torch.tensor to int
         actions = [int(a) for a in actions]
 
         # Make the environment step
         self._obs, rewards, done, info = self._env.step(actions)
 
-        if type(rewards) is list:
-            rewards = sum(rewards)
+        # Add all rewards together. 'rewards' is a list
+        rewards = sum(rewards)
 
         return float(rewards), done, {}
 
@@ -86,6 +111,7 @@ class _CaptureTargetWrapper(MultiAgentEnv):
         return self._obs_size
 
     def get_state(self):
+        # The state is a vector with the observations of all agents flattened
         return self._obs.flatten()
 
     def get_state_size(self):

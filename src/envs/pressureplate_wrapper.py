@@ -115,15 +115,18 @@ class _PressurePlateWrapper(MultiAgentEnv):
     def step(self, actions):
         """ Returns reward, terminated, info """
 
-        # Apply actions for each agent
+        # From torch.tensor to int
         actions = [int(a) for a in actions]
+
         # Make the environment step
         self._obs, rewards, terminations, self._info = self._env.step(actions)
 
-        # Add all rewards together
+        # Add all rewards together. 'rewards' is a list
         reward = sum(rewards)
+
         # Keep only 'TimeLimit.truncated' in 'self._info'
         self._info = {"TimeLimit.truncated": self._info["TimeLimit.truncated"]}
+
         # The episode ends when all agents have reached their positions ("terminations" are all True) or
         # "self._elapsed_steps >= self._max_episode_steps" is True
         done = all(terminations)
