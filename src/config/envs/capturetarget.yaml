@@ -3,7 +3,7 @@ env: "capturetarget"
 env_args:
   key: null # Options: CaptureTarget-6x6-1t-2a-v0
   seed: null
-  terminate_step: 60 # Maximal steps for termination
+  time_limit: 60 # Maximal steps for termination
   obs_one_hot: False # Whether represents observation as one-hot vector
   intermediate_r: False
   target_flick_prob: 0.3 # Probability of not observing the target
@@ -22,4 +22,4 @@ t_max: 10000 # # 20050000
 # Capture Target
 # https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/capture_target.py
 # args: key, seed, terminate_step=60, obs_one_hot=False, intermediate_r=False, target_flick_prob=0.3, tgt_avoid_agent=False, tgt_trans_noise=0.0, agent_trans_noise=0.1
-# RUN: python3 src/main.py --config=qmix --env-config=capturetarget with env_args.key="CaptureTarget-6x6-1t-2a-v0" env_args.terminate_step=60
+# RUN: python3 src/main.py --config=qmix --env-config=capturetarget with env_args.key="CaptureTarget-6x6-1t-2a-v0" env_args.time_limit=60

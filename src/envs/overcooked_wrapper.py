@@ -91,29 +91,33 @@ class _OvercookedWrapper(MultiAgentEnv):
 
     def __init__(self,
                  key,
-                 horizon,
+                 time_limit,
                  seed,
                  reward_type):
 
+        # Check key validity
         assert key in OVERCOOKED_KEY_CHOICES, \
             f"Invalid 'key': {key}! \nChoose one of the following: \n{OVERCOOKED_KEY_CHOICES}"
-        self.key = key
-        assert isinstance(horizon, int), f"Invalid horizon type: {type(horizon)}, 'horizon': {horizon}, is not 'int'!"
-        self.horizon = horizon
-        self._seed = seed
+        # Check time_limit validity
+        assert isinstance(time_limit, int), \
+            f"Invalid time_limit type: {type(time_limit)}, 'time_limit': {time_limit}, is not 'int'!"
+        # Check reward_type validity
         assert reward_type in OVERCOOKED_REWARD_TYPE_CHOICES, \
             f"Invalid 'reward_type': {reward_type}! \nChoose one of the following: \n{OVERCOOKED_REWARD_TYPE_CHOICES}"
+
+        self.key = key
+        self._seed = seed
         self.reward_type = reward_type
 
         # Gym make
         from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld
         from overcooked_ai_py.mdp.overcooked_env import OvercookedEnv
         mdp = OvercookedGridworld.from_layout_name(self.key)
-        base_env = OvercookedEnv.from_mdp(mdp, horizon=self.horizon)
+        base_env = OvercookedEnv.from_mdp(mdp, horizon=time_limit)
         self.original_env = gym.make("Overcooked-v0", base_env=base_env, featurize_fn=base_env.featurize_state_mdp)
 
         # Use the wrappers for handling the time limit and the environment observations properly.
-        self.episode_limit = self.horizon
+        self.episode_limit = time_limit
         self.n_agents = 2  # Always 2 agents
         self._env = TimeLimitOvercooked(self.original_env, max_episode_steps=self.episode_limit)
         self._env = ObservationOvercooked(self._env)

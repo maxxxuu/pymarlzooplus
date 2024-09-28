@@ -165,7 +165,7 @@ AutoROM -y
 ```
 Example of using PettingZoo:
 ```sh
-python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.max_cycles=25 env_args.key="pistonball_v6" env_args.kwargs="('n_pistons',10),"
+python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.time_limit=900 env_args.key="pistonball_v6" env_args.kwargs="('n_pistons',10),"
 ```
 
 ### Overcooked
@@ -180,7 +180,7 @@ pip install opencv-python-headless==4.9.0.80 # or pip install opencv-python==4.9
 
 Example of using Overcooked (replace ```<algo>```, ```<scenario>```, and ```<reward_type>```):
 ```sh
-python3 src/main.py --config=<algo> --env-config=overcooked with env_args.horizon=500 env_args.key=<scenario> env_args.reward_type=<reward_type>
+python3 src/main.py --config=<algo> --env-config=overcooked with env_args.time_limit=500 env_args.key=<scenario> env_args.reward_type=<reward_type>
 ```
 
 Available scenarios we run experiments:
@@ -226,7 +226,7 @@ pip install pyglet==1.5.27 # For rendering
 
 Example of using Pressure plate (replace ```<algo>``` and ```<scenario>```):
 ```sh
-python3 src/main.py --config=<algo> --env-config=pressureplate with env_args.key=<scenario> env_args.horizon=500
+python3 src/main.py --config=<algo> --env-config=pressureplate with env_args.key=<scenario> env_args.time_limit=500
 ```
 
 Available scenarios we run experiments:
@@ -246,7 +246,7 @@ pip install pyglet==1.5.27 # For rendering
 
 Example of using Capture Target (replace ```<algo>```):
 ```sh
-python3 src/main.py --config=<algo> --env-config=capturetarget with env_args.key=<scenario> env_args.terminate_step=60
+python3 src/main.py --config=<algo> --env-config=capturetarget with env_args.key=<scenario> env_args.time_limit=60
 ```
 
 Available scenarios:

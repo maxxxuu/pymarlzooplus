@@ -2,7 +2,7 @@ env: "overcooked"
 
 env_args:
   key: null
-  horizon: null
+  time_limit: 500 # By default 500
   reward_type: null # Options: "shaped", "sparse"
 
 test_greedy: True
@@ -15,8 +15,8 @@ t_max: 10000 # 2050000
 
 # Overcooked
 # https://github.com/HumanCompatibleAI/overcooked_ai
-# args: key="asymmetric_advantages", horizon=500, reward_type="shaped"
-# RUN: python3 src/main.py --config=qmix --env-config=overcooked with env_args.horizon=500 env_args.key="asymmetric_advantages"
+# args: key="asymmetric_advantages", time_limit=500, reward_type="shaped"/"sparse"
+# RUN: python3 src/main.py --config=qmix --env-config=overcooked with env_args.time_limit=500 env_args.key="asymmetric_advantages" env_args.reward_type="sparse"
 
 # layouts (which is the "key" in the "env_args") options:
 

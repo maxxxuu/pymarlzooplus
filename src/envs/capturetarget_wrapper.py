@@ -48,6 +48,16 @@ class _CaptureTargetWrapper(MultiAgentEnv):
 
     def __init__(self, key, seed, **kwargs):
 
+        # Check time_limit validity
+        assert 'time_limit' in list(kwargs.keys()), 'time_limit not provided!'
+        time_limit = kwargs['time_limit']
+        assert isinstance(time_limit, int), \
+            f"Invalid time_limit type: {type(time_limit)}, 'time_limit': {time_limit}, is not 'int'!"
+
+        # Fix kwargs time_limit, since the environment defines this arg as 'terminate_step'
+        kwargs['terminate_step'] = time_limit
+        del kwargs['time_limit']
+
         # Import and register
         from capture_target_ai_py.environment import CaptureTarget
         self.gym_registration()

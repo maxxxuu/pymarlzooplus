@@ -58,23 +58,18 @@ class _PressurePlateWrapper(MultiAgentEnv):
 
     def __init__(self,
                  key,
-                 horizon,
+                 time_limit,
                  seed,
                  ):
 
         # Check key validity
         assert key in PRESSUREPLATE_KEY_CHOICES, \
             f"Invalid 'key': {key}! \nChoose one of the following: \n{PRESSUREPLATE_KEY_CHOICES}"
+        # Check time_limit validity
+        assert isinstance(time_limit, int), \
+            f"Invalid time_limit type: {type(time_limit)}, 'time_limit': {time_limit}, is not 'int'!"
+
         self.key = key
-
-        # Check horizon validity
-        assert isinstance(horizon, int), f"Invalid horizon type: {type(horizon)}, 'horizon': {horizon}, is not 'int'!"
-
-        # Default horizon
-        if not horizon:
-            horizon = 500
-
-        self.horizon = horizon
         self._seed = seed
 
         # Placeholders
@@ -86,14 +81,14 @@ class _PressurePlateWrapper(MultiAgentEnv):
         self.observation_space = None
         self.action_space = None
 
-        # Gym make
+        ## Gym make
         # base env sourced by gym.make with all its args
         from pressureplate.environment import PressurePlate
         self.original_env = gym.make(f"{key}")
 
         # Use the wrappers for handling the time limit and the environment observations properly.
         self.n_agents = self.original_env.n_agents
-        self.episode_limit = self.horizon
+        self.episode_limit = time_limit
         # now create the wrapped env
         self._env = TimeLimitPressurePlate(self.original_env, max_episode_steps=self.episode_limit)
         self._env = ObservationPressurePlate(self._env)

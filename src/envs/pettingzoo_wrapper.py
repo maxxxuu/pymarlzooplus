@@ -289,7 +289,7 @@ class ObservationPZ(ObservationWrapper):
 class _PettingZooWrapper(MultiAgentEnv):
     def __init__(self,
                  key,
-                 max_cycles,
+                 time_limit,
                  seed,
                  render_mode="rgb_array",
                  partial_observation=False,
@@ -306,7 +306,7 @@ class _PettingZooWrapper(MultiAgentEnv):
              "'entombed_cooperative_v3' or 'space_invaders_v2'!")
 
         self.key = key
-        self.max_cycles = max_cycles
+        self.max_cycles = time_limit
         self._seed = seed
         self.render_mode = render_mode
         self.partial_observation = partial_observation

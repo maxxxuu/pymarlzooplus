@@ -9,6 +9,14 @@ def env_fn(env, **kwargs) -> MultiAgentEnv:
     return env(**kwargs)
 
 
+REGISTRY_availability = [
+    "gymma",
+    "pettingzoo",
+    "overcooked",
+    "pressureplate",
+    "capturetarget"
+]
+
 # In this way, the user don't need to install requirements
 REGISTRY = {}
 
@@ -19,8 +27,8 @@ except:
     pass
 
 try:
-    from envs.pettingzoo_wrapper import _PettingZooWrapper
-    REGISTRY["pettingzoo"] = partial(env_fn, env=_PettingZooWrapper)
+  from envs.pettingzoo_wrapper import _PettingZooWrapper
+  REGISTRY["pettingzoo"] = partial(env_fn, env=_PettingZooWrapper)
 except:
     pass
 
@@ -42,10 +50,3 @@ try:
 except:
     pass
 
-REGISTRY_availability = [
-    "gymma",
-    "pettingzoo",
-    "overcooked",
-    "pressureplate",
-    "capturetarget"
-]
