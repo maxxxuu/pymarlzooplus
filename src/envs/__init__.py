@@ -1,11 +1,6 @@
 from functools import partial
 
 from smac.env import MultiAgentEnv
-from envs.gym_wrapper import _GymmaWrapper
-from envs.pettingzoo_wrapper import _PettingZooWrapper
-from envs.overcooked_wrapper import _OvercookedWrapper
-from envs.pressureplate_wrapper import _PressurePlateWrapper
-from envs.capturetarget_wrapper import _CaptureTargetWrapper
 import envs.lbf_registration
 import envs.mpe_registration
 
@@ -15,28 +10,34 @@ def env_fn(env, **kwargs) -> MultiAgentEnv:
 
 
 # In this way, the user don't need to install requirements
+REGISTRY = {}
 
 try:
+    from envs.gym_wrapper import _GymmaWrapper
     REGISTRY["gymma"] = partial(env_fn, env=_GymmaWrapper)
 except:
     pass
 
 try:
+    from envs.pettingzoo_wrapper import _PettingZooWrapper
     REGISTRY["pettingzoo"] = partial(env_fn, env=_PettingZooWrapper)
 except:
     pass
 
 try:
+    from envs.overcooked_wrapper import _OvercookedWrapper
     REGISTRY["overcooked"] = partial(env_fn, env=_OvercookedWrapper)
 except:
     pass
 
 try:
+    from envs.pressureplate_wrapper import _PressurePlateWrapper
     REGISTRY["pressureplate"] = partial(env_fn, env=_PressurePlateWrapper)
 except:
     pass
   
 try:
+    from envs.capturetarget_wrapper import _CaptureTargetWrapper
     REGISTRY["capture_target"] = partial(env_fn, env=_CaptureTargetWrapper)
 except:
     pass
