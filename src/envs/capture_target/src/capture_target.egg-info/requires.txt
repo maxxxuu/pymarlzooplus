@@ -1,3 +1,0 @@
-numpy
-pyglet==1.5.27
-gym
