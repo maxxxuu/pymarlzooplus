@@ -4,6 +4,7 @@ from gym.wrappers import TimeLimit as GymTimeLimit
 
 from smac.env import MultiAgentEnv
 from utils.image_encoder import ImageEncoder
+from utils.handle_import_errors import import_error_pt_atari, import_error_pt_butterfly
 
 
 class TimeLimitPZ(GymTimeLimit):
@@ -451,67 +452,314 @@ class _PettingZooWrapper(MultiAgentEnv):
 
     @staticmethod
     def pettingzoo_make(env_name, kwargs):
+
+        #### Butterfly environments ####
+
         if env_name == "pistonball_v6":
-            try:
-                from pettingzoo.butterfly import pistonball_v6
-            except:
-                raise ImportError("pettingzoo[butterfly] is not installed! "
-                                  "\nInstall it running: \npip install 'pettingzoo[butterfly]'")
 
             if 'continuous' not in kwargs.keys():
                 kwargs['continuous'] = False
-            assert kwargs['continuous'] is False, "'continuous' argument should be True!"
-
+            assert kwargs['continuous'] is False, "'continuous' argument should be False!"
             if 'n_pistons' in kwargs.keys():
                 assert kwargs['n_pistons'] >= 4, \
                     "'n_pistons' argument must be greater than or equal to 4!"
                 # Otherwise, the game stops almost immediately.
 
-            return pistonball_v6.parallel_env(**kwargs)  # Parallel mode
+            try:
+
+                from pettingzoo.butterfly import pistonball_v6
+                return pistonball_v6.parallel_env(**kwargs)  # Parallel mode
+
+            except:
+                import_error_pt_butterfly()
 
         elif env_name == "cooperative_pong_v5":
             try:
-                from pettingzoo.butterfly import cooperative_pong_v5
-            except:
-                raise ImportError("pettingzoo[butterfly] is not installed! "
-                                  "\nInstall it running: \npip install 'pettingzoo[butterfly]'")
 
-            return cooperative_pong_v5.parallel_env(**kwargs)
+                from pettingzoo.butterfly import cooperative_pong_v5
+                return cooperative_pong_v5.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_butterfly()
+
+        elif env_name == "knights_archers_zombies_v10":
+
+            if 'vector_state' not in kwargs.keys():
+                kwargs['vector_state'] = False
+            assert kwargs['vector_state'] is False, "'vector_state' argument should be False!"
+            if 'use_typemasks' not in kwargs.keys():
+                kwargs['use_typemasks'] = False
+            assert kwargs['use_typemasks'] is False, "'use_typemasks' argument should be False!"
+            if 'sequence_space' not in kwargs.keys():
+                kwargs['sequence_space'] = False
+            assert kwargs['sequence_space'] is False, "'sequence_space' argument should be False!"
+
+            try:
+
+                from pettingzoo.butterfly import knights_archers_zombies_v10
+                return knights_archers_zombies_v10.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_butterfly()
+
+        #### Atari environments ####
 
         elif env_name == "entombed_cooperative_v3":
             try:
-                from pettingzoo.atari import entombed_cooperative_v3
-            except:
-                raise ImportError("pettingzoo[atari] is not installed! "
-                                  "\nInstall it running: \npip install 'pettingzoo[atari]'")
 
-            return entombed_cooperative_v3.parallel_env(**kwargs)
+                from pettingzoo.atari import entombed_cooperative_v3
+                return entombed_cooperative_v3.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
 
         elif env_name == "space_invaders_v2":
-            try:
-                from pettingzoo.atari import space_invaders_v2
-            except:
-                raise ImportError("pettingzoo[atari] is not installed! "
-                                  "\nInstall it running: \npip install 'pettingzoo[atari]'")
 
             if 'alternating_control' not in kwargs.keys():
                 kwargs['alternating_control'] = False
             assert kwargs['alternating_control'] is False, "'alternating_control' should be False!"
 
-            return space_invaders_v2.parallel_env(**kwargs)
+            try:
+
+                from pettingzoo.atari import space_invaders_v2
+                return space_invaders_v2.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
 
         elif env_name == "basketball_pong_v3":
             try:
+
+                if 'num_players' not in kwargs.keys():
+                    kwargs['num_players'] = 2
+                assert kwargs['num_players'] in [2, 4], "'num_players' should be 2 or 4!"
+
                 from pettingzoo.atari import basketball_pong_v3
+                return basketball_pong_v3.parallel_env(**kwargs)
+
             except:
-                raise ImportError("pettingzoo[atari] is not installed! "
-                                  "\nInstall it running: \npip install 'pettingzoo[atari]'")
+                import_error_pt_atari()
+
+        elif env_name == "boxing_v2":
+            try:
+
+                from pettingzoo.atari import boxing_v2
+                return boxing_v2.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "combat_tank_v2":
+            try:
+
+                from pettingzoo.atari import combat_tank_v2
+                return combat_tank_v2.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "double_dunk_v3":
+            try:
+
+                from pettingzoo.atari import double_dunk_v3
+                return double_dunk_v3.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "double_dunk_v3":
+            try:
+
+                from pettingzoo.atari import double_dunk_v3
+                return double_dunk_v3.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "entombed_competitive_v3":
+            try:
+
+                from pettingzoo.atari import entombed_competitive_v3
+                return entombed_competitive_v3.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "entombed_cooperative_v3":
+            try:
+
+                from pettingzoo.atari import entombed_cooperative_v3
+                return entombed_cooperative_v3.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "flag_capture_v2":
+            try:
+
+                from pettingzoo.atari import flag_capture_v2
+                return flag_capture_v2.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "foozpong_v3":
 
             if 'num_players' not in kwargs.keys():
                 kwargs['num_players'] = 2
             assert kwargs['num_players'] in [2, 4], "'num_players' should be 2 or 4!"
 
-            return basketball_pong_v3.parallel_env(**kwargs)
+            try:
+
+                from pettingzoo.atari import foozpong_v3
+                return foozpong_v3.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "ice_hockey_v2":
+            try:
+
+                from pettingzoo.atari import ice_hockey_v2
+                return ice_hockey_v2.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "joust_v3":
+            try:
+
+                from pettingzoo.atari import joust_v3
+                return joust_v3.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "mario_bros_v3":
+            try:
+
+                from pettingzoo.atari import mario_bros_v3
+                return mario_bros_v3.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "maze_craze_v3":
+
+            if 'game_version' in kwargs.keys():
+                assert kwargs['game_version'] in ["robbers", "race", "capture"], \
+                    "'game_version' should be one of following: ['robbers', 'race', 'capture']!"
+            if 'visibilty_level' in kwargs.keys():
+                assert kwargs['visibilty_level'] in [0, 1, 2, 3], \
+                    "'visibilty_level' should be one of following: [0, 1, 2, 3]!"
+
+            try:
+
+                from pettingzoo.atari import maze_craze_v3
+                return maze_craze_v3.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "othello_v3":
+            try:
+
+                from pettingzoo.atari import othello_v3
+                return othello_v3.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "pong_v3":
+
+            if 'num_players' not in kwargs.keys():
+                kwargs['num_players'] = 2
+            assert kwargs['num_players'] in [2, 4], "'num_players' should be 2 or 4!"
+
+            try:
+
+                from pettingzoo.atari import pong_v3
+                return pong_v3.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "quadrapong_v4":
+            try:
+
+                from pettingzoo.atari import quadrapong_v4
+                return quadrapong_v4.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "space_war_v2":
+            try:
+
+                from pettingzoo.atari import space_war_v2
+                return space_war_v2.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "surround_v2":
+            try:
+
+                from pettingzoo.atari import surround_v2
+                return surround_v2.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "tennis_v3":
+            try:
+
+                from pettingzoo.atari import tennis_v3
+                return tennis_v3.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "video_checkers_v4":
+            try:
+
+                from pettingzoo.atari import video_checkers_v4
+                return video_checkers_v4.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "volleyball_pong_v3":
+
+            if 'num_players' not in kwargs.keys():
+                kwargs['num_players'] = 2
+            assert kwargs['num_players'] in [2, 4], "'num_players' should be 2 or 4!"
+
+            try:
+
+                from pettingzoo.atari import volleyball_pong_v3
+                return volleyball_pong_v3.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "warlords_v3":
+            try:
+
+                from pettingzoo.atari import warlords_v3
+                return warlords_v3.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
+
+        elif env_name == "wizard_of_wor_v3":
+            try:
+
+                from pettingzoo.atari import wizard_of_wor_v3
+                return wizard_of_wor_v3.parallel_env(**kwargs)
+
+            except:
+                import_error_pt_atari()
 
         else:
             raise ValueError(f"Environment '{env_name}' is not supported.")

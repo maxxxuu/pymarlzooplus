@@ -28,16 +28,6 @@ import random as rnd
 #   }
 # }
 
-args = {
-  "env": "pettingzoo",
-  "env_args": {
-      "key": "basketball_pong_v3",
-      "max_cycles": None,
-      "kwargs": "",
-      "seed": 2024
-  }
-}
-
 # Arguments for Overcooked
 # args = {
 #   "env": "overcooked",

@@ -22,25 +22,134 @@ t_max: 2000 # 2050000
 
 # Pistonball
 # https://pettingzoo.farama.org/environments/butterfly/pistonball/
+# key: "pistonball_v6"
 # args: max_cycles=125, render_mode="human", n_pistons=20, time_penalty=-0.1, continuous=True, random_drop=True, random_rotate=True, ball_mass=0.75, ball_friction=0.3, ball_elasticity=1.5
 # RUN:  python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.key="pistonball_v6" env_args.kwargs="('n_pistons',4),"
 
 # Cooperative Pong
 # https://pettingzoo.farama.org/environments/butterfly/cooperative_pong/
+# key: "cooperative_pong_v5"
 # args: max_cycles=900, render_mode="human", ball_speed=9, left_paddle_speed=12, right_paddle_speed=12, cake_paddle=True, max_cycles=900, bounce_randomness=False, max_reward=100, off_screen_penalty=-10
 # RUN: python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.key="cooperative_pong_v5"
 
-# All (the following) atari games have these default args: obs_type='rgb_image', full_action_space=True, max_cycles=100000, auto_rom_install_path=None)
+# Knights Archers Zombies
+# https://pettingzoo.farama.org/environments/butterfly/knights_archers_zombies/
+# key: "knights_archers_zombies_v10"
+# args: spawn_rate=20, num_archers=2, num_knights=2, max_zombies=10, max_arrows=10, killable_knights=True, killable_archers=True, pad_observation=True, line_death=False, max_cycles=900, vector_state=True (It should be False), use_typemasks=False, sequence_space=False
+# RUN: Not compatible with our training framework, but it can be used with the environment API.
+
+
+## All (the following) atari games have these default args: obs_type='rgb_image', full_action_space=True, max_cycles=100000, auto_rom_install_path=None)
+
 # Entombed Cooperative
 # https://pettingzoo.farama.org/environments/atari/entombed_cooperative/
+# key: "entombed_cooperative_v3"
 # RUN: python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.key="entombed_cooperative_v3"
 
 # Space Invaders
 # https://pettingzoo.farama.org/environments/atari/space_invaders/
+# key: "space_invaders_v2"
 # args: alternating_control=False, moving_shields=True, zigzaging_bombs=False, fast_bomb=False, invisible_invaders=False
 # RUN: python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.key="space_invaders_v2"
 
 # Basketball Pong
 # https://pettingzoo.farama.org/environments/atari/basketball_pong/
-# args: num_players=2 or 4
+# key: "basketball_pong_v3"
+# args: num_players=2/4
+# RUN: Not compatible with our training framework, but it can be used with the environment API.
+
+# Boxing
+# https://pettingzoo.farama.org/environments/atari/boxing/
+# key: "boxing_v2"
+# args: game_version="jet"/“bi-plane”, guided_missile=True
+# RUN: Not compatible with our training framework, but it can be used with the environment API.
+
+# Combat Tank
+# https://pettingzoo.farama.org/environments/atari/combat_tank/
+# key: "combat_tank_v2"
+# args: has_maze=True, is_invisible=False, billiard_hit=True
+# RUN: Not compatible with our training framework, but it can be used with the environment API.
+
+# Emtombed: Competitive
+# https://pettingzoo.farama.org/environments/atari/entombed_competitive/
+# key: "entombed_competitive_v3"
+# RUN: Not compatible with our training framework, but it can be used with the environment API.
+
+# Flag Capture
+# https://pettingzoo.farama.org/environments/atari/flag_capture/
+# key: "flag_capture_v2"
+# args: num_players=2/4
+# RUN: Not compatible with our training framework, but it can be used with the environment API.
+
+# Ice Hockey
+# https://pettingzoo.farama.org/environments/atari/ice_hockey/
+# key: "ice_hockey_v2"
+# RUN: Not compatible with our training framework, but it can be used with the environment API.
+
+# Joust
+# https://pettingzoo.farama.org/environments/atari/joust/
+# key: "joust_v3"
+# RUN: Not compatible with our training framework, but it can be used with the environment API.
+
+# Mario Bros
+# https://pettingzoo.farama.org/environments/atari/mario_bros/
+# key: "mario_bros_v3"
+# RUN: Not compatible with our training framework, but it can be used with the environment API.
+
+# Maze Craze
+# https://pettingzoo.farama.org/environments/atari/maze_craze/
+# key: "maze_craze_v3"
+# args: game_version="robbers"/“race”/“capture”, visibilty_level=0/1/2/3
+# RUN: Not compatible with our training framework, but it can be used with the environment API.
+
+# Othello
+# https://pettingzoo.farama.org/environments/atari/othello/
+# key: "othello_v3"
+# RUN: Not compatible with our training framework, but it can be used with the environment API.
+
+# Pong
+# https://pettingzoo.farama.org/environments/atari/pong/
+# key: "pong_v3"
+# args: num_players=2/4
+# RUN: Not compatible with our training framework, but it can be used with the environment API.
+
+# Quadrapong
+# https://pettingzoo.farama.org/environments/atari/quadrapong/
+# key: "quadrapong_v4"
+# RUN: Not compatible with our training framework, but it can be used with the environment API.
+
+# Space War
+# https://pettingzoo.farama.org/environments/atari/space_war/
+# key: "space_war_v2"
+# RUN: Not compatible with our training framework, but it can be used with the environment API.
+
+# Surround
+# https://pettingzoo.farama.org/environments/atari/surround/
+# key: "surround_v2"
+# RUN: Not compatible with our training framework, but it can be used with the environment API.
+
+# Tennis
+# https://pettingzoo.farama.org/environments/atari/tennis/
+# key: "tennis_v3"
+# RUN: Not compatible with our training framework, but it can be used with the environment API.
+
+# Video Checkers
+# https://pettingzoo.farama.org/environments/atari/video_checkers/
+# key: "video_checkers_v4"
+# RUN: Not compatible with our training framework, but it can be used with the environment API.
+
+# Volleyball Pong
+# https://pettingzoo.farama.org/environments/atari/volleyball_pong/
+# key: "volleyball_pong_v3"
+# args: num_players=4/2
+# RUN: Not compatible with our training framework, but it can be used with the environment API.
+
+# Warlords
+# https://pettingzoo.farama.org/environments/atari/warlords/
+# key: "warlords_v3"
+# RUN: Not compatible with our training framework, but it can be used with the environment API.
+
+# Wizard of Wor
+# https://pettingzoo.farama.org/environments/atari/wizard_of_wor/
+# key: "wizard_of_wor_v3"
 # RUN: Not compatible with our training framework, but it can be used with the environment API.

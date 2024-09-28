@@ -14,10 +14,30 @@ def env_fn(env, **kwargs) -> MultiAgentEnv:
     return env(**kwargs)
 
 
-REGISTRY = {
-    "gymma": partial(env_fn, env=_GymmaWrapper),
-    "pettingzoo": partial(env_fn, env=_PettingZooWrapper),
-    "overcooked": partial(env_fn, env=_OvercookedWrapper),
-    "pressureplate": partial(env_fn, env=_PressurePlateWrapper),
-    "capture_target": partial(env_fn, env=_CaptureTargetWrapper),
-}
+# In this way, the user don't need to install requirements
+
+try:
+    REGISTRY["gymma"] = partial(env_fn, env=_GymmaWrapper)
+except:
+    pass
+
+try:
+    REGISTRY["pettingzoo"] = partial(env_fn, env=_PettingZooWrapper)
+except:
+    pass
+
+try:
+    REGISTRY["overcooked"] = partial(env_fn, env=_OvercookedWrapper)
+except:
+    pass
+
+try:
+    REGISTRY["pressureplate"] = partial(env_fn, env=_PressurePlateWrapper)
+except:
+    pass
+  
+try:
+    REGISTRY["capture_target"] = partial(env_fn, env=_CaptureTargetWrapper)
+except:
+    pass
+

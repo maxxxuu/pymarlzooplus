@@ -24,7 +24,7 @@ class ImageEncoder(nn.Module):
         self.trainable_cnn = trainable_cnn
         self.print_info = None
 
-        assert not (centralized_image_encoding is True and trainable_cnn is True), \
+        assert not (self.centralized_image_encoding is True and self.trainable_cnn is True), \
             "'centralized_image_encoding' and 'trainable_cnn' cannot be both True!"
 
         ## Define image encoder. In this case, a pretrained model is used frozen, i.e., without further training.

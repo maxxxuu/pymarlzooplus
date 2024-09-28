@@ -156,6 +156,10 @@ More available scenarios:
 ### PettingZoo
 To install PettingZoo run:
 ```sh
+pip install opencv-python-headless==4.9.0.80
+# or
+pip install opencv-python==4.9.0.80 # only for rendering
+
 pip install transformers==4.38.2 pettingzoo==1.24.3 'pettingzoo[atari]'==1.24.3 autorom==0.6.1 'pettingzoo[butterfly]'==1.24.3 
 AutoROM -y
 ```
@@ -169,6 +173,9 @@ To install Overcooked, being in ```fepymarl/``` directory, run:
 ```sh
 cd src/envs/overcooked_ai/
 pip install -e .
+# Uninstall opencv because it installs newer version
+pip uninstall opencv-python opencv-python-headless -y
+pip install opencv-python-headless==4.9.0.80 # or pip install opencv-python==4.9.0.80 # only for rendering
 ```
 
 Example of using Overcooked (replace ```<algo>```, ```<scenario>```, and ```<reward_type>```):
@@ -215,7 +222,6 @@ To install Pressure plate, being in ```fepymarl/``` directory, run:
 cd src/envs/pressureplate_ai/
 pip install -e .
 pip install pyglet==1.5.29 # For rendering
-pip install gym==0.21.0  # To avoid installing other gym version
 ```
 
 Example of using Pressure plate (replace ```<algo>``` and ```<scenario>```):

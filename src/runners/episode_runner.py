@@ -1,13 +1,18 @@
 import datetime
-from envs import REGISTRY as env_REGISTRY
 from functools import partial
-from components.episode_buffer import EpisodeBatch
 import numpy as np
+
+from envs import REGISTRY as env_REGISTRY
+from components.episode_buffer import EpisodeBatch
+from utils.handle_import_errors import check_env_installation
 
 
 class EpisodeRunner:
 
     def __init__(self, args, logger):
+
+        # Check if the requirements for the selected environment are installed
+        check_env_installation(args.env, env_REGISTRY, logger)
 
         self.batch = None
         self.new_batch = None
