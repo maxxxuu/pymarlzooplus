@@ -22,4 +22,4 @@ t_max: 10000 # 2050000
 
 # MPE
 # RUN: python3 src/main.py --config=qmix --env-config=gymma with env_args.time_limit=25 env_args.key="mpe:SimpleSpeakerListener-v0"
-# key choices: mpe:SimpleSpeakerListener-v0, mpe:SimpleSpread-3-v0, mpe:SimpleSpread-4-v0, mpe:SimpleSpread-5-v0, mpe:SimpleSpread-8-v0
+# key choices: mpe:MultiSpeakerListener-v0, mpe:SimpleSpread-3-v0, mpe:SimpleSpread-4-v0, mpe:SimpleSpread-5-v0, mpe:SimpleSpread-8-v0

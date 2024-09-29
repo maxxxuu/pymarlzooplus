@@ -70,14 +70,14 @@ args = {
 # }
 
 # Arguments for MPE
-# args = {
-#   "env": "gymma",
-#   "env_args": {
-#       "key": "mpe:SimpleSpread-3-v0",
-#       "time_limit": 25,
-#       "seed": 2024
-#   }
-# }
+args = {
+  "env": "gymma",
+  "env_args": {
+      "key": "mpe:MultiSpeakerListener-v0",
+      "time_limit": 25,
+      "seed": 2024
+  }
+}
 
 # Arguments for Capture Target
 # args = {
@@ -97,10 +97,7 @@ n_acts = env.get_total_actions()
 obs, state = env.reset()
 done = False
 # Run an episode
-t = 0
 while not done:
-    print(t)
-    t += 1
     # Render the environment
     env.render()
     # Insert the policy's actions here
