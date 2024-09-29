@@ -56,7 +56,14 @@ class FlattenObservation(ObservationWrapper):
 
 
 class _GymmaWrapper(MultiAgentEnv):
-    def __init__(self, key, time_limit, seed, **kwargs):
+    def __init__(self, key, time_limit=500, seed=1, **kwargs):
+
+        # Check time_limit consistency
+        if 'lbforaging' in key:
+            assert time_limit <= 50, 'LBF environments should have <=50 time_limit!'
+        elif 'rware' in key:
+            assert time_limit <= 500, 'RWARE environments should have <=500 time_limit!'
+
         self.original_env = gym.make(f"{key}", **kwargs)
         self.episode_limit = time_limit
         self._env = TimeLimit(self.original_env, max_episode_steps=time_limit)

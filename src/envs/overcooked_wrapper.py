@@ -91,9 +91,9 @@ class _OvercookedWrapper(MultiAgentEnv):
 
     def __init__(self,
                  key,
-                 time_limit,
-                 seed,
-                 reward_type):
+                 time_limit=500,
+                 seed=1,
+                 reward_type="sparse"):
 
         # Check key validity
         assert key in OVERCOOKED_KEY_CHOICES, \

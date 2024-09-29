@@ -46,10 +46,11 @@ class ObservationCT(ObservationWrapper):
 
 class _CaptureTargetWrapper(MultiAgentEnv):
 
-    def __init__(self, key, seed, **kwargs):
+    def __init__(self, key, seed=1, **kwargs):
 
         # Check time_limit validity
-        assert 'time_limit' in list(kwargs.keys()), 'time_limit not provided!'
+        if 'time_limit' not in list(kwargs.keys()):
+            kwargs['time_limit'] = 500  # default value of time_limit
         time_limit = kwargs['time_limit']
         assert isinstance(time_limit, int), \
             f"Invalid time_limit type: {type(time_limit)}, 'time_limit': {time_limit}, is not 'int'!"

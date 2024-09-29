@@ -58,8 +58,8 @@ class _PressurePlateWrapper(MultiAgentEnv):
 
     def __init__(self,
                  key,
-                 time_limit,
-                 seed,
+                 time_limit=500,
+                 seed=1,
                  ):
 
         # Check key validity

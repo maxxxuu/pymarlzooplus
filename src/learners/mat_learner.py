@@ -312,3 +312,6 @@ class MATLearner:
 
         return mini_batch
 
+    def cuda(self):
+        self.mac.agent.cuda()
+        self.critic.cuda()
