@@ -11,22 +11,22 @@ from envs import REGISTRY as env_REGISTRY
 import random as rnd
 
 # Arguments for PettingZoo
-# args = {
-#   "env": "pettingzoo",
-#   "env_args": {
-#       "key": "pistonball_v6",
-#       "time_limit": 900,
-#       "render_mode": "rgb_array",
-#       "image_encoder": "ResNet18",
-#       "image_encoder_use_cuda": True,
-#       "image_encoder_batch_size": 10,
-#       "centralized_image_encoding": False,
-#       "partial_observation": False,
-#       "trainable_cnn": False,
-#       "kwargs": "('n_pistons',10),",
-#       "seed": 2024
-#   }
-# }
+args = {
+  "env": "pettingzoo",
+  "env_args": {
+      "key": "pistonball_v6",
+      "time_limit": 900,
+      "render_mode": "rgb_array",
+      "image_encoder": "ResNet18",
+      "image_encoder_use_cuda": True,
+      "image_encoder_batch_size": 10,
+      "centralized_image_encoding": False,
+      "partial_observation": False,
+      "trainable_cnn": False,
+      "kwargs": "('n_pistons',10),",
+      "seed": 2024
+  }
+}
 
 # Arguments for Overcooked
 # args = {
@@ -60,14 +60,14 @@ import random as rnd
 # }
 
 # Arguments for RWARE
-args = {
-  "env": "gymma",
-  "env_args": {
-      "key": "rware:rware-small-4ag-hard-v1",
-      "time_limit": 500,
-      "seed": 2024
-  }
-}
+# args = {
+#   "env": "gymma",
+#   "env_args": {
+#       "key": "rware:rware-small-4ag-hard-v1",
+#       "time_limit": 500,
+#       "seed": 2024
+#   }
+# }
 
 # Arguments for MPE
 # args = {

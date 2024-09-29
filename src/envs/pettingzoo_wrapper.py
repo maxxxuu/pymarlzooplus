@@ -289,8 +289,8 @@ class ObservationPZ(ObservationWrapper):
 class _PettingZooWrapper(MultiAgentEnv):
     def __init__(self,
                  key,
-                 time_limit,
-                 seed,
+                 time_limit=None,
+                 seed=1,
                  render_mode="rgb_array",
                  partial_observation=False,
                  trainable_cnn=False,
