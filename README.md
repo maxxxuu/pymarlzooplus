@@ -137,14 +137,14 @@ python3 src/main.py --config=<algo> --env-config=gymma with env_args.time_limit=
 ```
 
 Available scenarios we run experiments:
-- "mpe:MultiSpeakerListener-v0", 
+- "mpe:SimpleSpeakerListener-v0", 
 - "mpe:SimpleSpread-3-v0",
 - "mpe:SimpleSpread-4-v0",
 - "mpe:SimpleSpread-5-v0",
 - "mpe:SimpleSpread-8-v0"
 
 More available scenarios:
-- "mpe:SimpleSpeakerListener-v0"
+- "mpe:MultiSpeakerListener-v0"
 - "mpe:SimpleAdversary-v0",
 - "mpe:SimpleCrypto-v0",
 - "mpe:SimplePush-v0",
