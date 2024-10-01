@@ -1,7 +1,6 @@
 import copy
 import os
 import numpy as np
-import torch
 import torch as th
 from torch.optim import Adam
 
