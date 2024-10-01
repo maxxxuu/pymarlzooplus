@@ -1,8 +1,6 @@
 from functools import partial
 
 from smac.env import MultiAgentEnv
-import envs.lbf_registration
-import envs.mpe_registration
 
 
 def env_fn(env, **kwargs) -> MultiAgentEnv:
@@ -19,6 +17,16 @@ REGISTRY_availability = [
 
 # In this way, the user don't need to install requirements
 REGISTRY = {}
+
+try:
+    import envs.lbf_registration
+except:
+    pass
+
+try:
+    import envs.mpe_registration
+except:
+    pass
 
 try:
     from envs.gym_wrapper import _GymmaWrapper
