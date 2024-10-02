@@ -1,10 +1,10 @@
-import copy
-
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.nn import functional as F
 from torch.distributions import Categorical
+
+import psutil
+import os
 
 
 class MLPMATAgent(nn.Module):
@@ -41,6 +41,7 @@ class MLPMATAgent(nn.Module):
         distri = Categorical(logits=logit)
         action_log = distri.log_prob(action.squeeze(-1)).unsqueeze(-1)
         entropy = distri.entropy().unsqueeze(-1)
+
         return action_log, entropy
 
     def get_actions(self, ep_batch, t, obs, available_actions=None, deterministic=False):

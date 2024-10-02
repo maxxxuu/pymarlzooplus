@@ -120,7 +120,7 @@ class MATLearner:
 
         values, action_log_probs, dist_entropy = self.mac.evaluate_actions(sample, t=0)
 
-        # actor update
+        # actor loss
         imp_weights = th.exp(action_log_probs - old_action_log_probs_batch)
 
         surr1 = imp_weights * adv_targ
@@ -128,11 +128,13 @@ class MATLearner:
 
         policy_loss = -th.sum(th.min(surr1, surr2), dim=-1, keepdim=True).mean()
 
-        # critic update
+        # critic loss
         value_loss = self.cal_value_loss(values, value_preds_batch, return_batch)
 
+        # both losses
         loss = policy_loss - dist_entropy * self.entropy_coef + value_loss * self.value_loss_coef
 
+        # update both actor and critic at once
         self.optimizer.zero_grad()
         loss.backward()
 
@@ -146,8 +148,8 @@ class MATLearner:
         train_stats["value_loss"].append(value_loss.item())
         train_stats["grad_norm"].append(grad_norm.item())
         train_stats["policy_loss"].append(policy_loss.item())
-        train_stats["entropy"].append(dist_entropy)
-        train_stats["ratio"].append(imp_weights.mean())
+        train_stats["entropy"].append(dist_entropy.item())
+        train_stats["ratio"].append(imp_weights.mean().item())
 
         return train_stats
 
@@ -190,11 +192,9 @@ class MATLearner:
 
     def prep_training(self):
         self.mac.agent.train()
-        self.critic.train()
 
     def prep_rollout(self):
         self.mac.agent.eval()
-        self.critic.eval()
 
     @staticmethod
     def get_gard_norm(it):
@@ -314,4 +314,3 @@ class MATLearner:
 
     def cuda(self):
         self.mac.agent.cuda()
-        self.critic.cuda()

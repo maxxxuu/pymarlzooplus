@@ -188,6 +188,7 @@ class ParallelRunner:
                 actions_chosen["log_probs"] = extra_returns["log_probs"].unsqueeze(1)
             if "values" in self.args.extra_in_buffer:
                 actions_chosen["values"] = extra_returns["values"].unsqueeze(1)
+
             self.batch.update(actions_chosen, bs=envs_not_terminated, ts=self.t, mark_filled=False)
 
             # Send actions to each env

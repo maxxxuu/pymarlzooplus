@@ -1,7 +1,3 @@
-import numpy as np
-import math
-import torch as th
-
 from .basic_controller import BasicMAC
 
 
@@ -96,6 +92,7 @@ class MATMAC(BasicMAC):
         """
 
         agent_inputs = self._build_inputs(ep_batch, t)
+
         actions = ep_batch["actions"][:, t]
         available_actions = ep_batch["avail_actions"][:, t]
         agent_inputs = agent_inputs.reshape(-1, self.n_agents, self.input_shape)

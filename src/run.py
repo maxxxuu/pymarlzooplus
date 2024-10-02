@@ -258,7 +258,7 @@ def run_sequential(args, logger):
                 else:
                     episode_sample = buffer.sample(args.batch_size)
 
-                # Train explorer. This is for EOI.
+                # Train explorer. This is for EOI and CDS.
                 if has_explorer is True:
                     explorer.train(episode_sample)
 
@@ -281,6 +281,7 @@ def run_sequential(args, logger):
                         learner.train(episode_sample, runner.t_env, episode, ec_buffer=ec_buffer)
                     else:
                         learner.train(episode_sample, runner.t_env, episode)
+
         # Execute test runs once in a while
         n_test_runs = max(1, args.test_nepisode // runner.batch_size)
         if (runner.t_env - last_test_T) / args.test_interval >= 1.0:
