@@ -49,6 +49,7 @@ class MATLearner:
         self.gae_lambda = args.gae_lambda
 
         self.device = "cuda" if args.use_cuda else "cpu"
+        self.mac.agent.device = self.device
 
         if self.use_popart:
             self.value_normalizer = PopArt(1, device=self.device)

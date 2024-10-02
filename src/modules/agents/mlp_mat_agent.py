@@ -3,9 +3,6 @@ import torch
 import torch.nn as nn
 from torch.distributions import Categorical
 
-import psutil
-import os
-
 
 class MLPMATAgent(nn.Module):
 
@@ -21,6 +18,7 @@ class MLPMATAgent(nn.Module):
         self.input_shape = input_shape
         self.decoder = Decoder(input_shape, args.n_actions, args.n_embd)
         self.critic = None
+        self.device = None
 
     def forward(self, obs, action, available_actions=None):
         # obs: (batch, n_agent, obs_dim)
@@ -62,7 +60,7 @@ class MLPMATAgent(nn.Module):
                                     available_actions=None,
                                     deterministic=False):
 
-        output_action = torch.zeros((batch_size, self.n_agent, 1), dtype=torch.long)
+        output_action = torch.zeros((batch_size, self.n_agent, 1), dtype=torch.long, device=self.device)
         output_action_log = torch.zeros_like(output_action, dtype=torch.float32)
 
         for i in range(self.n_agent):
