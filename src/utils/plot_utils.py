@@ -630,9 +630,10 @@ if __name__ == '__main__':
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/CDS/lbf_4s-11x11-3p-2f/cds_lbf_4s-11x11-3p-2f_results/sacred/cds/lbforaging:Foraging-4s-11x11-3p-2f-coop-v2",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/lbf_4s-11x11-3p-2f/maser_lbf_4s-11x11-3p-2f_results/sacred/maser/lbforaging:Foraging-4s-11x11-3p-2f-coop-v2",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/lbf_4s-11x11-3p-2f/qmix_lbf_4s-11x11-3p-2f_results/sacred/qmix/lbforaging:Foraging-4s-11x11-3p-2f-coop-v2",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/lbf_4s-11x11-3p-2f/qplex_lbf_4s-11x11-3p-2f_results/sacred/qplex/lbforaging:Foraging-4s-11x11-3p-2f-coop-v2"
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/lbf_4s-11x11-3p-2f/qplex_lbf_4s-11x11-3p-2f_results/sacred/qplex/lbforaging:Foraging-4s-11x11-3p-2f-coop-v2",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/lbf_4s-11x11-3p-2f/happo_lbf_4s-11x11-3p-2f_w_parallel_10_threads_results/sacred/happo/lbforaging:Foraging-4s-11x11-3p-2f-coop-v2"
     # ]
-    # algo_names_ = ["cds", "maser", "qmix", "qplex"]
+    # algo_names_ = ["cds", "maser", "qmix", "qplex", "happo"]
     # env_name_ = "lbf_4s-11x11-3p-2f"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/lbf_4s-11x11-3p-2f/"
 
@@ -640,9 +641,10 @@ if __name__ == '__main__':
     # paths_to_results_ = [
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/CDS/lbf_2s-9x9-3p-2f/cds_lbf_2s-9x9-3p-2f_results/sacred/cds/lbforaging:Foraging-2s-9x9-3p-2f-coop-v2",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/lbf_2s-9x9-3p-2f/maser_lbf_2s-9x9-3p-2f_results/sacred/maser/lbforaging:Foraging-2s-9x9-3p-2f-coop-v2",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/lbf_2s-9x9-3p-2f/qplex_lbf_2s-9x9-3p-2f_results/sacred/qplex/lbforaging:Foraging-2s-9x9-3p-2f-coop-v2"
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/lbf_2s-9x9-3p-2f/qplex_lbf_2s-9x9-3p-2f_results/sacred/qplex/lbforaging:Foraging-2s-9x9-3p-2f-coop-v2",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/lbf_2s-9x9-3p-2f/happo_lbf_2s-9x9-3p-2f_w_parallel_10_threads_results/sacred/happo/lbforaging:Foraging-2s-9x9-3p-2f-coop-v2"
     # ]
-    # algo_names_ = ["cds", "maser", "qplex"]
+    # algo_names_ = ["cds", "maser", "qplex", "happo"]
     # env_name_ = "lbf_2s-9x9-3p-2f"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/lbf_2s-9x9-3p-2f/"
 
@@ -667,14 +669,15 @@ if __name__ == '__main__':
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/lbf_2s-8x8-3p-2f/"
 
     # LBF - 7s-20x20-5p-3f
-    # paths_to_results_ = [
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/CDS/lbf_7s-20x20-5p-3f/cds_lbf_7s-20x20-5p-3f_results/sacred/cds/lbforaging:Foraging-7s-20x20-5p-3f-coop-v2",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/lbf_7s-20x20-5p-3f/qplex_lbf_7s-20x20-5p-3f_results/sacred/qplex/lbforaging:Foraging-7s-20x20-5p-3f-coop-v2",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/lbf_7s-20x20-5p-3f/maser_lbf_7s-20x20-5p-3f_results/sacred/maser/lbforaging:Foraging-7s-20x20-5p-3f-coop-v2"
-    # ]
-    # algo_names_ = ["cds", "qplex", "maser"]
-    # env_name_ = "7s-20x20-5p-3f"
-    # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/lbf_7s-20x20-5p-3f/"
+    paths_to_results_ = [
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/CDS/lbf_7s-20x20-5p-3f/cds_lbf_7s-20x20-5p-3f_results/sacred/cds/lbforaging:Foraging-7s-20x20-5p-3f-coop-v2",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/lbf_7s-20x20-5p-3f/qplex_lbf_7s-20x20-5p-3f_results/sacred/qplex/lbforaging:Foraging-7s-20x20-5p-3f-coop-v2",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/lbf_7s-20x20-5p-3f/maser_lbf_7s-20x20-5p-3f_results/sacred/maser/lbforaging:Foraging-7s-20x20-5p-3f-coop-v2",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/lbf_7s-20x20-5p-3f/happo_lbf_7s-20x20-5p-3f_w_parallel_10_threads_results/sacred/happo/lbforaging:Foraging-7s-20x20-5p-3f-coop-v2"
+    ]
+    algo_names_ = ["cds", "qplex", "maser", "happo"]
+    env_name_ = "7s-20x20-5p-3f"
+    path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/lbf_7s-20x20-5p-3f/"
 
     # LBF - 8s-25x25-8p-5f
     # paths_to_results_ = [
@@ -729,9 +732,10 @@ if __name__ == '__main__':
     # MPE - SimpleSpread-3
     # paths_to_results_ = [
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/mpe_SimpleSpread-3/qplex_mpe_SimpleSpread-3_results/sacred/qplex/mpe:SimpleSpread-v0",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/mpe_SimpleSpread-3/qmix_mpe_SimpleSpread-3_results/sacred/qmix/mpe:SimpleSpread-3-v0"
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/mpe_SimpleSpread-3/qmix_mpe_SimpleSpread-3_results/sacred/qmix/mpe:SimpleSpread-3-v0",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/mpe_SimpleSpread-3/maser_mpe_SimpleSpread-3_results/sacred/maser/mpe:SimpleSpread-3-v0"
     # ]
-    # algo_names_ = ["qplex", "qmix"]
+    # algo_names_ = ["qplex", "qmix", "maser"]
     # env_name_ = "SimpleSpread-3"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/simplespread-3/"
 
@@ -764,9 +768,10 @@ if __name__ == '__main__':
     # paths_to_results_ = [
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/mpe_SimpleSpeakerListener/eoi_mpe_SimpleSpeakerListener_w_episode_results/sacred/eoi/mpe:SimpleSpeakerListener-v0",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/mpe_SimpleSpeakerListener/qplex_mpe_SimpleSpeakerListener_results/results/sacred/qplex/mpe:SimpleSpeakerListener-v0",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/mpe_SimpleSpeakerListener/qmix_mpe_SimpleSpeakerListener_results/sacred/qmix/mpe:SimpleSpeakerListener-v0"
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/mpe_SimpleSpeakerListener/qmix_mpe_SimpleSpeakerListener_results/sacred/qmix/mpe:SimpleSpeakerListener-v0",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/CDS/mpe_SimpleSpeakerListener/cds_mpe_SimpleSpeakerListener_results/sacred/cds/mpe:SimpleSpeakerListener-v0"
     # ]
-    # algo_names_ = ["eoi", "qplex", "qmix"]
+    # algo_names_ = ["eoi", "qplex", "qmix", "cds"]
     # env_name_ = "SimpleSpeakerListener"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/simplespeakerlistener/"
 
