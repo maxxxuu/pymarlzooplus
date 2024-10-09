@@ -5,8 +5,7 @@ https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/capture_ta
 
 import numpy as np
 import gym
-
-from numpy.random import randint
+from gym.utils import seeding
 
 from capture_target_ai_py import rendering
 from capture_target_ai_py.assets import TRANSLATION_TABLE, ACTIONS, DIRECTION
@@ -41,24 +40,32 @@ class CaptureTarget(gym.Env):
         self.tgt_trans_noise = tgt_trans_noise
         self.agent_trans_noise = agent_trans_noise
 
-        #TODO Should be multiplied with n_agent
-
-        self.n_action = [len(TRANSLATION_TABLE)] * 2
+        self.n_action = [len(TRANSLATION_TABLE)] * self.n_agent
         if obs_one_hot:
-            self.obs_size = [self.x_len * self.y_len] * 2  # agent position and target position
+            self.obs_size = [self.x_len * self.y_len] * self.n_agent  # agent position and target position
         else:
-            self.obs_size = [len(grid_dim) * 2] * 2  # agent position and target position
+            self.obs_size = [len(grid_dim) * self.n_agent] * self.n_agent  # agent position and target position
 
         assert self.n_target == 1 and self.n_agent > 1
 
         self.obs_one_hot = obs_one_hot
         self.viewer = None
 
+        # Create seed object to control randomness of the environment reset()
+        self._seed = 1  # Default seed
+        self.np_random, self._seed = seeding.np_random(self._seed)
+
+    def seed(self, seed=None):
+        if seed is not None:
+            self.np_random, self._seed = seeding.np_random(seed)
+
+        return self._seed
+
     def action_space_sample(self, idx):
-        return np.random.randint(self.n_action[idx])
+        return self.np_random.randint(self.n_action[idx])
 
     def action_space_batch_sample(self, idx):
-        return np.random.randint(self.n_action[idx], size=self.n_agent)
+        return self.np_random.randint(self.n_action[idx], size=self.n_agent)
 
     def reset(self, debug=False):
         self.step_n = 0
@@ -85,7 +92,7 @@ class CaptureTarget(gym.Env):
 
         if not self.target_captured():
             if not self.tgt_avoid_agent:
-                target_directions = np.random.randint(len(TRANSLATION_TABLE), size=self.n_target)
+                target_directions = self.np_random.randint(len(TRANSLATION_TABLE), size=self.n_target)
             else:
                 target_directions = self.get_tgt_moves()
             self.target_positions = self.move(self.target_positions, target_directions, noise=self.tgt_trans_noise)
@@ -141,7 +148,7 @@ class CaptureTarget(gym.Env):
             h_0 = np.linalg.norm(self.agent_positions[0] - moves, axis=1)
             h_1 = np.linalg.norm(self.agent_positions[1] - moves, axis=1)
             h = h_0 + h_1
-        return np.random.choice(np.where(h == h.max())[0], size=1)
+        return self.np_random.choice(np.where(h == h.max())[0], size=1)
 
     def move(self, positions, directions, noise=0):
         translations = np.stack([self.translation(d, noise=noise) for d in directions])
@@ -159,14 +166,14 @@ class CaptureTarget(gym.Env):
             return (self.target_positions[0] for _ in range(self.n_agent))
 
     def rand_position(self):
-        return np.array([randint(self.x_len), randint(self.y_len)])
+        return np.array([self.np_random.randint(self.x_len), self.np_random.randint(self.y_len)])
 
     @staticmethod
     def translation(direction, noise=0.1):
         return TRANSLATION_TABLE[direction][np.random.choice(3, p=[noise / 2, 1 - noise, noise / 2])]
 
     def flick(self, N, prob=0.3):
-        mask = np.random.random(N.shape[0]).reshape(N.shape[0], -1) > prob
+        mask = self.np_random.random(N.shape[0]).reshape(N.shape[0], -1) > prob
         if self.obs_one_hot:
             return N * mask
         else:

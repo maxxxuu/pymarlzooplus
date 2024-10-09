@@ -70,24 +70,24 @@ import random as rnd
 # }
 
 # Arguments for MPE
-args = {
-  "env": "gymma",
-  "env_args": {
-      "key": "mpe:SimpleSpeakerListener-v0",
-      "time_limit": 25,
-      "seed": 2024
-  }
-}
-
-# Arguments for Capture Target
 # args = {
-#   "env": "capturetarget",
+#   "env": "gymma",
 #   "env_args": {
-#       "key": "CaptureTarget-6x6-1t-2a-v0",
-#       "time_limit": 60,
+#       "key": "mpe:SimpleSpeakerListener-v0",
+#       "time_limit": 25,
 #       "seed": 2024
 #   }
 # }
+
+# Arguments for Capture Target
+args = {
+  "env": "capturetarget",
+  "env_args": {
+      "key": "CaptureTarget-6x6-1t-2a-v0",
+      "time_limit": 60,
+      "seed": 2024
+  }
+}
 
 # Initialize environment
 env = env_REGISTRY[args["env"]](**args["env_args"])

@@ -59,11 +59,15 @@ class _CaptureTargetWrapper(MultiAgentEnv):
         kwargs['terminate_step'] = time_limit
         del kwargs['time_limit']
 
+        self.key = key
+        self._seed = seed
+
         # Import and register
         from capture_target_ai_py.environment import CaptureTarget
         self.gym_registration()
 
         self.original_env = gym.make(f"{key}", **kwargs)
+        self._seed = self.original_env.seed(self._seed)
         self.episode_limit = self.original_env.terminate_step
 
         self._env = TimeLimitCT(self.original_env, max_episode_steps=self.episode_limit)
@@ -72,7 +76,6 @@ class _CaptureTargetWrapper(MultiAgentEnv):
         self.n_agents = self._env.n_agent
         self._obs = None
         self._info = {"TimeLimit.truncated": False}
-        self._seed = seed
         self._obs_size = self._env.obs_size[0]
         self.action_space = self._env.n_action[0]
 
@@ -144,8 +147,14 @@ class _CaptureTargetWrapper(MultiAgentEnv):
         """ Returns the total number of actions an agent could ever take """
         return self.action_space
 
-    def reset(self):
+    def reset(self, seed=None):
         """ Returns initial observations and states"""
+
+        # Control seed
+        if seed is not None:
+            self._seed = seed
+            self._seed = self.original_env.seed(self._seed)
+
         self._obs = self._env.reset()
         return self.get_obs(), self.get_state()
 
