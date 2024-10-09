@@ -151,8 +151,13 @@ class _GymmaWrapper(MultiAgentEnv):
 
         return flatdim(self.longest_action_space)
 
-    def reset(self):
+    def reset(self, seed=None):
         """ Returns initial observations and states"""
+
+        if seed is not None:
+            self._seed = seed
+            self._env.seed(self._seed)
+
         self._obs = self._env.reset()
         self._obs = [np.pad(o,
                             (0, self.longest_observation_space.shape[0] - len(o)),

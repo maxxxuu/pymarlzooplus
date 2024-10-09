@@ -39,64 +39,64 @@ def entombed_cooperative_v3_get_combined_images(image_a, image_b):
     return combined_image, agent_1_obs_, agent_2_obs_
 
 
-from pettingzoo.atari import entombed_cooperative_v3
-import cv2
-
-env = entombed_cooperative_v3.parallel_env(render_mode="human")
-
-# Reset the environment
-previous_observations, previous_infos = env.reset()
-previous_obs = list(previous_observations.values())[0]
-
-# Perform no action in order to sync obs and actions
-no_actions = {'first_0': 0, 'second_0': 0}
-observations, rewards, terminations, truncations, infos = env.step(no_actions)
-current_obs = list(observations.values())[1]
-
-# Get the first obs of agents
-combined_obs, agent_1_obs, agent_2_obs = entombed_cooperative_v3_get_combined_images(previous_obs, current_obs)
-
-n_steps = 0
-while env.agents:
-    # this is where you would insert your policy
-
-    actions = {'first_0': 4, 'second_0': 3} # {agent: env.action_space(agent).sample() for agent in env.agents} #  {'first_0': np.random.choice([5, 1]), 'second_0': np.random.choice([5, 1])}   # {'first_0': 3, 'second_0': 4} # Right, Left  # {agent: 5 for agent in env.agents}
-
-    # In this step, agent 1 is moving
-    previous_observations_, previous_rewards_, previous_terminations_, previous_truncations_, previous_infos_ = env.step(actions)
-    previous_obs_ = list(previous_observations.values())[0]
-
-    # In this step, agent 2 is moving
-    observations_, rewards_, terminations_, truncations_, infos_ = env.step(actions)
-    current_obs_ = list(observations_.values())[1]
-
-    # Perform no action 2 times in order to sync obs and actions
-    previous_observations, previous_rewards, previous_terminations, previous_truncations, previous_infos = env.step(no_actions)
-    previous_obs = list(previous_observations.values())[0]
-    observations, rewards, terminations, truncations, infos = env.step(no_actions)
-    current_obs = list(observations.values())[1]
-    combined_obs, agent_1_obs, agent_2_obs = entombed_cooperative_v3_get_combined_images(previous_obs, current_obs)
-
-    print(n_steps)
-    print(actions)
-
-    # Render the state and observations
-    cv2.imshow("previous_obs_", cv2.cvtColor(previous_obs_, cv2.COLOR_RGB2BGR))
-    cv2.imshow("current_obs_", cv2.cvtColor(current_obs_, cv2.COLOR_RGB2BGR))
-    cv2.imshow("previous_obs", cv2.cvtColor(previous_obs, cv2.COLOR_RGB2BGR))
-    cv2.imshow("current_obs", cv2.cvtColor(current_obs, cv2.COLOR_RGB2BGR))
-    cv2.imshow("agent 1 obs", cv2.cvtColor(agent_1_obs, cv2.COLOR_RGB2BGR))
-    cv2.imshow("agent 2 obs", cv2.cvtColor(agent_2_obs, cv2.COLOR_RGB2BGR))
-    cv2.imshow("combined image", cv2.cvtColor(combined_obs, cv2.COLOR_RGB2BGR))
-    cv2.waitKey(0)
-
-    # for obs_agent_idx, observation in enumerate(observations.values()):
-    #     print(f"obs_agent_idx: {obs_agent_idx}")
-    #     image = cv2.cvtColor(observation, cv2.COLOR_RGB2BGR)
-    #     cv2.imshow("image", image)
-    #     cv2.waitKey(0)
-
-env.close()
+# from pettingzoo.atari import entombed_cooperative_v3
+# import cv2
+#
+# env = entombed_cooperative_v3.parallel_env(render_mode="human")
+#
+# # Reset the environment
+# previous_observations, previous_infos = env.reset()
+# previous_obs = list(previous_observations.values())[0]
+#
+# # Perform no action in order to sync obs and actions
+# no_actions = {'first_0': 0, 'second_0': 0}
+# observations, rewards, terminations, truncations, infos = env.step(no_actions)
+# current_obs = list(observations.values())[1]
+#
+# # Get the first obs of agents
+# combined_obs, agent_1_obs, agent_2_obs = entombed_cooperative_v3_get_combined_images(previous_obs, current_obs)
+#
+# n_steps = 0
+# while env.agents:
+#     # this is where you would insert your policy
+#
+#     actions = {'first_0': 4, 'second_0': 3} # {agent: env.action_space(agent).sample() for agent in env.agents} #  {'first_0': np.random.choice([5, 1]), 'second_0': np.random.choice([5, 1])}   # {'first_0': 3, 'second_0': 4} # Right, Left  # {agent: 5 for agent in env.agents}
+#
+#     # In this step, agent 1 is moving
+#     previous_observations_, previous_rewards_, previous_terminations_, previous_truncations_, previous_infos_ = env.step(actions)
+#     previous_obs_ = list(previous_observations.values())[0]
+#
+#     # In this step, agent 2 is moving
+#     observations_, rewards_, terminations_, truncations_, infos_ = env.step(actions)
+#     current_obs_ = list(observations_.values())[1]
+#
+#     # Perform no action 2 times in order to sync obs and actions
+#     previous_observations, previous_rewards, previous_terminations, previous_truncations, previous_infos = env.step(no_actions)
+#     previous_obs = list(previous_observations.values())[0]
+#     observations, rewards, terminations, truncations, infos = env.step(no_actions)
+#     current_obs = list(observations.values())[1]
+#     combined_obs, agent_1_obs, agent_2_obs = entombed_cooperative_v3_get_combined_images(previous_obs, current_obs)
+#
+#     print(n_steps)
+#     print(actions)
+#
+#     # Render the state and observations
+#     cv2.imshow("previous_obs_", cv2.cvtColor(previous_obs_, cv2.COLOR_RGB2BGR))
+#     cv2.imshow("current_obs_", cv2.cvtColor(current_obs_, cv2.COLOR_RGB2BGR))
+#     cv2.imshow("previous_obs", cv2.cvtColor(previous_obs, cv2.COLOR_RGB2BGR))
+#     cv2.imshow("current_obs", cv2.cvtColor(current_obs, cv2.COLOR_RGB2BGR))
+#     cv2.imshow("agent 1 obs", cv2.cvtColor(agent_1_obs, cv2.COLOR_RGB2BGR))
+#     cv2.imshow("agent 2 obs", cv2.cvtColor(agent_2_obs, cv2.COLOR_RGB2BGR))
+#     cv2.imshow("combined image", cv2.cvtColor(combined_obs, cv2.COLOR_RGB2BGR))
+#     cv2.waitKey(0)
+#
+#     # for obs_agent_idx, observation in enumerate(observations.values()):
+#     #     print(f"obs_agent_idx: {obs_agent_idx}")
+#     #     image = cv2.cvtColor(observation, cv2.COLOR_RGB2BGR)
+#     #     cv2.imshow("image", image)
+#     #     cv2.waitKey(0)
+#
+# env.close()
 #########################################################################
 
 
@@ -220,29 +220,32 @@ from pettingzoo.butterfly import cooperative_pong_v5
 #########################################################################
 
 ##################### pistonball_v6 #####################
-# import cv2
-# from pettingzoo.butterfly import pistonball_v6
-#
-# env = pistonball_v6.parallel_env(render_mode="human", continuous=True, n_pistons=20, max_cycles=20)
-#
-# for iter_ in range(10):
-#
-#     env.reset()
-#
-#     counter = 0
-#     while env.agents:
-#         # this is where you would insert your policy
-#         actions = {agent: env.action_space(agent).sample() for agent in env.agents}
-#
-#         observations, rewards, terminations, truncations, infos = env.step(actions)
-#         # image = env.render()
-#         for observation in observations.values():
-#             image = cv2.cvtColor(observation, cv2.COLOR_RGB2BGR)
-#             cv2.imshow("image", image)
-#             cv2.waitKey(0)
-#
-#         counter += 1
-#         print(counter)
-#
-# env.close()
+import cv2
+from pettingzoo.butterfly import pistonball_v6
+
+env = pistonball_v6.parallel_env(render_mode="human", continuous=True, n_pistons=20, max_cycles=20)
+
+for iter_ in range(10):
+
+    env.reset()
+
+    counter = 0
+    while env.agents:
+        # this is where you would insert your policy
+        actions = {agent: env.action_space(agent).sample() for agent in env.agents}
+
+        observations, rewards, terminations, truncations, infos = env.step(actions)
+        print()
+        print(rewards)
+        print(infos)
+        # image = env.render()
+        # for observation in observations.values():
+        #     image = cv2.cvtColor(observation, cv2.COLOR_RGB2BGR)
+        #     cv2.imshow("image", image)
+        #     cv2.waitKey(0)
+
+        counter += 1
+        print(counter)
+
+env.close()
 #########################################################################

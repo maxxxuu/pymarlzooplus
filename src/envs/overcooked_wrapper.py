@@ -106,7 +106,7 @@ class _OvercookedWrapper(MultiAgentEnv):
             f"Invalid 'reward_type': {reward_type}! \nChoose one of the following: \n{OVERCOOKED_REWARD_TYPE_CHOICES}"
 
         self.key = key
-        self._seed = seed
+        self._seed = seed  # Just for compatibility since the agents start always from the same position
         self.reward_type = reward_type
 
         # Gym make
@@ -131,9 +131,6 @@ class _OvercookedWrapper(MultiAgentEnv):
         # Placeholders
         self._obs = None
         self._info = None
-
-        # By setting the "seed" in "np.random.seed" in "src/main.py" we control the randomness of the environment.
-        self._seed = seed
 
         # Needed for rendering
         import cv2
@@ -201,8 +198,11 @@ class _OvercookedWrapper(MultiAgentEnv):
         """ Returns the total number of actions an agent could ever take """
         return self.action_space
 
-    def reset(self):
+    def reset(self, seed=None):
         """ Returns initial observations and states """
+
+        if seed is not None:
+            self._seed = seed
 
         self._obs = self._env.reset()
 

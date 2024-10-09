@@ -1,6 +1,7 @@
 import numpy as np
 from gym import ObservationWrapper
 from gym.wrappers import TimeLimit as GymTimeLimit
+from gym.utils import seeding
 
 from smac.env import MultiAgentEnv
 from utils.image_encoder import ImageEncoder
@@ -332,6 +333,7 @@ class _PettingZooWrapper(MultiAgentEnv):
         self.action_prefix = None
         self.cv2 = None
         self.sum_rewards = None
+        self.np_random = None
 
         # Environment
         self.set_environment(self.key,
@@ -426,6 +428,9 @@ class _PettingZooWrapper(MultiAgentEnv):
                  f"agent=0 - action_space={tmp_action_space}, agent={agent_idx} - action_space={tmp_action_space_}")
         self.action_space = tmp_action_space.n
         self.action_prefix = [action_prefix for action_prefix in self._env.possible_agents]
+
+        # Create seed object to control randomness of the environment reset()
+        self.np_random, self._seed = seeding.np_random(self._seed)
 
         # Use cv2 for rendering
         import cv2
@@ -848,8 +853,14 @@ class _PettingZooWrapper(MultiAgentEnv):
         """ Returns the total number of actions an agent could ever take """
         return self.action_space
 
-    def reset(self):
+    def reset(self, seed=None):
         """ Returns initial observations and states"""
+
+        # Control seed
+        if seed is None:
+            self._seed = self.np_random.choice(np.iinfo(np.int32).max)
+        else:
+            self.np_random, self._seed = seeding.np_random(self._seed)
 
         if self.key in ["entombed_cooperative_v3", "space_invaders_v2"]:
 
@@ -857,7 +868,7 @@ class _PettingZooWrapper(MultiAgentEnv):
             # games when resetting the game.
 
             # Reset ony the original environment and get the obs
-            previous_observations, previous_infos = self.original_env.reset()
+            previous_observations, previous_infos = self.original_env.reset(seed=self._seed)
             previous_obs = list(previous_observations.values())[0]
 
             # Perform no action in order to sync obs and actions
@@ -882,7 +893,7 @@ class _PettingZooWrapper(MultiAgentEnv):
             self._env.env._elapsed_steps = 1
 
         else:
-            self._obs = self._env.reset()
+            self._obs = self._env.reset(seed=self._seed)
 
         return self.get_obs(), self.get_state()
 

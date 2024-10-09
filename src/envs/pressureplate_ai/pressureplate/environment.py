@@ -1,5 +1,6 @@
 import gym
 from gym import spaces
+from gym.utils import seeding
 import numpy as np
 from enum import IntEnum
 from .assets import LINEAR
@@ -102,9 +103,19 @@ class PressurePlate(gym.Env):
         self.room_boundaries = np.unique(np.array(self.layout['WALLS'])[:, 1]).tolist()[::-1]
         self.room_boundaries.append(-1)
 
+        # Create seed object to control randomness of the environment reset()
+        self._seed = 1  # Default seed
+        self.np_random, self._seed = seeding.np_random(self._seed)
+
+    def seed(self, seed=None):
+        if seed is not None:
+            self.np_random, self._seed = seeding.np_random(seed)
+
+        return self._seed
+
     def step(self, actions):
         """obs, reward, done info"""
-        np.random.shuffle(self.agent_order)
+        self.np_random.shuffle(self.agent_order)
 
         for i in self.agent_order:
             # cur position
@@ -190,6 +201,7 @@ class PressurePlate(gym.Env):
         return False
 
     def reset(self):
+
         # Grid wipe
         self.grid = np.zeros((5, *self.grid_size))
 

@@ -85,6 +85,7 @@ class _PressurePlateWrapper(MultiAgentEnv):
         # base env sourced by gym.make with all its args
         from pressureplate.environment import PressurePlate
         self.original_env = gym.make(f"{key}")
+        self._seed = self.original_env.seed(self._seed)
 
         # Use the wrappers for handling the time limit and the environment observations properly.
         self.n_agents = self.original_env.n_agents
@@ -100,8 +101,6 @@ class _PressurePlateWrapper(MultiAgentEnv):
         # Placeholders
         self._obs = None
         self._info = None
-        # By setting the "seed" in "np.random.seed" in "src/main.py" we control the randomness of the environment.
-        self._seed = seed
 
         # Needed for rendering
         import cv2
@@ -167,8 +166,14 @@ class _PressurePlateWrapper(MultiAgentEnv):
         """ Returns the total number of actions an agent could ever take """
         return self.action_space
 
-    def reset(self):
+    def reset(self, seed=None):
         """ Returns initial observations and states """
+
+        # Control seed
+        if seed is not None:
+            self._seed = seed
+            self._seed = self.original_env.seed(self._seed)
+
         self._obs = self._env.reset()
         return self.get_obs(), self.get_state()
 

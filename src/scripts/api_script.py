@@ -11,22 +11,22 @@ from envs import REGISTRY as env_REGISTRY
 import random as rnd
 
 # Arguments for PettingZoo
-args = {
-  "env": "pettingzoo",
-  "env_args": {
-      "key": "pistonball_v6",
-      "time_limit": 900,
-      "render_mode": "rgb_array",
-      "image_encoder": "ResNet18",
-      "image_encoder_use_cuda": True,
-      "image_encoder_batch_size": 10,
-      "centralized_image_encoding": False,
-      "partial_observation": False,
-      "trainable_cnn": False,
-      "kwargs": "('n_pistons',10),",
-      "seed": 2024
-  }
-}
+# args = {
+#   "env": "pettingzoo",
+#   "env_args": {
+#       "key": "pistonball_v6",
+#       "time_limit": 900,
+#       "render_mode": "rgb_array",
+#       "image_encoder": "ResNet18",
+#       "image_encoder_use_cuda": True,
+#       "image_encoder_batch_size": 10,
+#       "centralized_image_encoding": False,
+#       "partial_observation": False,
+#       "trainable_cnn": False,
+#       "kwargs": "('n_pistons',10),",
+#       "seed": 2024
+#   }
+# }
 
 # Arguments for Overcooked
 # args = {
@@ -40,14 +40,14 @@ args = {
 # }
 
 # Arguments for Pressure Plate
-# args = {
-#   "env": "pressureplate",
-#   "env_args": {
-#       "key": "pressureplate-linear-4p-v0",
-#       "time_limit": 500,
-#       "seed": 2024
-#   }
-# }
+args = {
+  "env": "pressureplate",
+  "env_args": {
+      "key": "pressureplate-linear-4p-v0",
+      "time_limit": 500,
+      "seed": 2024
+  }
+}
 
 # Arguments for LBF
 # args = {
@@ -70,14 +70,14 @@ args = {
 # }
 
 # Arguments for MPE
-args = {
-  "env": "gymma",
-  "env_args": {
-      "key": "mpe:MultiSpeakerListener-v0",
-      "time_limit": 25,
-      "seed": 2024
-  }
-}
+# args = {
+#   "env": "gymma",
+#   "env_args": {
+#       "key": "mpe:MultiSpeakerListener-v0",
+#       "time_limit": 25,
+#       "seed": 2024
+#   }
+# }
 
 # Arguments for Capture Target
 # args = {
