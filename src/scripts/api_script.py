@@ -40,14 +40,14 @@ import random as rnd
 # }
 
 # Arguments for Pressure Plate
-args = {
-  "env": "pressureplate",
-  "env_args": {
-      "key": "pressureplate-linear-4p-v0",
-      "time_limit": 500,
-      "seed": 2024
-  }
-}
+# args = {
+#   "env": "pressureplate",
+#   "env_args": {
+#       "key": "pressureplate-linear-4p-v0",
+#       "time_limit": 500,
+#       "seed": 2024
+#   }
+# }
 
 # Arguments for LBF
 # args = {
@@ -70,14 +70,14 @@ args = {
 # }
 
 # Arguments for MPE
-# args = {
-#   "env": "gymma",
-#   "env_args": {
-#       "key": "mpe:MultiSpeakerListener-v0",
-#       "time_limit": 25,
-#       "seed": 2024
-#   }
-# }
+args = {
+  "env": "gymma",
+  "env_args": {
+      "key": "mpe:SimpleSpeakerListener-v0",
+      "time_limit": 25,
+      "seed": 2024
+  }
+}
 
 # Arguments for Capture Target
 # args = {

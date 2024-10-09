@@ -92,6 +92,8 @@ class _GymmaWrapper(MultiAgentEnv):
         """ Returns reward, terminated, info """
 
         actions = [int(a) for a in actions]
+        actions = self.filter_actions(actions)
+
         self._obs, reward, done, self._info = self._env.step(actions)
         self._obs = [np.pad(o,
                             (0, self.longest_observation_space.shape[0] - len(o)),
@@ -105,6 +107,23 @@ class _GymmaWrapper(MultiAgentEnv):
             done = all(done)
 
         return float(reward), done, {}
+
+    def filter_actions(self, actions):
+        """
+        Filter the actions of agents based on the available actions.
+        If an invalid action found, it will be replaced with the first available action.
+        This allows the agents to learn that some actions have the same effects with others.
+        Thus, we can have a shared NN policy for two or more agents which have different sets of available actions.
+        """
+
+        for agent_idx in range(self.n_agents):
+            agent_avail_actions = self.get_avail_agent_actions(agent_idx)
+            if not agent_avail_actions[actions[agent_idx]]:
+                # Choose the first available action
+                first_avail_action = agent_avail_actions.index(1)
+                actions[agent_idx] = first_avail_action
+
+        return actions
 
     def get_obs(self):
         """ Returns all agent observations in a list """
@@ -147,7 +166,6 @@ class _GymmaWrapper(MultiAgentEnv):
 
     def get_total_actions(self):
         """ Returns the total number of actions an agent could ever take """
-        # TODO: This is only suitable for a discrete 1 dimensional action space for each agent
 
         return flatdim(self.longest_action_space)
 
