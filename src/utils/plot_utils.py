@@ -4,6 +4,7 @@ import random
 
 from matplotlib import pyplot as plt
 import numpy as np
+import pandas as pd
 
 
 PREDEFINED_MAP_ALGO_COLORS = {
@@ -64,14 +65,16 @@ def read_json(json_path):
     return data
 
 
-def create_plot(x_data,
-                y_data_mean,
-                y_data_std,
-                path_to_save,
-                x_label,
-                y_label,
-                plot_title,
-                legend_labels=None):
+def create_plot(
+        x_data,
+        y_data_mean,
+        y_data_std,
+        path_to_save,
+        x_label,
+        y_label,
+        plot_title,
+        legend_labels=None
+):
 
     assert len(x_data) == len(y_data_mean), \
         f"'len(x_data)': {len(x_data)}, 'len(y_data_mean)': {len(y_data_mean)}"
@@ -165,17 +168,18 @@ def get_return_data(results_data):
     test_normalized_return_mean_data = np.array(test_return_mean_data) / np.array(test_ep_length_mean_data)
     test_normalized_return_std_data = np.array(test_return_std_data) / np.array(test_ep_length_mean_data)
 
-    return (x_return_data,
-            return_mean_data,
-            return_std_data,
-            x_test_return_data,
-            test_return_mean_data,
-            test_return_std_data,
-            normalized_return_mean_data,
-            normalized_return_std_data,
-            test_normalized_return_mean_data,
-            test_normalized_return_std_data
-            )
+    return (
+        x_return_data,
+        return_mean_data,
+        return_std_data,
+        x_test_return_data,
+        test_return_mean_data,
+        test_return_std_data,
+        normalized_return_mean_data,
+        normalized_return_std_data,
+        test_normalized_return_mean_data,
+        test_normalized_return_std_data
+    )
 
 
 def plot_single_experiment_results(path_to_results, algo_name, env_name):
@@ -211,41 +215,44 @@ def plot_single_experiment_results(path_to_results, algo_name, env_name):
         if "return" in results_type:
 
             # Get "returns" and normalized "returns" data
-            (x_return_data,
-             return_mean_data,
-             return_std_data,
-             x_test_return_data,
-             test_return_mean_data,
-             test_return_std_data,
-             normalized_return_mean_data,
-             normalized_return_std_data,
-             test_normalized_return_mean_data,
-             test_normalized_return_std_data
+            (
+                x_return_data,
+                return_mean_data,
+                return_std_data,
+                x_test_return_data,
+                test_return_mean_data,
+                test_return_std_data,
+                normalized_return_mean_data,
+                normalized_return_std_data,
+                test_normalized_return_mean_data,
+                test_normalized_return_std_data
              ) = get_return_data(results_data)
 
             # Create plot for the unnormalized returns
             path_to_save = os.path.join(path_to_save_results, "return_mean")
-            create_plot([x_return_data, x_test_return_data],
-                        [return_mean_data, test_return_mean_data],
-                        [return_std_data, test_return_std_data],
-                        path_to_save,
-                        "timesteps",
-                        "return mean",
-                        plot_title,
-                        legend_labels=["Train", "Test"]
-                        )
+            create_plot(
+                [x_return_data, x_test_return_data],
+                [return_mean_data, test_return_mean_data],
+                [return_std_data, test_return_std_data],
+                path_to_save,
+                "Steps",
+                "Episodic Reward",
+                plot_title,
+                legend_labels=["Train", "Test"]
+            )
 
             # Create plot for the normalized returns
             path_to_save = os.path.join(path_to_save_results, "normalized_return_mean")
-            create_plot([x_return_data, x_test_return_data],
-                        [normalized_return_mean_data, test_normalized_return_mean_data],
-                        [normalized_return_std_data, test_normalized_return_std_data],
-                        path_to_save,
-                        "timesteps",
-                        "per-step return mean",
-                        plot_title,
-                        legend_labels=["Train", "Test"]
-                        )
+            create_plot(
+                [x_return_data, x_test_return_data],
+                [normalized_return_mean_data, test_normalized_return_mean_data],
+                [normalized_return_std_data, test_normalized_return_std_data],
+                path_to_save,
+                "Steps",
+                "Per-Step Episodic Reward",
+                plot_title,
+                legend_labels=["Train", "Test"]
+            )
 
         else:
             # Get data for x and y axes
@@ -257,14 +264,15 @@ def plot_single_experiment_results(path_to_results, algo_name, env_name):
             # Define where to save the plot
             path_to_save = os.path.join(path_to_save_results, results_type)
             # Create the plot
-            create_plot([x_data],
-                        [mean_data],
-                        [std_data],
-                        path_to_save,
-                        "timesteps",
-                        results_type_for_y_axis_label,
-                        plot_title
-                        )
+            create_plot(
+                [x_data],
+                [mean_data],
+                [std_data],
+                path_to_save,
+                "Steps",
+                results_type_for_y_axis_label,
+                plot_title
+            )
 
 
 def calculate_mean_and_std_of_multiple_exps(x_data_list, mean_data_list):
@@ -278,8 +286,9 @@ def calculate_mean_and_std_of_multiple_exps(x_data_list, mean_data_list):
     max_common_time = min([max(x) for x in x_data_list])
 
     # Step 2: Truncate all datasets
-    truncated_data = [truncate_data(np.array(x), np.array(y), max_common_time)
-                      for x, y in zip(x_data_list, mean_data_list)]
+    truncated_data = [
+        truncate_data(np.array(x), np.array(y), max_common_time) for x, y in zip(x_data_list, mean_data_list)
+    ]
 
     # Step 3: Define a common set of timesteps and interpolate
     # Increase the data resolution by a factor of 10.
@@ -290,25 +299,29 @@ def calculate_mean_and_std_of_multiple_exps(x_data_list, mean_data_list):
     mean_data = np.mean(interpolated_data, axis=0)
     std_data = np.std(interpolated_data, axis=0)
 
-    return mean_data, std_data, common_timeline
+    n_samples = interpolated_data.shape[0]
+
+    return mean_data, std_data, common_timeline, n_samples
 
 
-def create_multiple_exps_plot(all_results,
-                              path_to_save,
-                              plot_title,
-                              legend_labels,  # Algorithm names
-                              env_name,
-                              plot_train=True):
+def create_multiple_exps_plot(
+        all_results,
+        path_to_save,
+        plot_title,
+        legend_labels,  # Algorithm names
+        env_name,
+        plot_train=True
+):
 
     # Create new figures, one for returns and another one for per-set returns.
     plt.figure(1)
-    plt.xlabel("Timesteps")
-    plt.ylabel("return mean")
+    plt.xlabel("Steps")
+    plt.ylabel("Episodic Reward")
     plt.title(plot_title)
 
     plt.figure(2)
-    plt.xlabel("Timesteps")
-    plt.ylabel("per-step return mean")
+    plt.xlabel("Steps")
+    plt.ylabel("Per-step Episodic Reward")
     plt.title(plot_title)
 
     lines = []  # To keep track of plot lines for legend
@@ -328,6 +341,7 @@ def create_multiple_exps_plot(all_results,
         norm_test_mean_data = all_results[alg_idx][7]
         norm_test_std_data = all_results[alg_idx][8]
         test_common_timeline = all_results[alg_idx][9]
+        n_samples = all_results[alg_idx][10]
 
         # Check data consistency
         assert (len(mean_data) ==
@@ -356,21 +370,24 @@ def create_multiple_exps_plot(all_results,
                  f"'len(norm_test_std_data)': {len(norm_test_std_data)}, "
                  f"'len(test_common_timeline)': {len(test_common_timeline)}")
 
-        data_for_plots = [[mean_data,
-                           std_data,
-                           common_timeline,
-                           test_mean_data,
-                           test_std_data,
-                           test_common_timeline
-                           ],
-                          [norm_mean_data,
-                           norm_std_data,
-                           common_timeline,
-                           norm_test_mean_data,
-                           norm_test_std_data,
-                           test_common_timeline
-                           ]
-                          ]
+        data_for_plots = [
+            [
+                mean_data,
+                std_data,
+                common_timeline,
+                test_mean_data,
+                test_std_data,
+                test_common_timeline
+            ],
+            [
+                norm_mean_data,
+                norm_std_data,
+                common_timeline,
+                norm_test_mean_data,
+                norm_test_std_data,
+                test_common_timeline
+            ]
+        ]
 
         # Define the label to plot in legend
         plot_legend = legend_labels[alg_idx] if plot_train is False else legend_labels[alg_idx] + "-test"
@@ -379,17 +396,10 @@ def create_multiple_exps_plot(all_results,
         color = PREDEFINED_MAP_ALGO_COLORS.get(plot_legend, f'#{random.randint(0, 0xFFFFFF):06x}')
 
         # Keep the used plot_legend
-        if plot_legend not in PREDEFINED_MAP_ALGO_COLORS:
-            extra_plot_legends.append(plot_legend)
-        else:
+        if plot_legend in PREDEFINED_MAP_ALGO_COLORS:
             plot_legends.append(plot_legend)
-
-        # if legend_labels is not None:
-        #     # Custom legend creation
-        #     legend_order = list(PREDEFINED_MAP_ALGO_COLORS.keys())
-        #     legend_lines = [lines[legend_order.index(label)] for label in legend_order if label in labels]
-        #     legend_lines += [line for line in extra_lines]
-        #     plt.legend(handles=legend_lines)
+        else:
+            extra_plot_legends.append(plot_legend)
 
         for data_for_plot_idx, data_for_plot in enumerate(data_for_plots):
 
@@ -400,57 +410,261 @@ def create_multiple_exps_plot(all_results,
             line, = plt.plot(
                 data_for_plot[5],
                 data_for_plot[3],
-                label=plot_legend
+                label=plot_legend,
+                color=color
             )
 
             # Append to either main or extra lines list
             if plot_legend in PREDEFINED_MAP_ALGO_COLORS:
                 if data_for_plot_idx == 0:
                     lines.append([])
-                lines[-1].append(line)
+                lines[-1].append([line])
             else:
-                extra_lines.append(line)
+                if data_for_plot_idx == 0:
+                    extra_lines.append([])
+                extra_lines[-1].append([line])
 
             # Add std if available
             if data_for_plot[4] is not None:
 
                 # Calculate the upper and lower bounds of the standard deviation
-                std_upper = np.array(data_for_plot[3]) + 1.15*np.array(data_for_plot[4])  # 75%
-                std_lower = np.array(data_for_plot[3]) - 1.15*np.array(data_for_plot[4])  # 75%
+                std_upper = np.array(data_for_plot[3]) + 1.15*np.array(data_for_plot[4]) / np.sqrt(n_samples)  # 75%
+                std_lower = np.array(data_for_plot[3]) - 1.15*np.array(data_for_plot[4]) / np.sqrt(n_samples)  # 75%
 
                 # Add a shaded area for the standard deviation
-                plt.fill_between(data_for_plot[5], std_lower, std_upper, alpha=0.2)
+                plt.fill_between(data_for_plot[5], std_lower, std_upper, alpha=0.2, color=color)
 
             # Plot the train data
             if plot_train is True:
-                plot_legend = legend_labels[alg_idx] + "-train"
-                plt.plot(
+                train_plot_legend = legend_labels[alg_idx] + "-train"
+                train_color = f'#{random.randint(0, 0xFFFFFF):06x}'
+                line, = plt.plot(
                     data_for_plot[2],
                     data_for_plot[0],
-                    label=plot_legend
+                    label=train_plot_legend,
+                    color=train_color
                 )
+
+                # Append to either main or extra lines list
+                # based on the 'plot_legend' since 'train_plot_legend'
+                # is not in 'PREDEFINED_MAP_ALGO_COLORS' by default
+                if plot_legend in PREDEFINED_MAP_ALGO_COLORS:
+                    lines[-1][-1].append(line)
+                else:
+                    extra_lines[-1][-1].append(line)
+
                 # Add std if available
                 if data_for_plot[1] is not None:
                     # Calculate the upper and lower bounds of the standard deviation
                     std_upper = np.array(data_for_plot[0]) + np.array(data_for_plot[1])
                     std_lower = np.array(data_for_plot[0]) - np.array(data_for_plot[1])
                     # Add a shaded area for the standard deviation
-                    plt.fill_between(data_for_plot[2], std_lower, std_upper, alpha=0.2)
+                    plt.fill_between(data_for_plot[2], std_lower, std_upper, alpha=0.2, color=train_color)
+
+    ## Custom legend creation
+    legend_order = list(PREDEFINED_MAP_ALGO_COLORS.keys())
+    legend_lines_fig_1 = []
+    legend_lines_fig_2 = []
+    # First should be the lines which are listed in 'legend_order'
+    for _plot_legend in legend_order:
+        if _plot_legend in plot_legends:
+            # Find the index of '_plot_legend' in 'plot_legends'
+            _plot_legend_idx = plot_legends.index(_plot_legend)
+            # Add the lines for figure 1
+            legend_lines_fig_1.extend(lines[_plot_legend_idx][0])
+            # Add the lines for figure 2
+            legend_lines_fig_2.extend(lines[_plot_legend_idx][1])
+    # Then should be all the rest lines (of algorithms not listed in 'legend_order')
+    for _lines in extra_lines:
+        # Add the lines for figure 1
+        legend_lines_fig_1.extend(_lines[0])
+        # Add the lines for figure 2
+        legend_lines_fig_2.extend(_lines[1])
 
     # Adding legend, save, and close
     plt.figure(1)
-    plt.legend()
+    plt.legend(handles=legend_lines_fig_1)
     plt.tight_layout()
     path_to_save_plot = os.path.join(path_to_save, f"return_mean_env={env_name}")
     plt.savefig(path_to_save_plot)
     plt.close()
 
     plt.figure(2)
-    plt.legend()
+    plt.legend(handles=legend_lines_fig_2)
     plt.tight_layout()
     path_to_save_plot = os.path.join(path_to_save, f"normalized_return_mean_env={env_name}")
     plt.savefig(path_to_save_plot)
     plt.close()
+
+
+def calculate_mean_best_reward_over_multiple_experiments(
+        all_results,
+        path_to_save,
+        algo_names,
+        env_name,
+        n_last_values=50
+):
+
+    def truncate_data(y, max_time):
+        """ Truncate data to minimum max_time """
+        y = np.array([y_element[:max_time] for y_element in y])
+        return y
+
+    def get_max_indices(_data):
+        all_values_best_idx = np.argmax(_data, axis=1)
+        last_values_best_idx = np.argmax(np.array(_data)[:, -n_last_values:], axis=1)
+        return all_values_best_idx, last_values_best_idx
+
+    def get_best_rewards(_data, all_values_best_idx, last_values_best_idx):
+
+        _best_rewards = {}
+
+        row_indices = np.arange(_data.shape[0])
+        _best_rewards['overall_mean_max_reward'] = np.mean(_data[row_indices, all_values_best_idx])
+        _best_rewards['overall_std_max_reward'] = np.std(_data[row_indices, all_values_best_idx])
+        _best_rewards['overall_median_max_reward'] = np.median(_data[row_indices, all_values_best_idx])
+        _best_rewards['overall_25_percentile_max_reward'] = np.percentile(_data[row_indices, all_values_best_idx], 25)
+        _best_rewards['overall_75_percentile_max_reward'] = np.percentile(_data[row_indices, all_values_best_idx], 75)
+        _best_rewards['overall_min_max_reward'] = np.min(_data[row_indices, all_values_best_idx])
+        _best_rewards['overall_max_max_reward'] = np.min(_data[row_indices, all_values_best_idx])
+
+        last_values_data = _data[:, -n_last_values:]
+        _best_rewards['last_values_mean_max_reward'] = np.mean(last_values_data[row_indices, last_values_best_idx])
+        _best_rewards['last_values_std_max_reward'] = np.std(last_values_data[row_indices, last_values_best_idx])
+        _best_rewards['last_values_median_max_reward'] = np.median(last_values_data[row_indices, last_values_best_idx])
+        _best_rewards['last_values_25_percentile_max_reward'] = \
+            np.percentile(last_values_data[row_indices, last_values_best_idx], 25)
+        _best_rewards['last_values_75_percentile_max_reward'] = \
+            np.percentile(last_values_data[row_indices, last_values_best_idx], 75)
+        _best_rewards['last_values_min_max_reward'] = np.min(last_values_data[row_indices, last_values_best_idx])
+        _best_rewards['last_values_max_max_reward'] = np.max(last_values_data[row_indices, last_values_best_idx])
+
+        # Round the results
+        for key, value in _best_rewards.items():
+            _best_rewards[key] = round(value, 2)
+
+        return _best_rewards
+
+    # Prepare the csv columns and data. These metrics have the same order as the 'best_rewards'
+    metrics = [
+        'test_overall_mean_max_reward',
+        'test_overall_std_max_reward',
+        'test_overall_median_max_reward',
+        'test_overall_25_percentile_max_reward',
+        'test_overall_75_percentile_max_reward',
+        'test_overall_min_max_reward',
+        'test_overall_max_max_reward',
+        'test_last_values_mean_max_reward',
+        'test_last_values_std_max_reward',
+        'test_last_values_median_max_reward',
+        'test_last_values_25_percentile_max_reward',
+        'test_last_values_75_percentile_max_reward',
+        'test_last_values_min_max_reward',
+        'test_last_values_max_max_reward',
+        'train_overall_mean_max_reward',
+        'train_overall_std_max_reward',
+        'train_overall_median_max_reward',
+        'train_overall_25_percentile_max_reward',
+        'train_overall_75_percentile_max_reward',
+        'train_overall_min_max_reward',
+        'train_overall_max_max_reward',
+        'train_last_values_mean_max_reward',
+        'train_last_values_std_max_reward',
+        'train_last_values_median_max_reward',
+        'train_last_values_25_percentile_max_reward',
+        'train_last_values_75_percentile_max_reward',
+        'train_last_values_min_max_reward',
+        'train_last_values_max_max_reward',
+        'test_norm_overall_mean_max_reward',
+        'test_norm_overall_std_max_reward',
+        'test_norm_overall_median_max_reward',
+        'test_norm_overall_25_percentile_max_reward',
+        'test_norm_overall_75_percentile_max_reward',
+        'test_norm_overall_min_max_reward',
+        'test_norm_overall_max_max_reward',
+        'test_norm_last_values_mean_max_reward',
+        'test_norm_last_values_std_max_reward',
+        'test_norm_last_values_median_max_reward',
+        'test_norm_last_values_25_percentile_max_reward',
+        'test_norm_last_values_75_percentile_max_reward',
+        'test_norm_last_values_min_max_reward',
+        'test_norm_last_values_max_max_reward',
+        'train_norm_overall_mean_max_reward',
+        'train_norm_overall_std_max_reward',
+        'train_norm_overall_median_max_reward',
+        'train_norm_overall_25_percentile_max_reward',
+        'train_norm_overall_75_percentile_max_reward',
+        'train_norm_overall_min_max_reward',
+        'train_norm_overall_max_max_reward',
+        'train_norm_last_values_mean_max_reward',
+        'train_norm_last_values_std_max_reward',
+        'train_norm_last_values_median_max_reward',
+        'train_norm_last_values_25_percentile_max_reward',
+        'train_norm_last_values_75_percentile_max_reward',
+        'train_norm_last_values_min_max_reward',
+        'train_norm_last_values_max_max_reward',
+    ]
+    # Create an empty DataFrame with metrics as the index
+    df = pd.DataFrame(index=metrics, columns=algo_names)
+
+    for alg_idx in range(len(all_results)):
+
+        mean_data = all_results[alg_idx][11]
+        norm_mean_data = all_results[alg_idx][12]
+        test_mean_data = all_results[alg_idx][13]
+        norm_test_mean_data = all_results[alg_idx][14]
+
+        # Step 1: Find the maximum common ending timestep
+        max_common_time = min([len(x) for x in mean_data])
+        test_max_common_time = min([len(x) for x in test_mean_data])
+
+        # Step 2: Truncate all datasets
+        data_for_reward_calculation = [
+            truncate_data(test_mean_data, test_max_common_time),
+            truncate_data(mean_data, max_common_time),
+            truncate_data(norm_test_mean_data, test_max_common_time),
+            truncate_data(norm_mean_data, max_common_time)
+        ]
+
+        data_columns = [
+            'test',
+            'train',
+            'norm test',
+            'norm train'
+        ]
+
+        test_all_values_best_idx = None
+        test_last_values_best_idx = None
+        train_all_values_best_idx = None
+        train_last_values_best_idx = None
+        algo_data_for_csv = np.zeros((len(metrics),), dtype=np.float32)
+        for data_idx, (data, data_column) in enumerate(zip(data_for_reward_calculation, data_columns)):
+
+            # Get indices from all experiments of the best reward over the last "n_last_values" and over all values
+            if data_column == 'test':
+                test_all_values_best_idx, test_last_values_best_idx = get_max_indices(data)
+            elif data_column == 'train':
+                train_all_values_best_idx, train_last_values_best_idx = get_max_indices(data)
+
+            # Get the best reward statistics
+            best_rewards = None
+            if 'test' in data_column:
+                best_rewards = get_best_rewards(data, test_all_values_best_idx, test_last_values_best_idx)
+            elif 'train' in data_column:
+                best_rewards = get_best_rewards(data, train_all_values_best_idx, train_last_values_best_idx)
+            else:
+                raise ValueError(f'data_column: {data_column}')
+
+            # Assign the statistics to the csv data
+            algo_data_for_csv[(data_idx * len(best_rewards)): ((data_idx + 1) * len(best_rewards))] = \
+                list(best_rewards.values())
+
+        # Assign the algo values to the dataframe
+        df[algo_names[alg_idx]] = algo_data_for_csv.copy()
+
+    # Save dataframe
+    file_path = os.path.join(path_to_save, f'best_rewards_env={env_name}.csv')
+    df.to_csv(file_path)
 
 
 def plot_multiple_experiment_results(paths_to_results, algo_names, env_name, path_to_save, plot_train):
@@ -474,7 +688,9 @@ def plot_multiple_experiment_results(paths_to_results, algo_names, env_name, pat
         assert os.path.exists(path_to_results), \
             f"The provided 'path_to_results' does not exist! 'path_to_results': {path_to_results}"
 
-        path_to_exps = [os.path.join(path_to_results, elem) for elem in os.listdir(path_to_results) if elem.isdigit()]
+        path_to_exps = [
+            os.path.join(path_to_results, elem) for elem in os.listdir(path_to_results) if elem.isdigit()
+        ]
         x_return_data_list = []
         return_mean_data_list = []
         x_test_return_data_list = []
@@ -488,17 +704,18 @@ def plot_multiple_experiment_results(paths_to_results, algo_names, env_name, pat
             results_data = read_json(path_to_info_json)
 
             # Get "returns" and normalized "returns" data
-            (x_return_data,
-             return_mean_data,
-             _,
-             x_test_return_data,
-             test_return_mean_data,
-             _,
-             normalized_return_mean_data,
-             _,
-             test_normalized_return_mean_data,
-             _
-             ) = get_return_data(results_data)
+            (
+                x_return_data,
+                return_mean_data,
+                _,
+                x_test_return_data,
+                test_return_mean_data,
+                _,
+                normalized_return_mean_data,
+                _,
+                test_normalized_return_mean_data,
+                _
+            ) = get_return_data(results_data)
 
             # Keep returns to compute their mean and std
             x_return_data_list.append(x_return_data)
@@ -508,35 +725,58 @@ def plot_multiple_experiment_results(paths_to_results, algo_names, env_name, pat
             normalized_return_mean_data_list.append(normalized_return_mean_data)
             test_normalized_return_mean_data_list.append(test_normalized_return_mean_data)
 
-        (mean_data,
-         std_data,
-         common_timeline) = calculate_mean_and_std_of_multiple_exps(x_return_data_list, return_mean_data_list)
-        (norm_mean_data,
-         norm_std_data,
-         _
-         ) = calculate_mean_and_std_of_multiple_exps(x_return_data_list, normalized_return_mean_data_list)
-        (test_mean_data,
-         test_std_data,
-         test_common_timeline
-         ) = calculate_mean_and_std_of_multiple_exps(x_test_return_data_list, test_return_mean_data_list)
-        (norm_test_mean_data,
-         norm_test_std_data,
-         _
-         ) = calculate_mean_and_std_of_multiple_exps(x_test_return_data_list, test_normalized_return_mean_data_list)
-        all_results.append([mean_data, std_data, norm_mean_data, norm_std_data, common_timeline,
-                            test_mean_data, test_std_data, norm_test_mean_data, norm_test_std_data, test_common_timeline
-                            ])
+        (
+            mean_data,
+            std_data,
+            common_timeline,
+            n_samples
+        ) = calculate_mean_and_std_of_multiple_exps(x_return_data_list, return_mean_data_list)
+        (
+            norm_mean_data,
+            norm_std_data,
+            _,
+            _
+        ) = calculate_mean_and_std_of_multiple_exps(x_return_data_list, normalized_return_mean_data_list)
+        (
+            test_mean_data,
+            test_std_data,
+            test_common_timeline,
+            _
+        ) = calculate_mean_and_std_of_multiple_exps(x_test_return_data_list, test_return_mean_data_list)
+        (
+            norm_test_mean_data,
+            norm_test_std_data,
+            _,
+            _
+        ) = calculate_mean_and_std_of_multiple_exps(x_test_return_data_list, test_normalized_return_mean_data_list)
+        all_results.append([
+            mean_data, std_data, norm_mean_data, norm_std_data, common_timeline,
+            test_mean_data, test_std_data, norm_test_mean_data, norm_test_std_data, test_common_timeline,
+            n_samples,
+            return_mean_data_list, normalized_return_mean_data_list,
+            test_return_mean_data_list, test_normalized_return_mean_data_list
+        ])
 
     # Create plots
     plot_title = "Env: " + env_name
     if os.path.exists(path_to_save) is False:
         os.makedirs(path_to_save)
-    create_multiple_exps_plot(all_results,
-                              path_to_save,
-                              plot_title,
-                              algo_names,
-                              env_name,
-                              plot_train=plot_train)
+    create_multiple_exps_plot(
+        all_results,
+        path_to_save,
+        plot_title,
+        algo_names,
+        env_name,
+        plot_train=plot_train
+    )
+
+    # Create csv file with the mean best rewards
+    calculate_mean_best_reward_over_multiple_experiments(
+        all_results,
+        path_to_save,
+        algo_names,
+        env_name
+    )
 
     print("\nMultiple-experiment plots created successfully! "
           f"\nSaved at: {path_to_save}")
@@ -729,21 +969,21 @@ if __name__ == '__main__':
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/lbf_4s-11x11-3p-2f/"
 
     # LBF - 2s-9x9-3p-2f
-    paths_to_results_ = [
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/CDS/lbf_2s-9x9-3p-2f/cds_lbf_2s-9x9-3p-2f_results/sacred/cds/lbforaging:Foraging-2s-9x9-3p-2f-coop-v2",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/lbf_2s-9x9-3p-2f/maser_lbf_2s-9x9-3p-2f_results/sacred/maser/lbforaging:Foraging-2s-9x9-3p-2f-coop-v2",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/lbf_2s-9x9-3p-2f/qplex_lbf_2s-9x9-3p-2f_results/sacred/qplex/lbforaging:Foraging-2s-9x9-3p-2f-coop-v2",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/lbf_2s-9x9-3p-2f/happo_lbf_2s-9x9-3p-2f_w_parallel_10_threads_results/sacred/happo/lbforaging:Foraging-2s-9x9-3p-2f-coop-v2",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/lbf_2s-9x9-3p-2f/coma_lbf_2s-9x9-3p-2f_w_parallel_10_threads_results/Foraging-2s-9x9-3p-2f-coop-v2",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/lbf_2s-9x9-3p-2f/eoi_lbf_2s-9x9-3p-2f_w_episode_results/Foraging-2s-9x9-3p-2f-coop-v2",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/lbf_2s-9x9-3p-2f/qmix_lbf_2s-9x9-3p-2f_results/Foraging-2s-9x9-3p-2f-coop-v2",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/lbf_2s-9x9-3p-2f/mappo_lbf_2s-9x9-3p-2f_w_parallel_10_threads_results/Foraging-2s-9x9-3p-2f-coop-v2",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/lbf_2s-9x9-3p-2f/maa2c_lbf_2s-9x9-3p-2f_w_parallel_10_threads_results/Foraging-2s-9x9-3p-2f-coop-v2",
-        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAT_DEC/lbf_2s-9x9-3p-2f/mat_dec_lbf_2s-9x9-3p-2f_w_parallel_10_threads_results/sacred/mat_dec/lbforaging:Foraging-2s-9x9-3p-2f-coop-v2"
-    ]
-    algo_names_ = ["cds", "maser", "qplex", "happo", "coma", "eoi", "qmix", "mappo", "maa2c", "mat_dec"]
-    env_name_ = "lbf_2s-9x9-3p-2f"
-    path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/lbf_2s-9x9-3p-2f/"
+    # paths_to_results_ = [
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/CDS/lbf_2s-9x9-3p-2f/cds_lbf_2s-9x9-3p-2f_results/sacred/cds/lbforaging:Foraging-2s-9x9-3p-2f-coop-v2",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/lbf_2s-9x9-3p-2f/maser_lbf_2s-9x9-3p-2f_results/sacred/maser/lbforaging:Foraging-2s-9x9-3p-2f-coop-v2",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/lbf_2s-9x9-3p-2f/qplex_lbf_2s-9x9-3p-2f_results/sacred/qplex/lbforaging:Foraging-2s-9x9-3p-2f-coop-v2",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/lbf_2s-9x9-3p-2f/happo_lbf_2s-9x9-3p-2f_w_parallel_10_threads_results/sacred/happo/lbforaging:Foraging-2s-9x9-3p-2f-coop-v2",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/lbf_2s-9x9-3p-2f/coma_lbf_2s-9x9-3p-2f_w_parallel_10_threads_results/Foraging-2s-9x9-3p-2f-coop-v2",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/lbf_2s-9x9-3p-2f/eoi_lbf_2s-9x9-3p-2f_w_episode_results/Foraging-2s-9x9-3p-2f-coop-v2",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/lbf_2s-9x9-3p-2f/qmix_lbf_2s-9x9-3p-2f_results/Foraging-2s-9x9-3p-2f-coop-v2",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/lbf_2s-9x9-3p-2f/mappo_lbf_2s-9x9-3p-2f_w_parallel_10_threads_results/Foraging-2s-9x9-3p-2f-coop-v2",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/lbf_2s-9x9-3p-2f/maa2c_lbf_2s-9x9-3p-2f_w_parallel_10_threads_results/Foraging-2s-9x9-3p-2f-coop-v2",
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAT_DEC/lbf_2s-9x9-3p-2f/mat_dec_lbf_2s-9x9-3p-2f_w_parallel_10_threads_results/sacred/mat_dec/lbforaging:Foraging-2s-9x9-3p-2f-coop-v2"
+    # ]
+    # algo_names_ = ["cds", "maser", "qplex", "happo", "coma", "eoi", "qmix", "mappo", "maa2c", "mat_dec"]
+    # env_name_ = "lbf_2s-9x9-3p-2f"
+    # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/lbf_2s-9x9-3p-2f/"
 
     # LBF - 2s-12x12-2p-2f
     # paths_to_results_ = [
@@ -780,21 +1020,21 @@ if __name__ == '__main__':
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/lbf_2s-8x8-3p-2f/"
 
     # LBF - 7s-20x20-5p-3f
-    # paths_to_results_ = [
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/CDS/lbf_7s-20x20-5p-3f/cds_lbf_7s-20x20-5p-3f_results/sacred/cds/lbforaging:Foraging-7s-20x20-5p-3f-coop-v2",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/lbf_7s-20x20-5p-3f/qplex_lbf_7s-20x20-5p-3f_results/sacred/qplex/lbforaging:Foraging-7s-20x20-5p-3f-coop-v2",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/lbf_7s-20x20-5p-3f/maser_lbf_7s-20x20-5p-3f_results/sacred/maser/lbforaging:Foraging-7s-20x20-5p-3f-coop-v2",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/lbf_7s-20x20-5p-3f/happo_lbf_7s-20x20-5p-3f_w_parallel_10_threads_results/sacred/happo/lbforaging:Foraging-7s-20x20-5p-3f-coop-v2",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/lbf_7s-20x20-5p-3f/coma_lbf_7s-20x20-5p-3f_w_parallel_10_threads_results/Foraging-7s-20x20-5p-3f-coop-v2",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EMC/lbf_7s-20x20-5p-3f/emc_lbf_7s-20x20-5p-3f_w_rew_stand_results/Foraging-7s-20x20-5p-3f-coop-v2",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/lbf_7s-20x20-5p-3f/eoi_lbf_7s-20x20-5p-3f_w_episode_results/Foraging-7s-20x20-5p-3f-coop-v2",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/lbf_7s-20x20-5p-3f/qmix_lbf_7s-20x20-5p-3f_results/Foraging-7s-20x20-5p-3f-coop-v2",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/lbf_7s-20x20-5p-3f/mappo_lbf_7s-20x20-5p-3f_w_parallel_10_threads_result/Foraging-7s-20x20-5p-3f-coop-v2",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/lbf_7s-20x20-5p-3f/maa2c_lbf_7s-20x20-5p-3f_w_parallel_10_threads_results/Foraging-7s-20x20-5p-3f-coop-v2"
-    # ]
-    # algo_names_ = ["cds", "qplex", "maser", "happo", "coma", "emc", "eoi", "qmix", "mappo", "maa2c"]
-    # env_name_ = "7s-20x20-5p-3f"
-    # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/lbf_7s-20x20-5p-3f/"
+    paths_to_results_ = [
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/CDS/lbf_7s-20x20-5p-3f/cds_lbf_7s-20x20-5p-3f_results/sacred/cds/lbforaging:Foraging-7s-20x20-5p-3f-coop-v2",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/lbf_7s-20x20-5p-3f/qplex_lbf_7s-20x20-5p-3f_results/sacred/qplex/lbforaging:Foraging-7s-20x20-5p-3f-coop-v2",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/lbf_7s-20x20-5p-3f/maser_lbf_7s-20x20-5p-3f_results/sacred/maser/lbforaging:Foraging-7s-20x20-5p-3f-coop-v2",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/lbf_7s-20x20-5p-3f/happo_lbf_7s-20x20-5p-3f_w_parallel_10_threads_results/sacred/happo/lbforaging:Foraging-7s-20x20-5p-3f-coop-v2",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/lbf_7s-20x20-5p-3f/coma_lbf_7s-20x20-5p-3f_w_parallel_10_threads_results/Foraging-7s-20x20-5p-3f-coop-v2",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EMC/lbf_7s-20x20-5p-3f/emc_lbf_7s-20x20-5p-3f_w_rew_stand_results/Foraging-7s-20x20-5p-3f-coop-v2",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/lbf_7s-20x20-5p-3f/eoi_lbf_7s-20x20-5p-3f_w_episode_results/Foraging-7s-20x20-5p-3f-coop-v2",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/lbf_7s-20x20-5p-3f/qmix_lbf_7s-20x20-5p-3f_results/Foraging-7s-20x20-5p-3f-coop-v2",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/lbf_7s-20x20-5p-3f/mappo_lbf_7s-20x20-5p-3f_w_parallel_10_threads_result/Foraging-7s-20x20-5p-3f-coop-v2",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/lbf_7s-20x20-5p-3f/maa2c_lbf_7s-20x20-5p-3f_w_parallel_10_threads_results/Foraging-7s-20x20-5p-3f-coop-v2"
+    ]
+    algo_names_ = ["cds", "qplex", "maser", "happo", "coma", "emc", "eoi", "qmix", "mappo", "maa2c"]
+    env_name_ = "7s-20x20-5p-3f"
+    path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/lbf_7s-20x20-5p-3f/"
 
     # LBF - 8s-25x25-8p-5f
     # paths_to_results_ = [
