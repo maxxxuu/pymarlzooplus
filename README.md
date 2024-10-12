@@ -252,6 +252,21 @@ python3 src/main.py --config=<algo> --env-config=capturetarget with env_args.key
 Available scenarios:
 - "CaptureTarget-6x6-1t-2a-v0"
 
+### Box Pushing
+To install [Pox Pushing](https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/box_pushing.py), being in ```fepymarl/``` directory run:
+```sh
+cd src/envs/box_pushing/
+pip install -e .
+pip install pyglet==1.5.27 # For rendering
+```
+
+Example of using Capture Target (replace ```<algo>```):
+```sh
+python3 src/main.py --config=<algo> --env-config=boxpushing with env_args.key=<scenario> env_args.time_limit=60
+```
+
+Available scenarios:
+- "BoxPushing-6x6-2a-v0"
 ## Using A Custom Gym Environment
 
 EPyMARL supports environments that have been registered with Gym. 

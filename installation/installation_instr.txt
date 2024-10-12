@@ -68,7 +68,13 @@ python3 -m pip install -e .
 python3 -m pip install pyglet==1.5.27 # For rendering
 
 # For Capture Target
-# Assuming being in epymarl/ directory:
+# Assuming being in fepymarl/ directory:
 cd src/envs/capture_target/
 python3 -m pip install -e .
 python3 -m pip install pyglet==1.5.27 # For rendering
+
+# For Box Pushing
+# Assuming being in fepymarl/ directory:
+cd src/envs/box_pushing/
+python3 -m pip install -e .
+python3 -m pip install pyglet==1.5.27 # For renderingg
