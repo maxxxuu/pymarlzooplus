@@ -12,7 +12,8 @@ REGISTRY_availability = [
     "pettingzoo",
     "overcooked",
     "pressureplate",
-    "capturetarget"
+    "capturetarget",
+    "boxpushing",
 ]
 
 # In this way, the user don't need to install requirements
@@ -55,6 +56,12 @@ except:
 try:
     from envs.capturetarget_wrapper import _CaptureTargetWrapper
     REGISTRY["capturetarget"] = partial(env_fn, env=_CaptureTargetWrapper)
+except:
+    pass
+
+try:
+    from envs.boxpushing_wrapper import _BoxPushingWrapper
+    REGISTRY["boxpushing"] = partial(env_fn, env=_BoxPushingWrapper)
 except:
     pass
 

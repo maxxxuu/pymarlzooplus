@@ -1,7 +1,7 @@
-# For base fepymarl
-cd fepymarl/installation
-conda create -n fepymarl python=3.8.18 -y
-conda activate fepymarl
+# For base pymarlzooplusplus
+cd pymarlzooplusplus/installation
+conda create -n pymarlzooplusplus python=3.8.18 -y
+conda activate pymarlzooplusplus
 python3 -m pip install pip==24.0
 python3 -m pip install wheel==0.38.4 setuptools==65.5.0 einops
 python3 -m pip install -r requirements.txt
@@ -21,7 +21,7 @@ python3 -m pip install lbforaging==1.1.1
 python3 -m pip install rware==1.0.3
 
 # For MPE
-# Being in fepymarl/ directory:
+# Being in pymarlzooplusplus/ directory:
 cd src/envs/multiagent-particle-envs/
 python3 -m pip install -e .
 python3 -m pip install seaborn==0.13.2  # Required for colors of landmarks
@@ -54,7 +54,7 @@ python3 -m pip install 'pettingzoo[sisl]'==1.24.3
 ################################################################################
 
 ## For Overcooked
-# Being in fepymarl/ directory:
+# Being in pymarlzooplusplus/ directory:
 cd src/envs/overcooked_ai/
 python3 -m pip install -e .
 # Uninstall opencv because it installs newer version
@@ -62,13 +62,19 @@ python3 -m pip uninstall opencv-python opencv-python-headless -y
 python3 -m pip install opencv-python-headless==4.9.0.80 # or python3 -m pip install opencv-python==4.9.0.80 # only for rendering
 
 ## For pressureplate
-# Being in fepymarl/ directory:
+# Being in pymarlzooplusplus/ directory:
 cd src/envs/pressureplate_ai/
 python3 -m pip install -e .
 python3 -m pip install pyglet==1.5.27 # For rendering
 
 # For Capture Target
-# Assuming being in epymarl/ directory:
+# Assuming being in pymarlzooplusplus/ directory:
 cd src/envs/capture_target/
 python3 -m pip install -e .
 python3 -m pip install pyglet==1.5.27 # For rendering
+
+# For Box Pushing
+# Assuming being in pymarlzooplusplus/ directory:
+cd src/envs/box_pushing/
+python3 -m pip install -e .
+python3 -m pip install pyglet==1.5.27 # For renderingg
