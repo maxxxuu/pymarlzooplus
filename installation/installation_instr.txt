@@ -3,72 +3,72 @@ cd fepymarl/installation
 conda create -n fepymarl python=3.8.18 -y
 conda activate fepymarl
 python3 -m pip install pip==24.0
-pip install wheel==0.38.4 setuptools==65.5.0 einops
-pip install -r requirements.txt
+python3 -m pip install wheel==0.38.4 setuptools==65.5.0 einops
+python3 -m pip install -r requirements.txt
 
 # For torch and torch-scatter installation
-pip install protobuf==3.20.*
+python3 -m pip install protobuf==3.20.*
 if you have GPU:
-    - pip3 install torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cu121
+    - python3 -m pip install torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cu121
 otherwise:
-    - pip3 install torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cpu
+    - python3 -m pip install torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cpu
 sh ./install_torch_scatter.sh
 
 # For LBF
-pip install lbforaging==1.1.1
+python3 -m pip install lbforaging==1.1.1
 
 # For RWARE
-pip install rware==1.0.3
+python3 -m pip install rware==1.0.3
 
 # For MPE
 # Being in fepymarl/ directory:
 cd src/envs/multiagent-particle-envs/
-pip install -e .
-pip install seaborn==0.13.2  # Required for colors of landmarks
+python3 -m pip install -e .
+python3 -m pip install seaborn==0.13.2  # Required for colors of landmarks
 
 
 ############################## For pettingzoo ##############################
 
 ## Prerequisites
-pip install opencv-python-headless==4.9.0.80
+python3 -m pip install opencv-python-headless==4.9.0.80
 # or
-pip install opencv-python==4.9.0.80 # only for rendering
+python3 -m pip install opencv-python==4.9.0.80 # only for rendering
 
 ## All (of our interest: Atari, Butterfly)
-pip install transformers==4.38.2 pettingzoo==1.24.3 'pettingzoo[atari]'==1.24.3 autorom==0.6.1 'pettingzoo[butterfly]'==1.24.3 && AutoROM -y
+python3 -m pip install transformers==4.38.2 pettingzoo==1.24.3 'pettingzoo[atari]'==1.24.3 autorom==0.6.1 'pettingzoo[butterfly]'==1.24.3 && AutoROM -y
 
 ## or, individual
 # Atari
-pip install 'pettingzoo[atari]'==1.24.3
-pip install autorom==0.6.1
+python3 -m pip install 'pettingzoo[atari]'==1.24.3
+python3 -m pip install autorom==0.6.1
 AutoROM -y
 # Butterfly
-pip install 'pettingzoo[butterfly]'==1.24.3
+python3 -m pip install 'pettingzoo[butterfly]'==1.24.3
 # Classic
-pip install 'pettingzoo[classic]'==1.24.3
+python3 -m pip install 'pettingzoo[classic]'==1.24.3
 # MPE (not used here)
-pip install 'pettingzoo[mpe]'==1.24.3
+python3 -m pip install 'pettingzoo[mpe]'==1.24.3
 # SISL
 sudo apt-get install swig
-pip install 'pettingzoo[sisl]'==1.24.3
+python3 -m pip install 'pettingzoo[sisl]'==1.24.3
 ################################################################################
 
 ## For Overcooked
 # Being in fepymarl/ directory:
 cd src/envs/overcooked_ai/
-pip install -e .
+python3 -m pip install -e .
 # Uninstall opencv because it installs newer version
-pip uninstall opencv-python opencv-python-headless -y
-pip install opencv-python-headless==4.9.0.80 # or pip install opencv-python==4.9.0.80 # only for rendering
+python3 -m pip uninstall opencv-python opencv-python-headless -y
+python3 -m pip install opencv-python-headless==4.9.0.80 # or python3 -m pip install opencv-python==4.9.0.80 # only for rendering
 
 ## For pressureplate
 # Being in fepymarl/ directory:
 cd src/envs/pressureplate_ai/
-pip install -e .
-pip install pyglet==1.5.27 # For rendering
+python3 -m pip install -e .
+python3 -m pip install pyglet==1.5.27 # For rendering
 
 # For Capture Target
 # Assuming being in epymarl/ directory:
 cd src/envs/capture_target/
-pip install -e .
-pip install pyglet==1.5.27 # For rendering
+python3 -m pip install -e .
+python3 -m pip install pyglet==1.5.27 # For rendering

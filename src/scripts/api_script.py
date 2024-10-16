@@ -29,15 +29,15 @@ import random as rnd
 # }
 
 # Arguments for Overcooked
-# args = {
-#   "env": "overcooked",
-#   "env_args": {
-#       "key": "cramped_room",
-#       "time_limit": 500,
-#       "reward_type": "sparse",
-#       "seed": 2024
-#   }
-# }
+args = {
+  "env": "overcooked",
+  "env_args": {
+      "key": "coordination_ring",
+      "time_limit": 500,
+      "reward_type": "sparse",
+      "seed": 2024
+  }
+}
 
 # Arguments for Pressure Plate
 # args = {
@@ -79,15 +79,15 @@ import random as rnd
 #   }
 # }
 
-# Arguments for Capture Target
-args = {
-  "env": "capturetarget",
-  "env_args": {
-      "key": "CaptureTarget-6x6-1t-2a-v0",
-      "time_limit": 60,
-      "seed": 2024
-  }
-}
+# # Arguments for Capture Target
+# args = {
+#   "env": "capturetarget",
+#   "env_args": {
+#       "key": "CaptureTarget-6x6-1t-2a-v0",
+#       "time_limit": 60,
+#       "seed": 2024
+#   }
+# }
 
 # Initialize environment
 env = env_REGISTRY[args["env"]](**args["env_args"])
@@ -105,6 +105,8 @@ while not done:
     # Apply an environment step
     reward, done, info = env.step(actions)
     obs = env.get_obs()
+    print(obs[0].shape)
+    print(obs[1].shape)
     state = env.get_state()
 # Terminate the environment
 env.close()

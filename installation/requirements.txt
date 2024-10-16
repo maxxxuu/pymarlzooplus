@@ -17,7 +17,7 @@ pygame==2.3.0
 pyparsing==2.2.2
 pysc2==3.0.0
 pytest==4.3.1
-python-dateutil==2.7.3
+python-dateutil==2.8.2
 PyYAML==5.3.1
 requests==2.19.1
 s2clientprotocol==4.10.1.75800.0
