@@ -1,6 +1,6 @@
-# Further Extended Python MARL framework - EPyMARL
+# PyMARLzoo++
 
-FEPyMARL is an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), and includes
+PyMARLzoo++ is an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), and includes
 - Additional (7) algorithms: 
   - HAPPO, 
   - MAT-DEC, 
@@ -26,31 +26,30 @@ Algorithms (9) maintained from EPyMARL:
 - IA2C
 
 # Table of Contents
-- [Further Extended Python MARL framework - FEPyMARL](#further-extended-python-marl-framework---epymarl)
+- [PyMARLzoo++](#pymarlzoo)
 - [Table of Contents](#table-of-contents)
 - [Installation & Run instructions](#installation--run-instructions)
   - [Base requirements installation](#base-requirements-installation)
   - [Torch installation](#torch-installation)
   - [Torch-scatter installation](#torch-scatter-installation)
   - [Installing LBF, RWARE, MPE, PettingZoo, Overcooked, and Pressure plate](#installing-lbf-rware-mpe-pettingzoo-overcooked-and-pressureplate)
-  - [Using A Custom Gym Environment](#using-a-custom-gym-environment)
-- [Run an experiment on a Gym environment](#run-an-experiment-on-a-gym-environment)
 - [Run a hyperparameter search](#run-a-hyperparameter-search)
 - [Saving and loading learnt models](#saving-and-loading-learnt-models)
   - [Saving models](#saving-models)
   - [Loading models](#loading-models)
-- [Citing FEPyMARL, PyMARL, and EPyMARL](#citing-fepymarl-epymarl-and-pymarl)
+- [Citing PyMARLzoo++, PyMARL, and EPyMARL](#citing-pymarlzoo-epymarl-and-pymarl)
 - [License](#license)
 
 # Installation & Run instructions
+Note: ```pip install pymarlzooplusplus``` installation command will be available when the paper is accepted to not break the double-blind review process.
 
 ## Base requirements installation
 To install the minimum requirements (without environments installation) run the following commands:
 ```sh
 git clone ...
-cd fepymarl/installation
-conda create -n epymarl python=3.8.18 -y
-conda activate epymarl
+cd pymarlzooplusplus/installation
+conda create -n pymarlzooplusplus python=3.8.18 -y
+conda activate pymarlzooplusplus
 python3 -m pip install pip==24.0
 pip install wheel==0.38.4 setuptools==65.5.0 einops
 pip install -r requirements.txt
@@ -124,7 +123,7 @@ Available scenarios we run experiments:
 - "rware:rware-tiny-2ag-hard-v1"
 
 ### MPE
-To install [Multi-agent Particle Environment](https://github.com/semitable/multiagent-particle-envs), being in ```fepymarl/``` directory, run:
+To install [Multi-agent Particle Environment](https://github.com/semitable/multiagent-particle-envs), being in ```pymarlzooplusplus/``` directory, run:
 ```sh
 cd src/envs/multiagent-particle-envs/
 pip install -e .
@@ -169,7 +168,7 @@ python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.time_lim
 ```
 
 ### Overcooked
-To install [Overcooked](https://github.com/HumanCompatibleAI/overcooked_ai), being in ```fepymarl/``` directory, run:
+To install [Overcooked](https://github.com/HumanCompatibleAI/overcooked_ai), being in ```pymarlzooplusplus/``` directory, run:
 ```sh
 cd src/envs/overcooked_ai/
 pip install -e .
@@ -217,7 +216,7 @@ Reward types available:
 - "shaped"
 
 ### Pressure plate
-To install [Pressure Plate](https://github.com/uoe-agents/pressureplate/), being in ```fepymarl/``` directory, run:
+To install [Pressure Plate](https://github.com/uoe-agents/pressureplate/), being in ```pymarlzooplusplus/``` directory, run:
 ```sh
 cd src/envs/pressureplate_ai/
 pip install -e .
@@ -237,7 +236,7 @@ More available scenarios:
 - "pressureplate-linear-5p-v0"
 
 ### Capture Target
-To install [Capture Target](https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/capture_target.py), being in ```fepymarl/``` directory run:
+To install [Capture Target](https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/capture_target.py), being in ```pymarlzooplusplus/``` directory run:
 ```sh
 cd src/envs/capture_target/
 pip install -e .
@@ -253,54 +252,20 @@ Available scenarios:
 - "CaptureTarget-6x6-1t-2a-v0"
 
 ### Box Pushing
-To install [Pox Pushing](https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/box_pushing.py), being in ```fepymarl/``` directory run:
+To install [Box Pushing](https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/box_pushing.py), being in ```pymarlzooplusplus/``` directory run:
 ```sh
 cd src/envs/box_pushing/
 pip install -e .
 pip install pyglet==1.5.27 # For rendering
 ```
 
-Example of using Capture Target (replace ```<algo>```):
+Example of using Box Pushing (replace ```<algo>```):
 ```sh
 python3 src/main.py --config=<algo> --env-config=boxpushing with env_args.key=<scenario> env_args.time_limit=60
 ```
 
 Available scenarios:
 - "BoxPushing-6x6-2a-v0"
-## Using A Custom Gym Environment
-
-EPyMARL supports environments that have been registered with Gym. 
-The only difference with the Gym framework would be that the returned rewards should be a tuple (one reward for each agent). In this cooperative framework we sum these rewards together.
-
-Environments that are supported out of the box are the ones that are registered in Gym automatically. Examples are: [LBF](https://github.com/semitable/lb-foraging) and [RWARE](https://github.com/semitable/robotic-warehouse). 
-
-To register a custom environment with Gym, use the template below (taken from Level-Based Foraging).
-```python
-from gym.envs.registration import registry, register, make, spec
-register(
-  id="Foraging-8x8-2p-3f-v1",                     # Environment ID.
-  entry_point="lbforaging.foraging:ForagingEnv",  # The entry point for the environment class
-  kwargs={
-            ...                                   # Arguments that go to ForagingEnv's __init__ function.
-        },
-    )
-```
-
-# Run an experiment on a Gym environment
-
-```shell
-python3 src/main.py --config=qmix --env-config=gymma with env_args.time_limit=50 env_args.key="lbforaging:Foraging-8x8-2p-3f-v1"
-```
- In the above command `--env-config=gymma` (in constrast to `sc2` will use a Gym compatible wrapper). `env_args.time_limit=50` sets the maximum episode length to 50 and `env_args.key="..."` provides the Gym's environment ID. In the ID, the `lbforaging:` part is the module name (i.e. `import lbforaging` will run automatically).
-
-
-The config files act as defaults for an algorithm or environment. 
-
-They are all located in `src/config`.
-`--config` refers to the config files in `src/config/algs`
-`--env-config` refers to the config files in `src/config/envs`
-
-All results will be stored in the `Results` folder.
 
 # Run a hyperparameter search
 
@@ -324,13 +289,9 @@ You can save the learnt models to disk by setting `save_model = True`, which is 
 
 Learnt models can be loaded using the `checkpoint_path` parameter, after which the learning will proceed from the corresponding timestep. 
 
-# Citing FEPyMARL, EPyMARL and PyMARL
+# Citing PyMARLzoo++, EPyMARL and PyMARL
 
-If you use FEPyMARL in your research, please cite the ...
-
-In BibTeX format:
-'''tex
-'''
+If you use PyMARLzoo++ in your research, please cite the ...
 
 If you use the EPyMARL in your research, please cite the [Benchmarking Multi-Agent Deep Reinforcement Learning Algorithms in Cooperative Tasks](https://arxiv.org/abs/2006.07869).
 
