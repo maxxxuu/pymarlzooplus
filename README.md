@@ -13,6 +13,7 @@ PyMARLzoo++ is an extension of [EPyMARL](https://github.com/uoe-agents/epymarl),
 - Support for [Overcooked](https://github.com/HumanCompatibleAI/overcooked_ai) environments.
 - Support for [Pressure plate](https://github.com/uoe-agents/pressureplate) environments.
 - Support for [Capture Target](https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/capture_target.py) environment.
+- Support for [Box Pushing](https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/box_pushing.py) environment.
 
 Algorithms (9) maintained from EPyMARL:
 - COMA
@@ -83,7 +84,7 @@ Finally, run the following for torch-scatter installation (which is needed for m
 sh ./install_torch_scatter.sh
 ```
 
-## Installing LBF, RWARE, MPE, PettingZoo, Overcooked, PressurePlate and Capture Target
+## Installing LBF, RWARE, MPE, PettingZoo, Overcooked, PressurePlate, Capture Target and Box Pushing
 
 ### LBF
 To install [Level Based Foraging](https://github.com/uoe-agents/lb-foraging), run:
