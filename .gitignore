@@ -6,6 +6,7 @@ results/
 **/pressureplate.egg-info/
 **/mpe.egg-info/
 **/capture_target.egg-info/
+**/box_pushing.egg-info/
 **/.DS_Store
 
 

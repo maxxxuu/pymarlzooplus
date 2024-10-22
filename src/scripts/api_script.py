@@ -28,16 +28,16 @@ import random as rnd
 #   }
 # }
 
-# Arguments for Overcooked
-args = {
-  "env": "overcooked",
-  "env_args": {
-      "key": "coordination_ring",
-      "time_limit": 500,
-      "reward_type": "sparse",
-      "seed": 2024
-  }
-}
+# # Arguments for Overcooked
+# args = {
+#   "env": "overcooked",
+#   "env_args": {
+#       "key": "coordination_ring",
+#       "time_limit": 500,
+#       "reward_type": "sparse",
+#       "seed": 2024
+#   }
+# }
 
 # Arguments for Pressure Plate
 # args = {
@@ -89,6 +89,16 @@ args = {
 #   }
 # }
 
+# Arguments for Capture Target
+args = {
+  "env": "boxpushing",
+  "env_args": {
+      "key": "BoxPushing-6x6-2a-v0",
+      "time_limit": 60,
+      "seed": 2024
+  }
+}
+
 # Initialize environment
 env = env_REGISTRY[args["env"]](**args["env_args"])
 n_agns = env.n_agents
@@ -105,8 +115,6 @@ while not done:
     # Apply an environment step
     reward, done, info = env.step(actions)
     obs = env.get_obs()
-    print(obs[0].shape)
-    print(obs[1].shape)
     state = env.get_state()
 # Terminate the environment
 env.close()

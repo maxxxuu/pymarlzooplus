@@ -2,6 +2,7 @@
 Code adapted by:
 https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/box_pushing.py
 """
+
 import gym
 import numpy as np
 from gym.utils import seeding
@@ -48,7 +49,7 @@ class BoxPushing(gym.Env):
     def seed(self, seed=None):
         if seed is not None:
             self.np_random, self._seed = seeding.np_random(seed)
-        return [self._seed]
+        return self._seed
 
     @property
     def obs_size(self):
