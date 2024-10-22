@@ -24,7 +24,7 @@ t_max: 2000 # 2050000
 # https://pettingzoo.farama.org/environments/butterfly/pistonball/
 # key: "pistonball_v6"
 # args: max_cycles=125, render_mode="human", n_pistons=20, time_penalty=-0.1, continuous=True, random_drop=True, random_rotate=True, ball_mass=0.75, ball_friction=0.3, ball_elasticity=1.5
-# RUN:  python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.key="pistonball_v6" env_args.time_limit=900 env_args.kwargs="('n_pistons',4),"
+# RUN:  python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.key="pistonball_v6" env_args.time_limit=125 env_args.kwargs="('n_pistons',4),"
 
 # Cooperative Pong
 # https://pettingzoo.farama.org/environments/butterfly/cooperative_pong/

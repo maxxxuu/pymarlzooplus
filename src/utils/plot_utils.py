@@ -3,6 +3,7 @@ import os
 import random
 import pickle
 
+import matplotlib as mpl
 from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
@@ -337,17 +338,24 @@ def create_multiple_exps_plot(
         plot_train=True,
         plot_legend_bool=False
 ):
+    # Font size configuration
+    title_fontsize = 18
+    label_fontsize = 16
+
+    # Set global parameters for font sizes
+    mpl.rcParams['xtick.labelsize'] = 14  # X-axis tick label font size
+    mpl.rcParams['ytick.labelsize'] = 14  # Y-axis tick label font size
 
     # Create new figures, one for returns and another one for per-set returns.
     plt.figure(1)
-    plt.xlabel("Steps")
-    plt.ylabel("Episodic Reward")
-    plt.title(plot_title)
+    plt.xlabel("Steps", fontsize=label_fontsize)
+    plt.ylabel("Episodic Reward", fontsize=label_fontsize)
+    plt.title(plot_title, fontsize=title_fontsize)
 
     plt.figure(2)
-    plt.xlabel("Steps")
-    plt.ylabel("Per-step Episodic Reward")
-    plt.title(plot_title)
+    plt.xlabel("Steps", fontsize=label_fontsize)
+    plt.ylabel("Per-step Episodic Reward", fontsize=label_fontsize)
+    plt.title(plot_title, fontsize=title_fontsize)
 
     lines = []  # To keep track of plot lines for legend
     plot_legends = []  # To keep track of plot legends
@@ -522,6 +530,10 @@ def create_multiple_exps_plot(
     path_to_save_plot = os.path.join(path_to_save, f"normalized_return_mean_env={env_name}")
     plt.savefig(path_to_save_plot)
     plt.close()
+
+    # Resetting the following parameters to their default values
+    mpl.rcParams['xtick.labelsize'] = mpl.rcParamsDefault['xtick.labelsize']
+    mpl.rcParams['ytick.labelsize'] = mpl.rcParamsDefault['ytick.labelsize']
 
 
 def calculate_mean_best_reward_over_multiple_experiments(
@@ -901,11 +913,19 @@ def plot_average_per_algo_for_all_tasks_of_a_benchmark(
                 temp_min_common_timeline = alg_common_timeline
         all_common_timelines_dict[alg_name] = temp_min_common_timeline
 
+    # Font size configuration
+    title_fontsize = 18
+    label_fontsize = 16
+
+    # Set global parameters for font sizes
+    mpl.rcParams['xtick.labelsize'] = 14  # X-axis tick label font size
+    mpl.rcParams['ytick.labelsize'] = 14  # Y-axis tick label font size
+
     # Create new figures, one for returns and another one for per-set returns.
     plt.figure()
-    plt.xlabel("Steps")
-    plt.ylabel("Normalized Episodic Reward")
-    plt.title(plot_title)
+    plt.xlabel("Steps", fontsize=label_fontsize)
+    plt.ylabel("Normalized Episodic Reward", fontsize=label_fontsize)
+    plt.title(plot_title, fontsize=title_fontsize)
 
     lines = []  # To keep track of plot lines for legend
     plot_legends = []  # To keep track of plot legends
@@ -984,6 +1004,13 @@ def plot_average_per_algo_for_all_tasks_of_a_benchmark(
     plt.savefig(path_to_save_plot)
     plt.close()
 
+    # Resetting the following parameters to their default values
+    mpl.rcParams['xtick.labelsize'] = mpl.rcParamsDefault['xtick.labelsize']
+    mpl.rcParams['ytick.labelsize'] = mpl.rcParamsDefault['ytick.labelsize']
+
+    print("\nAverage plots created successfully! "
+          f"\nSaved at: {path_to_save_plot}")
+
 
 if __name__ == '__main__':
 
@@ -1011,7 +1038,7 @@ if __name__ == '__main__':
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/pistonball_v6/happo_pistonball_v6_w_parallel_2_threads_w_resnet18_results/sacred/happo/pistonball_v6"
     # ]
     # algo_names_ = ["COMA", "MAA2C", "MAPPO", "QMIX", "EOI", "QPLEX", "MASER", "CDS", "MAT-DEC", "EMC", "HAPPO"]
-    # env_name_ = "pistonball_v6"
+    # env_name_ = "Pistonball"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/pistonball_v6/"
 
     # Pistonball - Ablation
@@ -1039,7 +1066,7 @@ if __name__ == '__main__':
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAT_DEC/cooperative_pong_v5/mat_dec_cooperative_pong_v5_w_parallel_2_threads_w_resnet18_results/sacred/mat_dec/cooperative_pong_v5"
     #                    ]
     # algo_names_ = ["COMA", "MAA2C", "MAPPO", "QMIX", "EOI", "QPLEX", "MASER", "EMC", "HAPPO", "CDS", "MAT-DEC"]
-    # env_name_ = "cooperative_pong_v5"
+    # env_name_ = "Cooperative Pong"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/cooperative_pong_v5/"
 
     # Cooperative pong - Ablation
@@ -1066,7 +1093,7 @@ if __name__ == '__main__':
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAT_DEC/entombed_cooperative_v3/mat_dec_fixed_entombed_cooperative_v3_w_parallel_10_threads_w_resnet18_results/sacred/mat_dec/entombed_cooperative_v3"
     #                     ]
     # algo_names_ = ["EMC", "COMA", "MAA2C", "MAPPO", "EOI", "QMIX", "QPLEX", "MASER", "CDS", "HAPPO", "MAT-DEC"]
-    # env_name_ = "entombed_cooperative_v3"
+    # env_name_ = "Emtombed Cooperative"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/entombed_cooperative_v3/"
 
     # Space invaders
@@ -1083,25 +1110,25 @@ if __name__ == '__main__':
 
     # Cramped Room
     # paths_to_results_ = [
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EMC/cramped_room/emc_cramped_room_results/sacred/emc/cramped_room",
+    #     # "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EMC/cramped_room/emc_cramped_room_results/sacred/emc/cramped_room",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/cramped_room/cramped_room_w_parallel_2_threads_results/results/sacred/maa2c/cramped_room",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/cramped_room/mappo_cramped_room_w_parallel_2_threads_results/sacred/mappo/cramped_room",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/cramped_room/coma_cramped_room_w_parallel_2_threads_results/sacred/coma/cramped_room",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/cramped_room/qmix_cramped_room_results/sacred/qmix/cramped_room",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/cramped_room/cramped_room_results/sacred/qplex/cramped_room",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/cramped_room/cramped_room_w_episode_results/sacred/eoi/cramped_room",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/cramped_room/maser_cramped_room_results/sacred/maser/cramped_room",
+    #     # "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/cramped_room/maser_cramped_room_results/sacred/maser/cramped_room",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/CDS/cramped_room/cds_cramped_room_results/sacred/cds/cramped_room",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/cramped_room/happo_cramped_room_w_parallel_2_threads_results/sacred/happo/cramped_room",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAT_DEC/cramped_room/mat_dec_cramped_room_w_parallel_2_threads_results/sacred/mat_dec/cramped_room",
     # ]
-    # algo_names_ = ["EMC", "MAA2C", "MAPPO", "COMA", "QMIX", "QPLEX", "EOI", "MASER", "CDS", "HAPPO", "MAT-DEC"]
+    # algo_names_ = ["MAA2C", "MAPPO", "COMA", "QMIX", "QPLEX", "EOI", "CDS", "HAPPO", "MAT-DEC"]  # ["EMC", "MAA2C", "MAPPO", "COMA", "QMIX", "QPLEX", "EOI", "MASER", "CDS", "HAPPO", "MAT-DEC"]
     # env_name_ = "Cramped Room"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/cramped_room/"
 
     # Assymetric_advantages
     # paths_to_results_ = [
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/assymetric_advantages/maser_assymetric_advantages_w_max_steps=100M_results/sacred/maser/asymmetric_advantages",
+    #     # "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/assymetric_advantages/maser_assymetric_advantages_w_max_steps=100M_results/sacred/maser/asymmetric_advantages",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/assymetric_advantages/maa2c_assymetric_advantages_w_max_steps=100M_w_parallel_2_threads_results/results/sacred/maa2c/asymmetric_advantages",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/assymetric_advantages/mappo_assymetric_advantages_w_max_steps=100M_w_parallel_2_threads_results/sacred/mappo/asymmetric_advantages",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/assymetric_advantages/coma_assymetric_advantages_w_max_steps=100M_w_parallel_2_threads_results/sacred/coma/asymmetric_advantages",
@@ -1112,7 +1139,7 @@ if __name__ == '__main__':
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAT_DEC/assymetric_advantages/mat_dec_assymetric_advantages_w_max_steps=100M_w_parallel_2_threads_results/sacred/mat_dec/asymmetric_advantages",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/assymetric_advantages/happo_assymetric_advantages_w_max_steps=100M_w_parallel_2_threads_results/sacred/happo/asymmetric_advantages",
     # ]
-    # algo_names_ = ["MASER", "MAA2C", "MAPPO", "COMA", "QMIX", "QPLEX", "EOI", "CDS", "MAT-DEC", "HAPPO"]
+    # algo_names_ = ["MAA2C", "MAPPO", "COMA", "QMIX", "QPLEX", "EOI", "CDS", "MAT-DEC", "HAPPO"]  # ["MASER", "MAA2C", "MAPPO", "COMA", "QMIX", "QPLEX", "EOI", "CDS", "MAT-DEC", "HAPPO"]
     # env_name_ = "Asymmetric Advantages"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/assymetric_advantages/"
 
@@ -1148,7 +1175,7 @@ if __name__ == '__main__':
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/pressureplate_linear-4p-v0/happo_linear-4p-v0_w_parallel_10_threads_results/sacred/happo/pressureplate-linear-4p-v0"
     # ]
     # algo_names_ = ["EMC", "QMIX", "MAA2C", "COMA", "QPLEX", "MAPPO", "EOI", "MASER", "CDS", "MAT-DEC", "HAPPO"]
-    # env_name_ = "pressureplate-linear-4p-v0"
+    # env_name_ = "4p"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/pressureplate-linear-4p-v0/"
 
     # PressurePlate - linear-6p-v0
@@ -1165,7 +1192,7 @@ if __name__ == '__main__':
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/pressureplate_linear-6p-v0/happo_linear-6p-v0_w_parallel_2_threads_results/sacred/happo/pressureplate-linear-6p-v0",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAT_DEC/pressureplate_linear-6p-v0/mat_dec_linear-6p-v0_w_parallel_2_threads_results/sacred/mat_dec/pressureplate-linear-6p-v0",    ]
     # algo_names_ = ["EMC", "MAA2C", "QMIX", "COMA", "QPLEX", "EOI", "MAPPO", "MASER", "CDS", "HAPPO", "MAT-DEC"]
-    # env_name_ = "pressureplate-linear-6p-v0"
+    # env_name_ = "6p"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/pressureplate-linear-6p-v0/"
 
     # LBF - 2s-11x11-3p-2f
@@ -1183,7 +1210,7 @@ if __name__ == '__main__':
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EMC/lbf_2s-11x11-3p-2f/emc_lbf_2s-11x11-3p-2f_w_rew_stand_results/sacred/emc/lbforaging:Foraging-2s-11x11-3p-2f-coop-v2"
     # ]
     # algo_names_ = ["CDS", "MASER", "QPLEX", "QMIX", "HAPPO", "COMA", "EOI", "MAT-DEC", "MAPPO", "MAA2C", "EMC"]
-    # env_name_ = "lbf_2s-11x11-3p-2f"
+    # env_name_ = "2s-11x11-3p-2f"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/lbf_2s-11x11-3p-2f/"
 
     # LBF - 4s-11x11-3p-2f
@@ -1201,7 +1228,7 @@ if __name__ == '__main__':
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EMC/lbf_4s-11x11-3p-2f/emc_lbf_4s-11x11-3p-2f_w_rew_stand_results/sacred/emc/lbforaging:Foraging-4s-11x11-3p-2f-coop-v2"
     # ]
     # algo_names_ = ["CDS", "MASER", "QMIX", "QPLEX", "HAPPO", "COMA", "EOI", "MAT-DEC", "MAPPO", "MAA2C", "EMC"]
-    # env_name_ = "lbf_4s-11x11-3p-2f"
+    # env_name_ = "4s-11x11-3p-2f"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/lbf_4s-11x11-3p-2f/"
 
     # LBF - 2s-9x9-3p-2f
@@ -1219,7 +1246,7 @@ if __name__ == '__main__':
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EMC/lbf_2s-9x9-3p-2f/emc_lbf_2s-9x9-3p-2f_w_rew_stand_results/sacred/emc/lbforaging:Foraging-2s-9x9-3p-2f-coop-v2"
     # ]
     # algo_names_ = ["CDS", "MASER", "QPLEX", "HAPPO", "COMA", "EOI", "QMIX", "MAPPO", "MAA2C", "MAT-DEC", "EMC"]
-    # env_name_ = "lbf_2s-9x9-3p-2f"
+    # env_name_ = "2s-9x9-3p-2f"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/lbf_2s-9x9-3p-2f/"
 
     # LBF - 2s-12x12-2p-2f
@@ -1278,6 +1305,7 @@ if __name__ == '__main__':
 
     # LBF - 8s-25x25-8p-5f
     # paths_to_results_ = [
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EMC/lbf_8s-25x25-8p-5f/emc_lbf_8s-25x25-8p-5f_results/sacred/emc/lbforaging:Foraging-8s-25x25-8p-5f-coop-v2",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/CDS/lbf_8s-25x25-8p-5f/cds_lbf_8s-25x25-8p-5f_results/sacred/cds/lbforaging:Foraging-8s-25x25-8p-5f-coop-v2",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/lbf_8s-25x25-8p-5f/qplex_lbf_8s-25x25-8p-5f_results/sacred/qplex/lbforaging:Foraging-8s-25x25-8p-5f-coop-v2",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/lbf_8s-25x25-8p-5f/maser_lbf_8s-25x25-8p-5f_results/sacred/maser/lbforaging:Foraging-8s-25x25-8p-5f-coop-v2",
@@ -1287,9 +1315,9 @@ if __name__ == '__main__':
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/lbf_8s-25x25-8p-5f/mappo_lbf_8s-25x25-8p-5f_w_parallel_10_threads_result/Foraging-8s-25x25-8p-5f-coop-v2",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/lbf_8s-25x25-8p-5f/maa2c_lbf_8s-25x25-8p-5f_w_parallel_10_threads_results/Foraging-8s-25x25-8p-5f-coop-v2",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAT_DEC/lbf_8s-25x25-8p-5f/mat_dec_lbf_8s-25x25-8p-5f_w_parallel_10_threads_results/sacred/mat_dec/lbforaging:Foraging-8s-25x25-8p-5f-coop-v2",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/lbf_8s-25x25-8p-5f/happo_lbf_8s-25x25-8p-5f_w_parallel_10_threads_results/sacred/happo/lbforaging:Foraging-8s-25x25-8p-5f-coop-v2"
+    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/lbf_8s-25x25-8p-5f/happo_lbf_8s-25x25-8p-5f_w_parallel_10_threads_results/sacred/happo/lbforaging:Foraging-8s-25x25-8p-5f-coop-v2",
     # ]
-    # algo_names_ = ["CDS", "QPLEX", "MASER", "COMA", "EOI", "QMIX", "MAPPO", "MAA2C", "MAT-DEC", "HAPPO"]
+    # algo_names_ = ["EMC", "CDS", "QPLEX", "MASER", "COMA", "EOI", "QMIX", "MAPPO", "MAA2C", "MAT-DEC", "HAPPO"]
     # env_name_ = "8s-25x25-8p-5f"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/lbf_8s-25x25-8p-5f/"
 
@@ -1318,20 +1346,20 @@ if __name__ == '__main__':
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/rware-tiny-4ag-hard-v1/qplex_rware-tiny-4ag-hard-v1_results/sacred/qplex/rware-tiny-4ag-hard-v1",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/rware-tiny-4ag-hard-v1/happo_rware-tiny-4ag-hard_w_parallel_10_threads_results/sacred/happo/rware:rware-tiny-4ag-hard-v1",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/rware-tiny-4ag-hard-v1/coma_rware_rware-tiny-4ag-hard-v1_w_parallel_10_threads_results/rware_rware-tiny-4ag-hard-v1",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EMC/rware-tiny-4ag-hard-v1/emc_rware_rware-tiny-4ag-hard-v1_w_rew_stand_results/rware_rware-tiny-4ag-hard-v1",
+    #     # "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EMC/rware-tiny-4ag-hard-v1/emc_rware_rware-tiny-4ag-hard-v1_w_rew_stand_results/rware_rware-tiny-4ag-hard-v1",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/rware-tiny-4ag-hard-v1/eoi_rware_rware-tiny-4ag-hard-v1_w_episode_results/rware_rware-tiny-4ag-hard-v1",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAT_DEC/rware-tiny-4ag-hard-v1/mat_dec_rware_rware-tiny-4ag-hard_w_parallel_10_threads_results/sacred/mat_dec/rware:rware-tiny-4ag-hard-v1",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/rware-tiny-4ag-hard-v1/mappo_rware_rware-tiny-4ag-hard-v1_w_parallel_10_threads_results/rware_rware-tiny-4ag-hard-v1",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/rware-tiny-4ag-hard-v1/maa2c_rware_rware-tiny-4ag-hard-v1_w_parallel_10_threads_results/rware_rware-tiny-4ag-hard-v1",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/rware-tiny-4ag-hard-v1/maser_rware-tiny-4ag-hard-v1_results/sacred/maser/rware:rware-tiny-4ag-hard-v1"
     # ]
-    # algo_names_ = ["CDS", "QMIX", "QPLEX", "HAPPO", "COMA", "EMC", "EOI", "MAT-DEC", "MAPPO", "MAA2C", "MASER"]
-    # env_name_ = "tiny-4ag-hard-v1"
+    # algo_names_ = ["CDS", "QMIX", "QPLEX", "HAPPO", "COMA", "EOI", "MAT-DEC", "MAPPO", "MAA2C", "MASER"] # ["CDS", "QMIX", "QPLEX", "HAPPO", "COMA", "EMC", "EOI", "MAT-DEC", "MAPPO", "MAA2C", "MASER"]
+    # env_name_ = "tiny-4ag-hard"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/rware_tiny-4ag-hard-v1/"
 
     # RWARE - tiny-2ag-hard-v1
     # paths_to_results_ = [
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EMC/rware-tiny-2ag-hard-v1/emc_rware_rware-tiny-2ag-hard-v1_w_rew_stand_results/sacred/emc/rware:rware-tiny-2ag-hard-v1",
+    #     # "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EMC/rware-tiny-2ag-hard-v1/emc_rware_rware-tiny-2ag-hard-v1_w_rew_stand_results/sacred/emc/rware:rware-tiny-2ag-hard-v1",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/rware-tiny-2ag-hard-v1/qmix_rware-tiny-2ag-hard-v1_results/sacred/qmix/rware:rware-tiny-2ag-hard-v1",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/rware-tiny-2ag-hard-v1/qplex_rware-tiny-2ag-hard-v1_results/sacred/qplex/rware-tiny-2ag-hard-v1",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/CDS/rware-tiny-2ag-hard-v1/cds_rware-tiny-2ag-hard-v1_results/sacred/cds/rware:rware-tiny-2ag-hard-v1",
@@ -1343,13 +1371,13 @@ if __name__ == '__main__':
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/rware-tiny-2ag-hard-v1/maser_rware-tiny-2ag-hard-v1_results/sacred/maser/rware:rware-tiny-2ag-hard-v1",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAT_DEC/rware-tiny-2ag-hard-v1/mat_dec_rware_rware-tiny-2ag-hard-v1_w_parallel_10_threads_results/sacred/mat_dec/rware:rware-tiny-2ag-hard-v1"
     # ]
-    # algo_names_ = ["EMC", "QMIX", "QPLEX", "CDS", "HAPPO", "COMA", "EOI", "MAPPO", "MAA2C", "MASER", "MAT-DEC"]
-    # env_name_ = "tiny-2ag-hard-v1"
+    # algo_names_ = ["QMIX", "QPLEX", "CDS", "HAPPO", "COMA", "EOI", "MAPPO", "MAA2C", "MASER", "MAT-DEC"] # ["EMC", "QMIX", "QPLEX", "CDS", "HAPPO", "COMA", "EOI", "MAPPO", "MAA2C", "MASER", "MAT-DEC"]
+    # env_name_ = "tiny-2ag-hard"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/rware_tiny-2ag-hard-v1/"
 
     # RWARE - small-4ag-hard-v1
     # paths_to_results_ = [
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EMC/rware-small-4ag-hard-v1/emc_rware-small-4ag-hard-v1_results/sacred/emc/rware:rware-small-4ag-hard-v1",
+    #     # "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EMC/rware-small-4ag-hard-v1/emc_rware-small-4ag-hard-v1_results/sacred/emc/rware:rware-small-4ag-hard-v1",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/rware-small-4ag-hard-v1/qmix_rware-small-4ag-hard-v1_results/sacred/qmix/rware:rware-small-4ag-hard-v1",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/rware-small-4ag-hard-v1/qplex_rware-small-4ag-hard-v1_results/sacred/qplex/rware_rware-small-4ag-hard-v1",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/CDS/rware-small-4ag-hard-v1/cds_rware-small-4ag-hard-v1_results/sacred/cds/rware:rware-small-4ag-hard-v1",
@@ -1361,8 +1389,8 @@ if __name__ == '__main__':
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/rware-small-4ag-hard-v1/maser_rware-small-4ag-hard-v1_results/sacred/maser/rware:rware-small-4ag-hard-v1",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAT_DEC/rware-small-4ag-hard-v1/mat_dec_rware_rware-small-4ag-hard-v1_w_parallel_10_threads_results/sacred/mat_dec/rware:rware-small-4ag-hard-v1",
     # ]
-    # algo_names_ = ["EMC", "QMIX", "QPLEX", "CDS", "COMA", "EOI", "HAPPO", "MAPPO", "MAA2C", "MASER", "MAT-DEC"]
-    # env_name_ = "small-4ag-hard-v1"
+    # algo_names_ = ["QMIX", "QPLEX", "CDS", "COMA", "EOI", "HAPPO", "MAPPO", "MAA2C", "MASER", "MAT-DEC"] # ["EMC", "QMIX", "QPLEX", "CDS", "COMA", "EOI", "HAPPO", "MAPPO", "MAA2C", "MASER", "MAT-DEC"]
+    # env_name_ = "small-4ag-hard"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/rware_small-4ag-hard-v1/"
 
     # MPE - SimpleSpread-3
@@ -1380,7 +1408,7 @@ if __name__ == '__main__':
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/mpe_SimpleSpread-3/qmix_mpe_SimpleSpread-3_results/sacred/qmix/mpe:SimpleSpread-3-v0"
     # ]
     # algo_names_ = ["QPLEX", "MASER", "EOI", "COMA", "MAPPO", "MAA2C", "HAPPO", "MAT-DEC", "CDS", "EMC", "QMIX"]
-    # env_name_ = "SimpleSpread-3"
+    # env_name_ = "Spread-3"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/simplespread-3/"
 
     # MPE - SimpleSpread-4
@@ -1398,7 +1426,7 @@ if __name__ == '__main__':
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAT_DEC/mpe_SimpleSpread-4/mat_dec_mpe_SimpleSpread-4_w_parallel_10_threads_results/sacred/mat_dec/mpe:SimpleSpread-4-v0",
     # ]
     # algo_names_ = ["EMC", "QPLEX", "EOI", "MASER", "CDS", "COMA", "QMIX", "MAPPO", "MAA2C", "HAPPO", "MAT-DEC"]
-    # env_name_ = "SimpleSpread-4"
+    # env_name_ = "Spread-4"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/simplespread-4/"
 
     # MPE - SimpleSpread-5
@@ -1416,25 +1444,26 @@ if __name__ == '__main__':
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/mpe_SimpleSpread-5/maser_mpe_SimpleSpread-5_results/sacred/maser/mpe:SimpleSpread-5-v0",
     # ]
     # algo_names_ = ["EMC", "QPLEX", "COMA", "QMIX", "MAPPO", "MAA2C", "HAPPO", "MAT-DEC", "CDS", "EOI", "MASER"]
-    # env_name_ = "SimpleSpread-5"
+    # env_name_ = "Spread-5"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/simplespread-5/"
 
     # MPE - SimpleSpread-8
-    # paths_to_results_ = [
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/mpe_SimpleSpread-8/maser_mpe_SimpleSpread-8_results/sacred/maser/mpe:SimpleSpread-8-v0",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/mpe_SimpleSpread-8/qplex_mpe_SimpleSpread-8_results/sacred/qplex/mpe:SimpleSpread-v0",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/mpe_SimpleSpread-8/coma_mpe_SimpleSpread-8_w_parallel_10_threads_results/mpe_SimpleSpread-8",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/mpe_SimpleSpread-8/qmix_mpe_SimpleSpread-8_results/spread-8",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/mpe_SimpleSpread-8/mappo_mpe_SimpleSpread-8_w_parallel_10_threads_results/spread-8",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/mpe_SimpleSpread-8/maa2c_mpe_SimpleSpread-8_w_parallel_10_threads_results/spread-8",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/mpe_SimpleSpread-8/happo_mpe_SimpleSpread-8_w_parallel_10_threads_results/sacred/happo/mpe:SimpleSpread-8-v0",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAT_DEC/mpe_SimpleSpread-8/mat_dec_mpe_SimpleSpread-8_w_parallel_10_threads_results/sacred/mat_dec/mpe:SimpleSpread-8-v0",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/CDS/mpe_SimpleSpread-8/cds_mpe_SimpleSpread-8_results/sacred/cds/mpe:SimpleSpread-8-v0",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/mpe_SimpleSpead-8/eoi_mpe_SimpleSpead-8_w_episode_results/sacred/eoi/mpe:SimpleSpread-8-v0",
-    # ]
-    # algo_names_ = ["MASER", "QPLEX", "COMA", "QMIX", "MAPPO", "MAA2C", "HAPPO", "MAT-DEC", "CDS", "EOI"]
-    # env_name_ = "SimpleSpread-8"
-    # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/simplespread-8/"
+    paths_to_results_ = [
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EMC/mpe_SimpleSpread-8/emc_mpe_SimpleSpread-8_results/sacred/emc/mpe:SimpleSpread-8-v0",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MASER/mpe_SimpleSpread-8/maser_mpe_SimpleSpread-8_results/sacred/maser/mpe:SimpleSpread-8-v0",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QPLEX/mpe_SimpleSpread-8/qplex_mpe_SimpleSpread-8_results/sacred/qplex/mpe:SimpleSpread-v0",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/COMA/mpe_SimpleSpread-8/coma_mpe_SimpleSpread-8_w_parallel_10_threads_results/mpe_SimpleSpread-8",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/QMIX/mpe_SimpleSpread-8/qmix_mpe_SimpleSpread-8_results/spread-8",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAPPO/mpe_SimpleSpread-8/mappo_mpe_SimpleSpread-8_w_parallel_10_threads_results/spread-8",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAA2C/mpe_SimpleSpread-8/maa2c_mpe_SimpleSpread-8_w_parallel_10_threads_results/spread-8",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/HAPPO/mpe_SimpleSpread-8/happo_mpe_SimpleSpread-8_w_parallel_10_threads_results/sacred/happo/mpe:SimpleSpread-8-v0",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/MAT_DEC/mpe_SimpleSpread-8/mat_dec_mpe_SimpleSpread-8_w_parallel_10_threads_results/sacred/mat_dec/mpe:SimpleSpread-8-v0",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/CDS/mpe_SimpleSpread-8/cds_mpe_SimpleSpread-8_results/sacred/cds/mpe:SimpleSpread-8-v0",
+        "/home/georgepap/PycharmProjects/epymarl_master/experiments/results/EOI/mpe_SimpleSpead-8/eoi_mpe_SimpleSpead-8_w_episode_results/sacred/eoi/mpe:SimpleSpread-8-v0",
+    ]
+    algo_names_ = ["EMC", "MASER", "QPLEX", "COMA", "QMIX", "MAPPO", "MAA2C", "HAPPO", "MAT-DEC", "CDS", "EOI"]
+    env_name_ = "Spread-8"
+    path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/simplespread-8/"
 
     # MPE - SimpleSpeakerListener
     # paths_to_results_ = [
@@ -1454,16 +1483,16 @@ if __name__ == '__main__':
     # env_name_ = "SimpleSpeakerListener"
     # path_to_save_ = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/simplespeakerlistener/"
 
-    # plot_train_ = False
-    # plot_legend_bool_ = False
-    # plot_multiple_experiment_results(
-    #     paths_to_results_,
-    #     algo_names_,
-    #     env_name_,
-    #     path_to_save_,
-    #     plot_train_,
-    #     plot_legend_bool_
-    # )
+    plot_train_ = False
+    plot_legend_bool_ = False
+    plot_multiple_experiment_results(
+        paths_to_results_,
+        algo_names_,
+        env_name_,
+        path_to_save_,
+        plot_train_,
+        plot_legend_bool_
+    )
 
     ## Average plots per algo for all tasks of a benchmark
 
@@ -1471,7 +1500,7 @@ if __name__ == '__main__':
     # _paths_to_pickle_results = [
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/pistonball_v6/all_results_env=pistonball_v6.pkl",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/cooperative_pong_v5/all_results_env=cooperative_pong_v5.pkl",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/entombed_cooperative_v3/all_results_env=entombed_cooperative_v3.pkl"
+    #     # "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/entombed_cooperative_v3/all_results_env=entombed_cooperative_v3.pkl"
     # ]
     # _plot_title = "PettingZoo"
     # _path_to_save = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/pettingzoo/"
@@ -1519,7 +1548,7 @@ if __name__ == '__main__':
     # _paths_to_pickle_results = [
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/cramped_room/all_results_env=Cramped Room.pkl",
     #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/assymetric_advantages/all_results_env=Asymmetric Advantages.pkl",
-    #     "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/coordination_ring/all_results_env=Coordination Ring.pkl"
+    #     # "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/coordination_ring/all_results_env=Coordination Ring.pkl"
     # ]
     # _plot_title = "Overcooked"
     # _path_to_save = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/Overcooked/"
@@ -1533,5 +1562,5 @@ if __name__ == '__main__':
     # )
 
     # Create just a legend
-    _path_to_save = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/"
-    create_only_legend(_path_to_save)
+    # _path_to_save = "/home/georgepap/PycharmProjects/epymarl_master/experiments/multiple-exps-plots/"
+    # create_only_legend(_path_to_save)
