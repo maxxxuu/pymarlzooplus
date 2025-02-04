@@ -42,7 +42,7 @@ Algorithms (9) maintained from EPyMARL:
 - [License](#license)
 
 # Installation & Run instructions
-Note: ```pip install pymarlzooplusplus``` installation command will be available when the paper is accepted to not break the double-blind review process.
+Note: ```pip install pymarlzooplus``` installation command will be available when the paper is accepted to not break the double-blind review process.
 
 ## Base requirements installation
 To install the minimum requirements (without environments installation) run the following commands:
