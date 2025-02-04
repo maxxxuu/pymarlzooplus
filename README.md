@@ -1,6 +1,6 @@
-# PyMARLzoo++
+# PyMARLzoo+
 
-PyMARLzoo++ is an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), and includes
+PyMARLzoo+ is an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), and includes
 - Additional (7) algorithms: 
   - HAPPO, 
   - MAT-DEC, 
@@ -27,7 +27,7 @@ Algorithms (9) maintained from EPyMARL:
 - IA2C
 
 # Table of Contents
-- [PyMARLzoo++](#pymarlzoo)
+- [PyMARLzoo+](#pymarlzoo)
 - [Table of Contents](#table-of-contents)
 - [Installation & Run instructions](#installation--run-instructions)
   - [Base requirements installation](#base-requirements-installation)
@@ -38,7 +38,7 @@ Algorithms (9) maintained from EPyMARL:
 - [Saving and loading learnt models](#saving-and-loading-learnt-models)
   - [Saving models](#saving-models)
   - [Loading models](#loading-models)
-- [Citing PyMARLzoo++, PyMARL, and EPyMARL](#citing-pymarlzoo-epymarl-and-pymarl)
+- [Citing PyMARLzoo+, PyMARL, and EPyMARL](#citing-pymarlzoo-epymarl-and-pymarl)
 - [License](#license)
 
 # Installation & Run instructions
@@ -48,9 +48,9 @@ Note: ```pip install pymarlzooplusplus``` installation command will be available
 To install the minimum requirements (without environments installation) run the following commands:
 ```sh
 git clone ...
-cd pymarlzooplusplus/installation
-conda create -n pymarlzooplusplus python=3.8.18 -y
-conda activate pymarlzooplusplus
+cd pymarlzooplus/installation
+conda create -n pymarlzooplus python=3.8.18 -y
+conda activate pymarlzooplus
 python3 -m pip install pip==24.0
 pip install wheel==0.38.4 setuptools==65.5.0 einops
 pip install -r requirements.txt
@@ -124,7 +124,7 @@ Available scenarios we run experiments:
 - "rware:rware-tiny-2ag-hard-v1"
 
 ### MPE
-To install [Multi-agent Particle Environment](https://github.com/semitable/multiagent-particle-envs), being in ```pymarlzooplusplus/``` directory, run:
+To install [Multi-agent Particle Environment](https://github.com/semitable/multiagent-particle-envs), being in ```pymarlzooplus/``` directory, run:
 ```sh
 cd src/envs/multiagent-particle-envs/
 pip install -e .
@@ -169,7 +169,7 @@ python3 src/main.py --config=qmix --env-config=pettingzoo with env_args.time_lim
 ```
 
 ### Overcooked
-To install [Overcooked](https://github.com/HumanCompatibleAI/overcooked_ai), being in ```pymarlzooplusplus/``` directory, run:
+To install [Overcooked](https://github.com/HumanCompatibleAI/overcooked_ai), being in ```pymarlzooplus/``` directory, run:
 ```sh
 cd src/envs/overcooked_ai/
 pip install -e .
@@ -237,7 +237,7 @@ More available scenarios:
 - "pressureplate-linear-5p-v0"
 
 ### Capture Target
-To install [Capture Target](https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/capture_target.py), being in ```pymarlzooplusplus/``` directory run:
+To install [Capture Target](https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/capture_target.py), being in ```pymarlzooplus/``` directory run:
 ```sh
 cd src/envs/capture_target/
 pip install -e .
@@ -253,7 +253,7 @@ Available scenarios:
 - "CaptureTarget-6x6-1t-2a-v0"
 
 ### Box Pushing
-To install [Box Pushing](https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/box_pushing.py), being in ```pymarlzooplusplus/``` directory run:
+To install [Box Pushing](https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/box_pushing.py), being in ```pymarlzooplus/``` directory run:
 ```sh
 cd src/envs/box_pushing/
 pip install -e .
@@ -290,9 +290,9 @@ You can save the learnt models to disk by setting `save_model = True`, which is 
 
 Learnt models can be loaded using the `checkpoint_path` parameter, after which the learning will proceed from the corresponding timestep. 
 
-# Citing PyMARLzoo++, EPyMARL and PyMARL
+# Citing PyMARLzoo+, EPyMARL and PyMARL
 
-If you use PyMARLzoo++ in your research, please cite the ...
+If you use PyMARLzoo+ in your research, please cite the ...
 
 If you use the EPyMARL in your research, please cite the [Benchmarking Multi-Agent Deep Reinforcement Learning Algorithms in Cooperative Tasks](https://arxiv.org/abs/2006.07869).
 
