@@ -484,6 +484,7 @@ If you use PyMARLzoo+ in your research, please cite the [An Extended Benchmarkin
 
 *George Papadopoulos, Andreas Kontogiannis, Foteini Papadopoulou, Chaido Poulianou, Ioannis Koumentis, George Vouros. An Extended Benchmarking of Multi-Agent Reinforcement Learning Algorithms in Complex Fully Cooperative Tasks, AAMAS 2025.*
 
+NOTE: BibTex format will be available upon the publication of the AAMAS paper.
 
 If you use the EPyMARL in your research, please cite the [Benchmarking Multi-Agent Deep Reinforcement Learning Algorithms in Cooperative Tasks](https://arxiv.org/abs/2006.07869).
 
