@@ -1,0 +1,122 @@
+# Import packages
+from pymarlzooplus.envs import REGISTRY as env_REGISTRY
+import random as rnd
+
+# Arguments for PettingZoo
+args = {
+  "env": "pettingzoo",
+  "env_args": {
+      "key": "pistonball_v6",
+      "time_limit": 900,
+      "render_mode": "rgb_array",
+      "image_encoder": "ResNet18",
+      "image_encoder_use_cuda": True,
+      "image_encoder_batch_size": 10,
+      "centralized_image_encoding": False,
+      "partial_observation": False,
+      "trainable_cnn": False,
+      "kwargs": "('n_pistons',10),",
+      "seed": 2024
+  }
+}
+
+# Arguments for Overcooked
+# args = {
+#   "env": "overcooked",
+#   "env_args": {
+#       "key": "coordination_ring",
+#       "time_limit": 500,
+#       "reward_type": "sparse",
+#       "seed": 2024
+#   }
+# }
+
+# # Arguments for Pressure Plate
+# args = {
+#   "env": "pressureplate",
+#   "env_args": {
+#       "key": "pressureplate-linear-4p-v0",
+#       "time_limit": 500,
+#       "seed": 2024
+#   }
+# }
+
+# # Arguments for LBF
+# args = {
+#   "env": "gymma",
+#   "env_args": {
+#       "key": "lbforaging:Foraging-8x8-2p-3f-v2",
+#       "time_limit": 50,
+#       "seed": 2024
+#   }
+# }
+
+# # Arguments for RWARE-v1
+# args = {
+#   "env": "gymma",
+#   "env_args": {
+#       "key": "rware:rware-small-4ag-hard-v1",
+#       "time_limit": 500,
+#       "seed": 2024
+#   }
+# }
+
+# # Arguments for RWARE-v2
+# args = {
+#   "env": "gymma",
+#   "env_args": {
+#       "key": "rware:rware-small-4ag-hard-v2",
+#       "time_limit": 500,
+#       "seed": 2024
+#   }
+# }
+
+# # Arguments for MPE
+# args = {
+#   "env": "gymma",
+#   "env_args": {
+#       "key": "mpe:SimpleSpeakerListener-v0",
+#       "time_limit": 25,
+#       "seed": 2024
+#   }
+# }
+
+# # Arguments for Capture Target
+# args = {
+#   "env": "capturetarget",
+#   "env_args": {
+#       "key": "CaptureTarget-6x6-1t-2a-v0",
+#       "time_limit": 60,
+#       "seed": 2024
+#   }
+# }
+
+# # Arguments for Box Pushing
+# args = {
+#   "env": "boxpushing",
+#   "env_args": {
+#       "key": "BoxPushing-6x6-2a-v0",
+#       "time_limit": 60,
+#       "seed": 2024
+#   }
+# }
+
+# Initialize environment
+env = env_REGISTRY[args["env"]](**args["env_args"])
+n_agns = env.n_agents
+n_acts = env.get_total_actions()
+# Reset the environment
+obs, state = env.reset()
+done = False
+# Run an episode
+while not done:
+    # Render the environment
+    env.render()
+    # Insert the policy's actions here
+    actions = rnd.choices(range(0, n_acts), k=n_agns)
+    # Apply an environment step
+    reward, done, info = env.step(actions)
+    obs = env.get_obs()
+    state = env.get_state()
+# Terminate the environment
+env.close()

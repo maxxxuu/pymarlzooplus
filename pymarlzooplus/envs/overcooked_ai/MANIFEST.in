@@ -1,0 +1,3 @@
+recursive-include src/overcooked_ai_py/data/graphics *
+recursive-include src/overcooked_ai_py/data/layouts *
+recursive-include src/overcooked_ai_py/data/fonts *

@@ -14,6 +14,8 @@ PyMARLzoo+ is an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), 
 - Support for [Pressure plate](https://github.com/uoe-agents/pressureplate) environments.
 - Support for [Capture Target](https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/capture_target.py) environment.
 - Support for [Box Pushing](https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/box_pushing.py) environment.
+- Support for [LBF](https://github.com/semitable/lb-foraging) environment.
+- Support for [RWARE](https://github.com/semitable/robotic-warehouse) environment.
 
 Algorithms (9) maintained from EPyMARL:
 - COMA
@@ -43,7 +45,11 @@ Algorithms (9) maintained from EPyMARL:
 - [Citing PyMARLzoo+, PyMARL, and EPyMARL](#citing-pymarlzoo-epymarl-and-pymarl)
 - [License](#license)
 
-# Installation
+# Installation & Run instructions
+
+## Installation
+To install and use it as a package, run the following commands:
+
 Run:
 ```sh
 pip install pymarlzooplus
@@ -52,146 +58,64 @@ NOTE: We work on this!
 
 Otherwise, follow the instructions below to install from source.
 
-## Base requirements installation
-To install the minimum requirements (without environment installation), run the following commands:
+Before installing PyMARLzoo+, we recommend creating a conda environment:
+
 ```sh
-git clone https://github.com/AILabDsUnipi/pymarlzooplus.git
-cd pymarlzooplus/installation
-conda create -n pymarlzooplus python=3.8.18 -y
+conda create -y -n pymarlzooplus python=3.8.18
 conda activate pymarlzooplus
-python3 -m pip install pip==24.0
-pip install wheel==0.38.4 setuptools==65.5.0 einops
-pip install -r requirements.txt
+```
+
+For an easy installation, you can use:
+
+```sh
+sudo apt-get install x11-xserver-utils
+pip install "git+https://github.com/AILabDsUnipi/pymarlzooplus.git@main#egg=pymarlzoo_plus[Overcooked]" 
 ``` 
-openCV:
+
+To build it from source, run the following commands:
 ```sh
-pip install opencv-python==4.9.0.80
-```
-or, openCV for headless machines:
-```sh
-pip install opencv-python==4.9.0.80
+sudo apt-get install x11-xserver-utils
+git clone https://github.com/AILabDsUnipi/pymarlzooplus.git
+cd pymarlzooplus 
+pip install -e .[Overcooked] 
+``` 
+Specify the environment you want to install by changing the [Overcooked] with the desired environment. 
+The available environments are :
+- Overcooked
+- PressurePlate
+- CaptureTarget
+- BoxPushing
+- PettingZoo
+- LBF 
+- RWARE
+- MPE
+
+To use it as a package, you can import it as follows and change the params_dict accordingly with the environement you want to use:
+
+```python
+from pymarlzooplus import pymarlzooplus
+
+params_dict = {
+    "config": "qmix",
+    "env-config": "capturetarget",
+    "env_args": {
+        "time_limit": 60,
+        "key" : "CaptureTarget-6x6-1t-2a-v0",
+    }
+}
+
+pymarlzooplus(params_dict)
 ```
 
-## Torch installation
-Then, run the following to install torch:
-```sh
-pip install protobuf==3.20.*
-```
-If you need torch with CUDA support:
-```sh
-pip3 install torch==2.1.2 torchvision==0.16.2--index-url https://download.pytorch.org/whl/cu121
-```
-otherwise:
-```sh
-pip3 install torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cpu
-```
 
-## Torch-scatter installation
-Finally, run the following for torch-scatter installation (which is needed for most of the Actor-Critic algorithms):
-```sh
-sh ./install_torch_scatter.sh
-```
 
-## Installing LBF, RWARE, MPE, PettingZoo, Overcooked, PressurePlate, Capture Target and Box Pushing
+## Running LBF, RWARE, MPE, PettingZoo, Overcooked, PressurePlate, Capture Target and Box Pushing
 
 ### LBF
-To install [Level Based Foraging](https://github.com/uoe-agents/lb-foraging), run:
-```sh
-pip install lbforaging==1.1.1
-```
-
-### RWARE
-To install [Multi-Robot Warehouse](https://github.com/uoe-agents/robotic-warehouse), run:
-```sh
-pip install rware==1.0.3
-```
-
-### MPE
-To install [Multi-agent Particle Environment](https://github.com/semitable/multiagent-particle-envs), being in ```pymarlzooplus/``` directory, run:
-```sh
-cd src/envs/multiagent-particle-envs/
-pip install -e .
-pip install seaborn==0.13.2  # Required for colors of landmarks
-```
-
-### PettingZoo
-To install [PettingZoo](https://github.com/Farama-Foundation/PettingZoo) run:
-```sh
-pip install opencv-python-headless==4.9.0.80
-# or
-pip install opencv-python==4.9.0.80 # only for rendering
-
-pip install transformers==4.38.2 pettingzoo==1.24.3 'pettingzoo[atari]'==1.24.3 autorom==0.6.1 'pettingzoo[butterfly]'==1.24.3 'pettingzoo[classic]'==1.24.3 'pettingzoo[sisl]'==1.24.3
-AutoROM -y
-```
-
-### Overcooked
-To install [Overcooked](https://github.com/HumanCompatibleAI/overcooked_ai), being in ```pymarlzooplus/``` directory, run:
-```sh
-cd src/envs/overcooked_ai/
-pip install -e .
-# Uninstall opencv because it installs newer version
-pip uninstall opencv-python opencv-python-headless -y
-pip install opencv-python-headless==4.9.0.80 # or pip install opencv-python==4.9.0.80 # only for rendering
-```
-
-### Pressure plate
-To install [Pressure Plate](https://github.com/uoe-agents/pressureplate/), being in ```pymarlzooplusplus/``` directory, run:
-```sh
-cd src/envs/pressureplate_ai/
-pip install -e .
-pip install pyglet==1.5.27 # For rendering
-```
-
-### Capture Target
-To install [Capture Target](https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/capture_target.py), being in ```pymarlzooplus/``` directory run:
-```sh
-cd src/envs/capture_target/
-pip install -e .
-pip install pyglet==1.5.27 # For rendering
-```
-
-### Box Pushing
-To install [Box Pushing](https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/box_pushing.py), being in ```pymarlzooplus/``` directory run:
-```sh
-cd src/envs/box_pushing/
-pip install -e .
-pip install pyglet==1.5.27 # For rendering
-```
-
-# Run instructions
-To run an experiment, you can use the following command:
-
-```sh
-python3 src/main.py --config=<algo> --env-config=<config> with env_args.time_limit=<time_limit> env_args.key=<scenario>
-```
-
-The available algorithms (replace ```<algo>```) are the following:
-- "coma"
-- "qmix"
-- "maa2c"
-- "mappo"
-- "vdn"
-- "maddpg"
-- "iql"
-- "ippo"
-- "ia2c"
-- "happo" 
-- "mat-dec" 
-- "qplex" 
-- "eoi" 
-- "emc" 
-- "maser" 
-- "cds"
-
-**These algorithms are compatible with our training framework for all the environments.**
-Before running an experiment, you need to edit the corresponding configuration file in [src/config/algorithms](src/config/algs) to set the hyperparameters of the algorithm you want to run.
-
-## LBF
 
 Example of using LBF (replace ```<algo>``` and ```<scenario>```):
 ```sh
-python3 src/main.py --config=<algo> --env-config=gymma with env_args.time_limit=25 env_args.key=<scenario>
+python3 pymarlzoo_plus/main.py --config=<algo> --env-config=gymma with env_args.time_limit=25 env_args.key=<scenario>
 ```
 
 Available scenarios (replace ```<scenario>```) we run experiments:
@@ -206,28 +130,27 @@ Available scenarios (replace ```<scenario>```) we run experiments:
 
 All the above scenarios are compatible both with our **training framework** and the **environment API**.
 
-Before running an experiment, edit the configuration file in [src/config/envs/gymma.yaml](src/config/envs/gymma.yaml).
+### RWARE
 
-## RWARE
 Example of using RWARE (replace ```<algo>``` and ```<scenario>```):
 ```sh
-python3 src/main.py --config=<algo> --env-config=gymma with env_args.time_limit=500 env_args.key=<scenario>
+python3 pymarlzoo_plus/main.py --config=<algo> --env-config=gymma with env_args.time_limit=500 env_args.key=<scenario>
 ```
 
-Available scenarios we run experiments:
-- "rware:rware-small-4ag-hard-v1",
-- "rware:rware-tiny-4ag-hard-v1",
-- "rware:rware-tiny-2ag-hard-v1"
+Available scenarios we run experiments (our experiments were conducted with v1):
+- "rware:rware-small-4ag-hard-v1" / "rware:rware-small-4ag-hard-v2"
+- "rware:rware-tiny-4ag-hard-v1" / "rware:rware-tiny-4ag-hard-v2",
+- "rware:rware-tiny-2ag-hard-v1" / "rware:rware-tiny-2ag-hard-v2"
 
 All the above scenarios are compatible both with our **training framework** and the **environment API**.
 
 Before running an experiment, edit the configuration file in [src/config/envs/gymma.yaml](src/config/envs/gymma.yaml).
 
-## MPE
+### MPE
 
 Example of using MPE (replace ```<algo>``` and ```<scenario>```):
 ```sh
-python3 src/main.py --config=<algo> --env-config=gymma with env_args.time_limit=25 env_args.key=<scenario>
+python3 pymarlzoo_plus/main.py --config=<algo> --env-config=gymma with env_args.time_limit=25 env_args.key=<scenario>
 ```
 
 Available scenarios we run experiments:
@@ -251,11 +174,17 @@ All the above scenarios are compatible both with our **training framework** and 
 
 Before running an experiment, edit the configuration file in [src/config/envs/gymma.yaml](src/config/envs/gymma.yaml).
 
-## PettingZoo
+### PettingZoo
 
 Example of using PettingZoo (replace ```<algo>```, ```<time-limit>```, and ```<task>```):
+
+To run [PettingZoo](https://github.com/Farama-Foundation/PettingZoo) run:
 ```sh
-python3 src/main.py --config=<algo> --env-config=pettingzoo with env_args.time_limit=<time-limit> env_args.key=<task>
+AutoROM -y
+```
+Example of using PettingZoo:
+```sh
+python3 pymarlzoo_plus/main.py --config=qmix --env-config=pettingzoo with env_args.time_limit=900 env_args.key="pistonball_v6" env_args.kwargs="('n_pistons',10),"
 ```
 
 Available tasks we run experiments:
@@ -321,10 +250,11 @@ Below, we list more tasks which are compatible only with the **environment API**
 
 Before running an experiment, edit the configuration file in [src/config/envs/pettingzoo.yaml](src/config/envs/pettingzoo.yaml). Also, there you can find useful comments for each task's arguments.
 
-## Overcooked
+### Overcooked
+
 Example of using Overcooked (replace ```<algo>```, ```<scenario>```, and ```<reward_type>```):
 ```sh
-python3 src/main.py --config=<algo> --env-config=overcooked with env_args.time_limit=500 env_args.key=<scenario> env_args.reward_type=<reward_type>
+python3 pymarlzoo_plus/main.py --config=<algo> --env-config=overcooked with env_args.time_limit=500 env_args.key=<scenario> env_args.reward_type=<reward_type>
 ```
 
 Available scenarios we run experiments:
@@ -361,13 +291,13 @@ Reward types available:
 - "shaped"
 
 All the above scenarios are compatible both with our **training framework** and the **environment API**.
+### Pressure plate
 
 Before running an experiment, edit the configuration file in [src/config/envs/overcooked.yaml](src/config/envs/overcooked.yaml). 
 
-## Pressure Plate
 Example of using Pressure plate (replace ```<algo>``` and ```<scenario>```):
 ```sh
-python3 src/main.py --config=<algo> --env-config=pressureplate with env_args.key=<scenario> env_args.time_limit=500
+python3 pymarlzoo_plus/main.py --config=<algo> --env-config=pressureplate with env_args.key=<scenario> env_args.time_limit=500
 ```
 
 Available scenarios we run experiments:
@@ -379,10 +309,11 @@ More available scenarios:
 
 Before running an experiment, edit the configuration file in [src/config/envs/pressureplate.yaml](src/config/envs/pressureplate.yaml).
 
-## Capture target
-Example of using Capture Target (replace ```<algo>``` and ```<scenario>```):
+### Capture Target
+
+Example of using Capture Target (replace ```<algo>```):
 ```sh
-python3 src/main.py --config=<algo> --env-config=capturetarget with env_args.key=<scenario> env_args.time_limit=60
+python3 pymarlzoo_plus/main.py --config=<algo> --env-config=capturetarget with env_args.key=<scenario> env_args.time_limit=60
 ```
 
 Available scenario:
@@ -392,10 +323,11 @@ The above scenario is compatible both with our **training framework** and the **
 
 Before running an experiment, edit the configuration file in [src/config/envs/capturetarget.yaml](src/config/envs/capturetarget.yaml). Also, there you can find useful comments for the rest of arguments.
 
-## Box Pushing
-Example of using Box Pushing (replace ```<algo>``` and ```<scenario>```):
+### Box Pushing
+
+Example of using Box Pushing (replace ```<algo>```):
 ```sh
-python3 src/main.py --config=<algo> --env-config=boxpushing with env_args.key=<scenario> env_args.time_limit=60
+python3 pymarlzoo_plus/main.py --config=<algo> --env-config=boxpushing with env_args.key=<scenario> env_args.time_limit=60
 ```
 
 Available scenario:
