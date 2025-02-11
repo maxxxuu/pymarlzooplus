@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import gym
 from gym import ObservationWrapper, spaces
@@ -168,6 +170,9 @@ class _GymmaWrapper(MultiAgentEnv):
         """ Returns the total number of actions an agent could ever take """
 
         return flatdim(self.longest_action_space)
+
+    def sample_actions(self):
+        return random.choices(range(0, self.get_total_actions()), k=self.n_agents)
 
     def reset(self, seed=None):
         """ Returns initial observations and states"""

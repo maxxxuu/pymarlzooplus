@@ -16,7 +16,7 @@ REGISTRY_availability = [
     "boxpushing",
 ]
 
-# In this way, the user don't need to install requirements
+# In this way, the user doesn't need to install all requirements
 REGISTRY = {}
 
 try:

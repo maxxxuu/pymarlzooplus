@@ -1,3 +1,5 @@
+import random
+
 import gym
 from gym import ObservationWrapper
 from gym.wrappers import TimeLimit as GymTimeLimit
@@ -145,6 +147,9 @@ class _BoxPushingWrapper(MultiAgentEnv):
     def get_total_actions(self):
         """ Returns the total number of actions an agent could ever take """
         return self.action_space
+
+    def sample_actions(self):
+        return random.choices(range(0, self.get_total_actions()), k=self.n_agents)
 
     def reset(self, seed=None):
         """ Returns initial observations and states"""

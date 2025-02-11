@@ -9,13 +9,15 @@ class ImageEncoder(nn.Module):
     for preparing images to be fed to a CNN.
     """
 
-    def __init__(self,
-                 called_from,  # Valid options: "env", "parallel_runner"
-                 centralized_image_encoding,
-                 trainable_cnn,
-                 image_encoder,
-                 image_encoder_batch_size,
-                 image_encoder_use_cuda):
+    def __init__(
+            self,
+            called_from,  # Valid options: "env", "parallel_runner"
+            centralized_image_encoding,
+            trainable_cnn,
+            image_encoder,
+            image_encoder_batch_size,
+            image_encoder_use_cuda
+    ):
 
         super(ImageEncoder, self).__init__()
 
@@ -26,12 +28,16 @@ class ImageEncoder(nn.Module):
 
         assert not (self.centralized_image_encoding is True and self.trainable_cnn is True), \
             "'centralized_image_encoding' and 'trainable_cnn' cannot be both True!"
+        assert not (self.centralized_image_encoding is True and self.called_from == "env"), \
+            "'centralized_image_encoding' cannot be True when 'called_from' is 'env'!"
 
         ## Define image encoder. In this case, a pretrained model is used frozen, i.e., without further training.
         self.image_encoder = None
         self.observation_space = None
-        if self.centralized_image_encoding is False or \
-           (self.centralized_image_encoding is True and self.called_from == "parallel_runner"):
+        if (
+                self.centralized_image_encoding is False or
+                (self.centralized_image_encoding is True and self.called_from == "parallel_runner")
+        ):
 
             if self.trainable_cnn is False:
 
@@ -84,7 +90,7 @@ class ImageEncoder(nn.Module):
 
                     # Define SAM
                     self.print_info = "Loading pretrained SlimSAM model..."
-                    self.image_encoder = SamModel.from_pretrained("Zigeng/SlimSAM-uniform-50").to(self.device)  # Original SAM: facebook/sam-vit-base, options: huge, large, base
+                    self.image_encoder = SamModel.from_pretrained("Zigeng/SlimSAM-uniform-50").to(self.device)
                     self.image_encoder.eval()
 
                     # Image transformations
@@ -132,10 +138,10 @@ class ImageEncoder(nn.Module):
                 # https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/torch_layers.py
 
                 # Image transformations.
-                # Images will be downscaled to 224 max size, reducing the complexity,
+                # Images will be downscaled to 224 max-size, reducing the complexity,
                 # and will be padded (if needed) to become square.
                 # Images will be normalized simply by dividing by 255 (as in the original Nature paper,
-                # but without converting to gray scale).
+                # but without converting to gray-scale).
                 import albumentations as A
                 from albumentations.pytorch import ToTensorV2
                 img_size = 224

@@ -2,7 +2,7 @@ env: "overcooked"
 
 env_args:
   key: null
-  time_limit: 500 # By default 500
+  time_limit: 500 # # Episode horizon, by default 500
   reward_type: null # Options: "shaped", "sparse"
 
 test_greedy: True

@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 from gym import ObservationWrapper
 from gym.wrappers import TimeLimit as GymTimeLimit
@@ -6,7 +8,7 @@ import gym
 from smac.env import MultiAgentEnv
 
 
-# Wraps original environment and adds the extra var "elapsed_time" to keep track of when an episode starts
+# Wraps the original environment and adds the extra var "elapsed_time" to keep track of when an episode starts
 
 class TimeLimitPressurePlate(GymTimeLimit):
 
@@ -56,11 +58,12 @@ PRESSUREPLATE_N_AGENTS_CHOICES = [4, 5, 6]
 
 class _PressurePlateWrapper(MultiAgentEnv):
 
-    def __init__(self,
-                 key,
-                 time_limit=500,
-                 seed=1,
-                 ):
+    def __init__(
+            self,
+            key,
+            time_limit=500,
+            seed=1,
+    ):
 
         # Check key validity
         assert key in PRESSUREPLATE_KEY_CHOICES, \
@@ -165,6 +168,9 @@ class _PressurePlateWrapper(MultiAgentEnv):
     def get_total_actions(self):
         """ Returns the total number of actions an agent could ever take """
         return self.action_space
+
+    def sample_actions(self):
+        return random.choices(range(0, self.get_total_actions()), k=self.n_agents)
 
     def reset(self, seed=None):
         """ Returns initial observations and states """

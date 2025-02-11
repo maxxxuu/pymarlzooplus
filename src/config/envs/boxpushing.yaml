@@ -1,10 +1,10 @@
 env: "boxpushing"
 
 env_args:
-  key: null # Options: BoxPushing-6x6-2a-v0
+  key: null  # Options: BoxPushing-6x6-2a-v0
   seed: null
-  time_limit: 60 # Maximal steps for termination
-  random_init: True # random initial position of agents
+  time_limit: 60  # Episode horizon
+  random_init: True  # Random initial position of agents
 
 test_greedy: True
 test_nepisode: 100
