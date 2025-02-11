@@ -11,6 +11,7 @@ from utils.torch_utils import to_cuda
 from .vdn_learner import vdn_Learner
 from components.standarize_stream import RunningMeanStd
 
+
 class EMC_qplex_curiosity_vdn_Learner:
     def __init__(self, mac, scheme, logger, args):
         self.args = args
@@ -35,7 +36,7 @@ class EMC_qplex_curiosity_vdn_Learner:
 
         self.optimiser = RMSprop(params=self.params, lr=args.lr, alpha=args.optim_alpha, eps=args.optim_eps)
 
-        # a little wasteful to deepcopy (e.g. duplicates action selector), but should work for any MAC
+        # a little wasteful to deepcopy (e.g., duplicates action selector), but should work for any MAC
         self.target_mac = copy.deepcopy(mac)
 
         self.log_stats_t = -self.args.learner_log_interval - 1
@@ -208,21 +209,30 @@ class EMC_qplex_curiosity_vdn_Learner:
             self.logger.log_stat("grad_norm", grad_norm, t_env)
             mask_elems = mask.sum().item()
             if self.args.use_emdqn:
-                self.logger.log_stat("e_m Q mean", (qec_input_new * mask).sum().item() /
-                                     (mask_elems * self.args.n_agents), t_env)
+                self.logger.log_stat(
+                    "e_m Q mean",
+                    (qec_input_new * mask).sum().item() / (mask_elems * self.args.n_agents),
+                    t_env
+                )
                 self.logger.log_stat("em_ Q hit probability", episodic_q_hit_pro, t_env)
                 self.logger.log_stat("emdqn_loss", emdqn_loss.item(), t_env)
                 self.logger.log_stat("emdqn_curr_capacity", ec_buffer.ec_buffer.curr_capacity, t_env)
                 self.logger.log_stat("emdqn_weight", self.args.emdqn_loss_weight, t_env)
             self.logger.log_stat("td_error_abs", (masked_td_error.abs().sum().item() / mask_elems), t_env)
-            self.logger.log_stat("q_taken_mean",
-                                 (chosen_action_qvals * mask).sum().item() / (mask_elems * self.args.n_agents), t_env)
-            self.logger.log_stat("target_mean", (targets * mask).sum().item() / (mask_elems * self.args.n_agents),
-                                 t_env)
+            self.logger.log_stat(
+                "q_taken_mean",
+                (chosen_action_qvals * mask).sum().item() / (mask_elems * self.args.n_agents),
+                t_env
+            )
+            self.logger.log_stat(
+                "target_mean",
+                (targets * mask).sum().item() / (mask_elems * self.args.n_agents),
+                t_env
+            )
             self.log_stats_t = t_env
 
         if self.args.prioritized_buffer:
-            return masked_td_error ** 2, mask
+            return masked_td_error ** 2
 
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int, ec_buffer=None):
 
@@ -289,6 +299,8 @@ class EMC_qplex_curiosity_vdn_Learner:
         self.target_mac.load_models(path)
         if self.mixer is not None:
             self.mixer.load_state_dict(th.load("{}/mixer.th".format(path), map_location=lambda storage, loc: storage))
-            self.target_mixer.load_state_dict(th.load("{}/mixer.th".format(path),
-                                                      map_location=lambda storage, loc: storage))
+            self.target_mixer.load_state_dict(
+                th.load("{}/mixer.th".format(path),
+                        map_location=lambda storage, loc: storage)
+            )
         self.optimiser.load_state_dict(th.load("{}/opt.th".format(path), map_location=lambda storage, loc: storage))

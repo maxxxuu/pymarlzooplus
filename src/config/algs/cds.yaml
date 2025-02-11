@@ -9,7 +9,11 @@ evaluation_epsilon: 0
 
 runner: "episode"
 
-buffer_size: 2 #5000
+# Buffer
+buffer_size: 2 # 5000
+prioritized_buffer: False
+prioritized_buffer_alpha: 0.6
+burn_in_period: 2
 
 # update the target network every {} episodes
 target_update_interval: 200
@@ -39,7 +43,6 @@ state_bias: True # the constant value c(s) in the paper
 mask_dead: False
 weighted_head: False # weighted head Q-values, for MMM2 and 3s5z_vs_3s6z, it is True
 nonlinear: False # non-linearity
-burn_in_period: 2
 
 predict_net_dim: 128 # hidden dim
 beta1: 0.5

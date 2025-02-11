@@ -43,7 +43,7 @@ class DMAQ_qattenLearner:
         self.optimiser = RMSprop(
             params=self.params, lr=args.lr, alpha=args.optim_alpha, eps=args.optim_eps)
 
-        # a little wasteful to deepcopy (e.g. duplicates action selector), but should work for any MAC
+        # a little wasteful to deepcopy (e.g., duplicates action selector), but should work for any MAC
         self.target_mac = copy.deepcopy(mac)
 
         self.log_stats_t = -self.args.learner_log_interval - 1
@@ -317,19 +317,25 @@ class DMAQ_qattenLearner:
             self.logger.log_stat("hit_prob", hit_prob.item(), t_env)
             self.logger.log_stat("grad_norm", grad_norm, t_env)
             mask_elems = mask.sum().item()
-            self.logger.log_stat("td_error_abs",
-                                 (masked_td_error.abs().sum().item() / mask_elems),
-                                 t_env
-                                 )
-            self.logger.log_stat("q_taken_mean",
-                                 (chosen_action_qvals * mask).sum().item() / (mask_elems * self.args.n_agents),
-                                 t_env
-                                 )
-            self.logger.log_stat("target_mean",
-                                 (targets * mask).sum().item() / (mask_elems * self.args.n_agents),
-                                 t_env
-                                 )
+            self.logger.log_stat(
+                "td_error_abs",
+                (masked_td_error.abs().sum().item() / mask_elems),
+                t_env
+            )
+            self.logger.log_stat(
+                "q_taken_mean",
+                (chosen_action_qvals * mask).sum().item() / (mask_elems * self.args.n_agents),
+                t_env
+            )
+            self.logger.log_stat(
+                "target_mean",
+                (targets * mask).sum().item() / (mask_elems * self.args.n_agents),
+                t_env
+            )
             self.log_stats_t = t_env
+
+        if self.args.prioritized_buffer:
+            return masked_td_error ** 2
 
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
         self.sub_train(batch, t_env, episode_num, self.mac, self.mixer, self.optimiser, self.params)

@@ -178,9 +178,11 @@ class MASERQLearner:
         intrinsic_rewards = th.zeros(rewards.shape).to(device=self.device)
 
         for i in range(self.n_agents):
-            intrinsic_rewards += -th.norm(reward_ddqn_up[:, :, i, :], dim=2).reshape(batch.batch_size,
-                                                                                     observation.shape[1],
-                                                                                     1) / self.n_agents
+            intrinsic_rewards += -th.norm(reward_ddqn_up[:, :, i, :], dim=2).reshape(
+                batch.batch_size,
+                observation.shape[1],
+                1
+            ) / self.n_agents
         rewards += self.lam * intrinsic_rewards
         ###############################################################################
 
@@ -216,7 +218,7 @@ class MASERQLearner:
         # Backpropagation
         self.optimiser.zero_grad()
         loss.backward()
-        grad_norm = th.nn.utils.clip_grad_norm_(self.params, self.args.grad_norm_clip)# max_norm
+        grad_norm = th.nn.utils.clip_grad_norm_(self.params, self.args.grad_norm_clip)  # max_norm
         self.optimiser.step()
 
         if (episode_num - self.last_target_update_episode) / self.args.target_update_interval >= 1.0:
@@ -231,6 +233,9 @@ class MASERQLearner:
             self.logger.log_stat("q_taken_mean", (chosen_action_qvals * mask).sum().item()/(mask_elems * self.args.n_agents), t_env)
             self.logger.log_stat("target_mean", (targets * mask).sum().item()/(mask_elems * self.args.n_agents), t_env)
             self.log_stats_t = t_env
+
+        if self.args.prioritized_buffer:
+            return masked_td_error ** 2
 
     def _update_targets(self):
         self.target_mac.load_state(self.mac)
