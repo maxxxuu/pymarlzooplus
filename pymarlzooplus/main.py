@@ -3,11 +3,12 @@ import os
 from os.path import dirname, abspath
 import collections
 from copy import deepcopy
+import inspect
+import yaml
+
 from sacred import Experiment, SETTINGS
 from sacred.observers import FileStorageObserver
 from sacred.utils import apply_backspaces_and_linefeeds
-import yaml
-
 import numpy as np
 import torch as th
 
@@ -16,7 +17,6 @@ from pymarlzooplus.run import run
 
 SETTINGS['CAPTURE_MODE'] = "fd"  # set to "no" if you want to see stdout/stderr in the console
 logger = get_logger()
-results_path = os.path.join(dirname(dirname(abspath(__file__))), "results")
 
 
 def my_main(_run, _config, _log):
@@ -33,6 +33,11 @@ def my_main(_run, _config, _log):
 
     # run the framework
     run(_run, config, _log)
+
+
+def get_caller_path():
+    frame = inspect.stack()
+    return dirname(abspath(frame[-1].filename))
 
 
 def _get_config(params, arg_name, subfolder):
@@ -164,7 +169,8 @@ def pymarlzooplus(params):
 
         # Save to disk by default for sacred
         logger.info("Saving to FileStorageObserver in results/sacred.")
-        file_obs_path = os.path.join(results_path, f"sacred/{config_dict['name']}/{map_name}")
+        results_path = os.path.join(get_caller_path(), "results")
+        file_obs_path = os.path.join(results_path, "sacred", f"{config_dict['name']}", f"{map_name}")
 
         ex.observers = [(FileStorageObserver(file_obs_path))]
         ex.main(my_main)
