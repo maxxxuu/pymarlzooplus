@@ -29,35 +29,16 @@ Algorithms (9) maintained from EPyMARL:
 - IA2C
 
 # Table of Contents
-- [PyMARLzoo+](#pymarlzoo)
-- [Table of Contents](#table-of-contents)
 - [Installation](#installation)
-  - [Base requirements installation](#base-requirements-installation)
-  - [Torch installation](#torch-installation)
-  - [Torch-scatter installation](#torch-scatter-installation)
-  - [Installing LBF, RWARE, MPE, PettingZoo, Overcooked, and Pressure plate](#installing-lbf-rware-mpe-pettingzoo-overcooked-and-pressureplate)
-- [Run instructions](#run-instructions)
+- [Run training](#run-training)
 - [Environment API](#environment-api)
 - [Run a hyperparameter search](#run-a-hyperparameter-search)
 - [Saving and loading learnt models](#saving-and-loading-learnt-models)
-  - [Saving models](#saving-models)
-  - [Loading models](#loading-models)
 - [Citing PyMARLzoo+, PyMARL, and EPyMARL](#citing-pymarlzoo-epymarl-and-pymarl)
 - [License](#license)
 
-# Installation & Run instructions
 
-## Installation
-To install and use it as a package, run the following commands:
-
-Run:
-```sh
-pip install pymarlzooplus
-``` 
-NOTE: We work on this!
-
-Otherwise, follow the instructions below to install from source.
-
+# Installation
 Before installing PyMARLzoo+, we recommend creating a conda environment:
 
 ```sh
@@ -65,77 +46,123 @@ conda create -y -n pymarlzooplus python=3.8.18
 conda activate pymarlzooplus
 ```
 
-For an easy installation, you can use:
-
+To install and use PyMARLzoo+ as a package, run the following commands:
 ```sh
-sudo apt-get install x11-xserver-utils
-pip install "git+https://github.com/AILabDsUnipi/pymarlzooplus.git@main#egg=pymarlzoo_plus[Overcooked]" 
+pip install pymarlzooplus
 ``` 
+NOTE: We work on this!
+
 
 To build it from source, run the following commands:
 ```sh
-sudo apt-get install x11-xserver-utils
 git clone https://github.com/AILabDsUnipi/pymarlzooplus.git
 cd pymarlzooplus 
-pip install -e .[Overcooked] 
+pip install -e .[<environment>] 
 ``` 
-Specify the environment you want to install by changing the [Overcooked] with the desired environment. 
-The available environments are :
-- Overcooked
-- PressurePlate
-- CaptureTarget
-- BoxPushing
-- PettingZoo
-- LBF 
-- RWARE
-- MPE
+Specify the environment you want to install by changing the ``<environment>`` with the desired environment. 
+The available environments are:
+- ``all`` (it installs all the following environments)
+- ``PettingZoo``
+- ``Overcooked``
+- ``PressurePlate``
+- ``CaptureTarget``
+- ``BoxPushing``
+- ``LBF_V2`` 
+- ``LBF`` 
+- ``RWARE_V1``
+- ``RWARE``
+- ``MPE``
 
-To use it as a package, you can import it as follows and change the params_dict accordingly with the environement you want to use:
+# Run training
+ 
+In the following instructions, ```<algo>``` (or ```"algo"```) can be replaced with one of the following algoriths:  
+- "coma"
+- "qmix"
+- "maa2c"
+- "mappo"
+- "vdn"
+- "maddpg"
+- "iql"
+- "ippo"
+- "ia2c"
+- "happo" 
+- "mat-dec" 
+- "qplex" 
+- "eoi" 
+- "emc" 
+- "maser" 
+- "cds"
 
-```python
-from pymarlzooplus import pymarlzooplus
+You can specify the algorithm arguments:
+- In case of running experiment **from source**, you can edit the corresponding configuration file in [pymarlzooplus/config/algs/](pymarlzooplus/config/algs) and the [pymarlzooplus/config/default.yaml](pymarlzooplus/config/default.yaml).
+- In case of running experiment **as a package**, you can specify the algorithm arguments in the dictionary ```"algo_args"```.
 
-params_dict = {
-    "config": "qmix",
-    "env-config": "capturetarget",
+## LBF
+
+- As a package (replace ```"algo"``` and ```"scenario"```):
+  ```python
+  from pymarlzooplus import pymarlzooplus
+  
+  params_dict = {
+    "config": "algo",
+    "algo_args": {},
+    "env-config": "gymma",
     "env_args": {
-        "time_limit": 60,
-        "key" : "CaptureTarget-6x6-1t-2a-v0",
+        "key": "scenario",
+        "time_limit": 50,
+        "seed": 2024
     }
-}
+  }
+  
+  pymarlzooplus(params_dict)
+  ```
+  Find all the LBF arguments in the configuration file [pymarlzooplus/config/envs/gymma.yaml](pymarlzooplus/config/envs/gymma.yaml).
 
-pymarlzooplus(params_dict)
-```
+- From source (replace ```<algo>``` and ```<scenario>```):
+  ```sh
+  python pymarlzooplus/main.py --config=<algo> --env-config=gymma with env_args.time_limit=25 env_args.key=<scenario>
+  ```
+  Before running an experiment, edit the configuration file in [pymarlzooplus/config/envs/gymma.yaml](pymarlzooplus/config/envs/gymma.yaml).
 
-
-
-## Running LBF, RWARE, MPE, PettingZoo, Overcooked, PressurePlate, Capture Target and Box Pushing
-
-### LBF
-
-Example of using LBF (replace ```<algo>``` and ```<scenario>```):
-```sh
-python3 pymarlzoo_plus/main.py --config=<algo> --env-config=gymma with env_args.time_limit=25 env_args.key=<scenario>
-```
-
-Available scenarios (replace ```<scenario>```) we run experiments:
-- "lbforaging:Foraging-4s-11x11-3p-2f-coop-v2",
-- "lbforaging:Foraging-2s-11x11-3p-2f-coop-v2",
-- "lbforaging:Foraging-2s-8x8-3p-2f-coop-v2",
-- "lbforaging:Foraging-2s-9x9-3p-2f-coop-v2",
-- "lbforaging:Foraging-7s-20x20-5p-3f-coop-v2",
-- "lbforaging:Foraging-2s-12x12-2p-2f-coop-v2",
-- "lbforaging:Foraging-8s-25x25-8p-5f-coop-v2",
-- "lbforaging:Foraging-7s-30x30-7p-4f-coop-v2"
+Available scenarios (replace ```"scenario"``` or ```<scenario>```) we run experiments (our experiments were conducted with v2):
+- "lbforaging:Foraging-4s-11x11-3p-2f-coop-v2" / "lbforaging:Foraging-4s-11x11-3p-2f-coop-v3",
+- "lbforaging:Foraging-2s-11x11-3p-2f-coop-v2" / "lbforaging:Foraging-2s-11x11-3p-2f-coop-v3",
+- "lbforaging:Foraging-2s-8x8-3p-2f-coop-v2" / "lbforaging:Foraging-2s-8x8-3p-2f-coop-v3",
+- "lbforaging:Foraging-2s-9x9-3p-2f-coop-v2" / "lbforaging:Foraging-2s-9x9-3p-2f-coop-v3",
+- "lbforaging:Foraging-7s-20x20-5p-3f-coop-v2" / "lbforaging:Foraging-7s-20x20-5p-3f-coop-v3",
+- "lbforaging:Foraging-2s-12x12-2p-2f-coop-v2" / "lbforaging:Foraging-2s-12x12-2p-2f-coop-v3",
+- "lbforaging:Foraging-8s-25x25-8p-5f-coop-v2" / "lbforaging:Foraging-8s-25x25-8p-5f-coop-v3",
+- "lbforaging:Foraging-7s-30x30-7p-4f-coop-v2" / "lbforaging:Foraging-7s-30x30-7p-4f-coop-v3"
 
 All the above scenarios are compatible both with our **training framework** and the **environment API**.
 
-### RWARE
 
-Example of using RWARE (replace ```<algo>``` and ```<scenario>```):
-```sh
-python3 pymarlzoo_plus/main.py --config=<algo> --env-config=gymma with env_args.time_limit=500 env_args.key=<scenario>
-```
+## RWARE
+
+- As a package (replace ```"algo"``` and ```"scenario"```):
+  ```python
+  from pymarlzooplus import pymarlzooplus
+  
+  params_dict = {
+    "config": "algo",
+    "algo_args": {},
+    "env-config": "gymma",
+    "env_args": {
+        "key": "scenario",
+        "time_limit": 500,
+        "seed": 2024
+    }
+  }
+  
+  pymarlzooplus(params_dict)
+  ```
+  Find all the RWARE arguments in the configuration file [pymarlzooplus/config/envs/gymma.yaml](pymarlzooplus/config/envs/gymma.yaml).
+
+- From source (replace ```<algo>``` and ```<scenario>```):
+  ```sh
+  python pymarlzooplus/main.py --config=<algo> --env-config=gymma with env_args.time_limit=500 env_args.key=<scenario>
+  ```
+  Before running an experiment, edit the configuration file in [pymarlzooplus/config/envs/gymma.yaml](pymarlzooplus/config/envs/gymma.yaml).
 
 Available scenarios we run experiments (our experiments were conducted with v1):
 - "rware:rware-small-4ag-hard-v1" / "rware:rware-small-4ag-hard-v2"
@@ -144,14 +171,33 @@ Available scenarios we run experiments (our experiments were conducted with v1):
 
 All the above scenarios are compatible both with our **training framework** and the **environment API**.
 
-Before running an experiment, edit the configuration file in [src/config/envs/gymma.yaml](src/config/envs/gymma.yaml).
 
-### MPE
+## MPE
 
-Example of using MPE (replace ```<algo>``` and ```<scenario>```):
-```sh
-python3 pymarlzoo_plus/main.py --config=<algo> --env-config=gymma with env_args.time_limit=25 env_args.key=<scenario>
-```
+- As a package (replace ```"algo"``` and ```"scenario"```):
+  ```python
+  from pymarlzooplus import pymarlzooplus
+  
+  params_dict = {
+    "config": "algo",
+    "algo_args": {},
+    "env-config": "gymma",
+    "env_args": {
+        "key": "scenario",
+        "time_limit": 25,
+        "seed": 2024
+    }
+  }
+  
+  pymarlzooplus(params_dict)
+  ```
+  Find all the MPE arguments in the configuration file [pymarlzooplus/config/envs/gymma.yaml](pymarlzooplus/config/envs/gymma.yaml).
+
+- From source (replace ```<algo>``` and ```<scenario>```):
+  ```sh
+  python pymarlzooplus/main.py --config=<algo> --env-config=gymma with env_args.time_limit=25 env_args.key=<scenario>
+  ```
+  Before running an experiment, edit the configuration file in [pymarlzooplus/config/envs/gymma.yaml](pymarlzooplus/config/envs/gymma.yaml).
 
 Available scenarios we run experiments:
 - "mpe:SimpleSpeakerListener-v0", 
@@ -172,20 +218,40 @@ More available scenarios:
 
 All the above scenarios are compatible both with our **training framework** and the **environment API**.
 
-Before running an experiment, edit the configuration file in [src/config/envs/gymma.yaml](src/config/envs/gymma.yaml).
 
-### PettingZoo
+## PettingZoo
 
-Example of using PettingZoo (replace ```<algo>```, ```<time-limit>```, and ```<task>```):
+- As a package (replace ```"algo"```, ```"task"```, and ```0000```):
+  ```python
+  from pymarlzooplus import pymarlzooplus
+  
+  params_dict = {
+    "config": "algo",
+    "algo_args": {},
+    "env-config": "pettingzoo",
+    "env_args": {
+        "key": "task",
+        "time_limit": 0000,
+        "render_mode": "rgb_array",  # Options: "human", "rgb_array
+        "image_encoder": "ResNet18",  # Options: "ResNet18", "SlimSAM", "CLIP"
+        "image_encoder_use_cuda": True,  # Whether to load image-encoder in GPU or not.
+        "image_encoder_batch_size": 10,  # How many images to encode in a single pass.
+        "partial_observation": False,  # Only for "Emtombed: Cooperative" and "Space Invaders"
+        "trainable_cnn": False,  # Specifies whether to return image-observation or the encoded vector-observation
+        "seed": 2024
+    }
+  }
+  
+  pymarlzooplus(params_dict)
+  ```
+  Find all the PettingZoo arguments in the configuration file [pymarlzooplus/config/envs/pettingzoo.yaml](pymarlzooplus/config/envs/pettingzoo.yaml). Also, there you can find useful comments for each task's arguments.
 
-To run [PettingZoo](https://github.com/Farama-Foundation/PettingZoo) run:
-```sh
-AutoROM -y
-```
-Example of using PettingZoo:
-```sh
-python3 pymarlzoo_plus/main.py --config=qmix --env-config=pettingzoo with env_args.time_limit=900 env_args.key="pistonball_v6" env_args.kwargs="('n_pistons',10),"
-```
+- From source (replace ```<algo>```, ```<time-limit>```, and ```<task>```):
+  ```sh
+  python pymarlzooplus/main.py --config=<algo> --env-config=pettingzoo with env_args.time_limit=<time-limit> env_args.key=<task>
+  ```
+  Before running an experiment, edit the configuration file in [pymarlzooplus/config/envs/pettingzoo.yaml](pymarlzooplus/config/envs/pettingzoo.yaml).
+
 
 Available tasks we run experiments:
 - Atari:
@@ -248,14 +314,33 @@ Below, we list more tasks which are compatible only with the **environment API**
   - "pursuit_v4"
   - "waterworld_v4"
 
-Before running an experiment, edit the configuration file in [src/config/envs/pettingzoo.yaml](src/config/envs/pettingzoo.yaml). Also, there you can find useful comments for each task's arguments.
 
-### Overcooked
+## Overcooked
 
-Example of using Overcooked (replace ```<algo>```, ```<scenario>```, and ```<reward_type>```):
-```sh
-python3 pymarlzoo_plus/main.py --config=<algo> --env-config=overcooked with env_args.time_limit=500 env_args.key=<scenario> env_args.reward_type=<reward_type>
-```
+- As a package (replace ```"algo"```, ```"scenario"```, and ```"rewardType"```):
+  ```python
+  from pymarlzooplus import pymarlzooplus
+  
+  params_dict = {
+    "config": "algo",
+    "algo_args": {},
+    "env-config": "overcooked",
+    "env_args": {
+        "time_limit": 500,
+        "key": "scenario",
+        "reward_type": "rewardType",
+    }
+  }
+  
+  pymarlzooplus(params_dict)
+  ```
+  Find all the Overcooked arguments in the configuration file [pymarlzooplus/config/envs/overcooked.yaml](pymarlzooplus/config/envs/overcooked.yaml).
+
+- From source (replace ```<algo>```, ```<scenario>```, and ```<reward_type>```):
+  ```sh
+  python pymarlzooplus/main.py --config=<algo> --env-config=overcooked with env_args.time_limit=500 env_args.key=<scenario> env_args.reward_type=<reward_type>
+  ```
+  Before running an experiment, edit the configuration file in [pymarlzooplus/config/envs/overcooked.yaml](pymarlzooplus/config/envs/overcooked.yaml). 
 
 Available scenarios we run experiments:
 - "cramped_room"
@@ -291,14 +376,34 @@ Reward types available:
 - "shaped"
 
 All the above scenarios are compatible both with our **training framework** and the **environment API**.
-### Pressure plate
 
-Before running an experiment, edit the configuration file in [src/config/envs/overcooked.yaml](src/config/envs/overcooked.yaml). 
 
-Example of using Pressure plate (replace ```<algo>``` and ```<scenario>```):
-```sh
-python3 pymarlzoo_plus/main.py --config=<algo> --env-config=pressureplate with env_args.key=<scenario> env_args.time_limit=500
-```
+## Pressure plate
+
+- As a package (replace ```"algo"``` and ```"scenario"```):
+  ```python
+  from pymarlzooplus import pymarlzooplus
+  
+  params_dict = {
+    "config": "algo",
+    "algo_args": {},
+    "env-config": "pressureplate",
+    "env_args": {
+        "key": "scenario",
+        "time_limit": 500,
+        "seed": 2024
+    }
+  }
+  
+  pymarlzooplus(params_dict)
+  ```
+  Find all the Pressure Plate arguments in the configuration file [pymarlzooplus/config/envs/pressureplate.yaml](pymarlzooplus/config/envs/pressureplate.yaml).
+
+- From source (replace ```<algo>``` and ```<scenario>```):
+  ```sh
+  python pymarlzooplus/main.py --config=<algo> --env-config=pressureplate with env_args.key=<scenario> env_args.time_limit=500
+  ```
+  Before running an experiment, edit the configuration file in [pymarlzooplus/config/envs/pressureplate.yaml](pymarlzooplus/config/envs/pressureplate.yaml).
 
 Available scenarios we run experiments:
 - "pressureplate-linear-4p-v0"
@@ -307,45 +412,82 @@ Available scenarios we run experiments:
 More available scenarios:
 - "pressureplate-linear-5p-v0"
 
-Before running an experiment, edit the configuration file in [src/config/envs/pressureplate.yaml](src/config/envs/pressureplate.yaml).
+All the above scenarios are compatible both with our **training framework** and the **environment API**.
 
-### Capture Target
 
-Example of using Capture Target (replace ```<algo>```):
-```sh
-python3 pymarlzoo_plus/main.py --config=<algo> --env-config=capturetarget with env_args.key=<scenario> env_args.time_limit=60
-```
+## Capture Target
+
+- As a package (replace ```"algo"``` and ```"scenario"```):
+  ```python
+  from pymarlzooplus import pymarlzooplus
+  
+  params_dict = {
+    "config": "algo",
+    "algo_args": {},
+    "env-config": "capturetarget",
+    "env_args": {
+        "time_limit": 60,
+        "key" : "scenario",
+    }
+  }
+  
+  pymarlzooplus(params_dict)
+  ```
+  Find all the Capture Target arguments in the configuration file [pymarlzooplus/config/envs/capturetarget.yaml](pymarlzooplus/config/envs/capturetarget.yaml).
+
+- From source (replace ```<algo>``` and ```<scenario>```):
+  ```sh
+  python pymarlzooplus/main.py --config=<algo> --env-config=capturetarget with env_args.key=<scenario> env_args.time_limit=60
+  ```
+  Before running an experiment, edit the configuration file in [pymarlzooplus/config/envs/capturetarget.yaml](pymarlzooplus/config/envs/capturetarget.yaml). Also, there you can find useful comments for the rest of arguments.
 
 Available scenario:
 - "CaptureTarget-6x6-1t-2a-v0"
 
 The above scenario is compatible both with our **training framework** and the **environment API**.
 
-Before running an experiment, edit the configuration file in [src/config/envs/capturetarget.yaml](src/config/envs/capturetarget.yaml). Also, there you can find useful comments for the rest of arguments.
 
-### Box Pushing
+## Box Pushing
 
-Example of using Box Pushing (replace ```<algo>```):
-```sh
-python3 pymarlzoo_plus/main.py --config=<algo> --env-config=boxpushing with env_args.key=<scenario> env_args.time_limit=60
-```
+- As a package (replace ```"algo"``` and ```"scenario"```):
+  ```python
+  from pymarlzooplus import pymarlzooplus
+  
+  params_dict = {
+    "config": "algo",
+    "algo_args": {},
+    "env-config": "boxpushing",
+    "env_args": {
+        "key": "scenario",
+        "time_limit": 60,
+        "seed": 2024
+    }
+  }
+  
+  pymarlzooplus(params_dict)
+  ```
+  Find all the Box Pushing arguments in the configuration file [pymarlzooplus/config/envs/boxpushing.yaml](pymarlzooplus/config/envs/boxpushing.yaml).
+
+- From source (replace ```<algo>``` and ```<scenario>```):
+  ```sh
+  python pymarlzooplus/main.py --config=<algo> --env-config=boxpushing with env_args.key=<scenario> env_args.time_limit=60
+  ```
+  Before running an experiment, edit the configuration file in [pymarlzooplus/config/envs/boxpushing.yaml](pymarlzooplus/config/envs/boxpushing.yaml).
 
 Available scenario:
 - "BoxPushing-6x6-2a-v0"
 
 The above scenario is compatible both with our **training framework** and the **environment API**.
 
-Before running an experiment, edit the configuration file in [src/config/envs/boxpushing.yaml](src/config/envs/boxpushing.yaml).
 
 
 # Environment API
 Except from using our training framework, you can use PyMARLzoo+ in your custom training pipeline as follows:
 ```python
-# Import packages
-from envs import REGISTRY as env_REGISTRY
-import random as rnd
+# Import package
+from pymarlzooplus.envs import REGISTRY as env_REGISTRY
 
-# Arguments for PettingZoo
+# Example of arguments for PettingZoo
 args = {
   "env": "pettingzoo",
   "env_args": {
@@ -381,15 +523,15 @@ while not done:
 # Terminate the environment
 env.close()
 ```
-The code above can be used as is (changing the arguments accordingly) **with the fully cooperative tasks** (see section [Run instructions](#run-instructions) to find out which tasks are fully cooperative).
+The code above can be used as is (changing the arguments accordingly) **with the fully cooperative tasks** (see section [Run training](#run-training) to find out which tasks are fully cooperative).
 
-In the file [src/scripts/api_script.py](src/scripts/api_script.py), you can find a complete example for all the supported environments.
+In the file [pymarlzooplus/scripts/api_script.py](pymarlzooplus/scripts/api_script.py), you can find a complete example for all the supported environments.
 
-For a description of each environment's arguments, please see the corresponding config file in [src/config/envs](src/config/envs). 
+For a description of each environment's arguments, please see the corresponding config file in [pymarlzooplus/config/envs](pymarlzooplus/config/envs). 
 
 # Run a hyperparameter search
 
-We include a script named `search.py` which reads a search configuration file (e.g. the included `search.config.example.yaml`) and runs a hyperparameter search in one or more tasks. The script can be run using
+We include a script named [search.py](pymarlzooplus/search.py) which reads a search configuration file (e.g. the included [search.config.example.yaml](pymarlzooplus/search.config.example.yaml)) and runs a hyperparameter search in one or more tasks. The script can be run using
 ```shell
 python search.py run --config=search.config.example.yaml --seeds 5 locally
 ```

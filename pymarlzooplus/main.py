@@ -16,15 +16,9 @@ from pymarlzooplus.run import run
 
 SETTINGS['CAPTURE_MODE'] = "fd"  # set to "no" if you want to see stdout/stderr in the console
 logger = get_logger()
-
-ex = Experiment("pymarlzooplus")
-ex.logger = logger
-ex.captured_out_filter = apply_backspaces_and_linefeeds
-
 results_path = os.path.join(dirname(dirname(abspath(__file__))), "results")
 
 
-@ex.main
 def my_main(_run, _config, _log):
 
     ## Setting the random seed throughout the modules
@@ -101,21 +95,36 @@ def format_params(params_dict):
     args = []
 
     for key, value in params_dict.items():
-        if key != "env_args":
+        if key != "env_args" and key != "algo_args" and "env-config" not in key:
             args.append(f"--{key}={value}")
 
+    # Keep the "algo_args" as a dict if exists
+    algo_params = None
+    if "algo_args" in params_dict:
+        assert isinstance(params_dict["algo_args"], dict), f"type(params_dict): {type(params_dict)}"
+        algo_params = params_dict["algo_args"]
+
+    # Add the "--env-config=..." if exists
+    for key, value in params_dict.items():
+        if "env-config" in key:
+            args.append(f"--{key}={value}")
+
+    # Add the "env_args" if exists
     if "env_args" in params_dict and isinstance(params_dict["env_args"], dict):
         args.append("with")
         for key, value in params_dict["env_args"].items():
             args.append(f"env_args.{key}={value}")
 
-    return args
+    return args, algo_params
 
 
 def pymarlzooplus(params):
     try:
+        algo_params = None
         if isinstance(params, dict):
-            params = ["pymarlzooplus/main.py"] + format_params(params)[:]
+            params, algo_params = format_params(params)
+            params = ["pymarlzooplus/main.py"] + params[:]
+
         th.set_num_threads(1)
 
         # Get the defaults from default.yaml
@@ -130,11 +139,19 @@ def pymarlzooplus(params):
         alg_config = _get_config(params, "--config", "algs")
         config_dict = recursive_dict_update(config_dict, env_config)
         config_dict = recursive_dict_update(config_dict, alg_config)
+        if algo_params is not None:
+            # Parameters from the command line override the default ones and the ones from the config file
+            config_dict = recursive_dict_update(config_dict, algo_params)
 
         try:
             map_name = config_dict["env_args"]["map_name"]
         except:
             map_name = config_dict["env_args"]["key"]
+
+        # Create a fresh Sacred experiment
+        ex = Experiment("pymarlzooplus")
+        ex.logger = logger
+        ex.captured_out_filter = apply_backspaces_and_linefeeds
 
         # now add all the config to sacred
         ex.add_config(config_dict)
@@ -149,10 +166,11 @@ def pymarlzooplus(params):
         logger.info("Saving to FileStorageObserver in results/sacred.")
         file_obs_path = os.path.join(results_path, f"sacred/{config_dict['name']}/{map_name}")
 
-        ex.observers.append(FileStorageObserver(file_obs_path))
+        ex.observers = [(FileStorageObserver(file_obs_path))]
+        ex.main(my_main)
         ex.run_commandline(params)
     except Exception as e:
-        print(e)
+        raise RuntimeError(f"pymarlzooplus failed with error:\n{e}") from e
 
 
 if __name__ == '__main__':

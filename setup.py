@@ -3,6 +3,9 @@ import os
 
 extras = {
     'LBF': ['lbforaging>1.1.1'],
+    'LBF_V2': [
+        'lbforaging_v2 @ file:./pymarlzooplus/envs/lb-foraging_v2'
+    ],
     'RWARE': ['rware>1.0.3'],
     'RWARE_V1': [
         'rware_v1 @ file:./pymarlzooplus/envs/robotics_warehouse_v1'
@@ -16,6 +19,9 @@ extras = {
         "pettingzoo[atari]",
         'autorom',
         "pettingzoo[butterfly]",
+        "pettingzoo[mpe]",
+        "pettingzoo[sisl]",
+        "pettingzoo[classic]"
     ],
     'Overcooked': [
         'overcooked_ai_py @ file:./pymarlzooplus/envs/overcooked_ai'
@@ -36,12 +42,11 @@ extras["all"] = sorted(set(dep for deps in extras.values() for dep in deps))
 with open('requirements.txt') as f:
     required = f.read().splitlines()
 
-# Check if the DISPLAY environment variable is set
+# Check if the DISPLAY environment variable is set and install the corresponding OpenCV version
 if 'DISPLAY' in os.environ:
     opencv_pack = "opencv-python"
 else:
     opencv_pack = "opencv-python-headless"
-
 required.append(opencv_pack)
 
 setup(

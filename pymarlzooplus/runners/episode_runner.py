@@ -4,7 +4,7 @@ import numpy as np
 
 from pymarlzooplus.envs import REGISTRY as env_REGISTRY
 from pymarlzooplus.components.episode_buffer import EpisodeBatch
-from pymarlzooplus.utils.handle_import_errors import check_env_installation
+from pymarlzooplus.utils.env_utils import check_env_installation
 
 
 class EpisodeRunner:

@@ -200,7 +200,7 @@ class Warehouse(gym.Env):
         max_steps: Optional[int],
         reward_type: RewardType,
         layout: str = None,
-        observation_type: ObserationType=ObserationType.FLATTENED,
+        observation_type: ObserationType = ObserationType.FLATTENED,
         image_observation_layers: List[ImageLayer] = (
             ImageLayer.SHELVES,
             ImageLayer.REQUESTS,
@@ -208,8 +208,8 @@ class Warehouse(gym.Env):
             ImageLayer.GOALS,
             ImageLayer.ACCESSIBLE
         ),
-        image_observation_directional: bool=True,
-        normalised_coordinates: bool=False,
+        image_observation_directional: bool =  True,
+        normalised_coordinates: bool = False,
     ):
         """The robotic warehouse environment
 
@@ -822,11 +822,6 @@ class Warehouse(gym.Env):
             else:
                 agent.req_action = Action(action)
 
-        # # stationary agents will certainly stay where they are
-        # stationary_agents = [agent for agent in self.agents if agent.action != Action.FORWARD]
-
-        # # forward agents will move only if they avoid collisions
-        # forward_agents = [agent for agent in self.agents if agent.action == Action.FORWARD]
         commited_agents = set()
 
         G = nx.DiGraph()
@@ -1038,7 +1033,6 @@ class Warehouse(gym.Env):
                 )
         return self.global_image
 
-    
 
 if __name__ == "__main__":
 

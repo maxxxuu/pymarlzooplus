@@ -5,7 +5,6 @@ env_args:
   seed: null
   time_limit: 60 # Maximal steps for termination
   random_init: True # random initial position of agents
-  key: null  # Options: BoxPushing-6x6-2a-v0
 
 test_greedy: True
 test_nepisode: 100

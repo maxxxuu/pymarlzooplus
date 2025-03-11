@@ -23,12 +23,15 @@ class TimeLimit(GymTimeLimit):
         assert (self._elapsed_steps is not None), "Cannot call env.step() before calling reset()"
         observation, reward, done, info = step_api_compatibility(self.env.step(action), output_truncation_bool=False)
 
+        # Add 'TimeLimit.truncated' in 'info' if it doesn't contain it
+        if "TimeLimit.truncated" not in info:
+            info["TimeLimit.truncated"] = False
+
         self._elapsed_steps += 1
         if self._elapsed_steps >= self._max_episode_steps:
-            info["TimeLimit.truncated"] = not all(done) \
-                if type(done) is list \
-                else not done
+            info["TimeLimit.truncated"] = not all(done) if type(done) is list else not done
             done = len(observation) * [True]
+
         return observation, reward, done, info
 
 
@@ -99,10 +102,31 @@ class _GymmaWrapper(MultiAgentEnv):
             assert ':' in key, f"key: {key}"
             key = key.split(':')[0] + '_v1:' + key.split(':')[1]
 
+        # Fix lbforaging v2 key
+        if 'lbforaging' in key and 'v2' in key:
+            assert ':' in key, f"key: {key}"
+            key = key.split(':')[0] + '_v2:' + key.split(':')[1]
+
         # Wrappers
         self.key = key
         self.episode_limit = time_limit
-        self.original_env = gym.make(f"{key}", **kwargs)
+        try:
+            self.original_env = gym.make(f"{key}", **kwargs)
+        except ModuleNotFoundError:
+            env_to_print = ""
+            if "mpe" in key:
+                env_to_print = "MPE"
+            elif "rware" in key and 'v1' in key:
+                env_to_print = "RWARE_v1"
+            elif "rware" in key and 'v1' not in key:
+                env_to_print = "RWARE"
+            elif "lbforaging" in key and 'v2' in key:
+                env_to_print = "LBF_v2"
+            elif "lbforaging" in key and 'v2' not in key:
+                env_to_print = "LBF"
+            raise ModuleNotFoundError(
+                f"{env_to_print} is not installed!\nPlease follow the instructions in README file."
+            )
         self.timelimit_env = TimeLimit(self.original_env, max_episode_steps=time_limit)
         self._env = FlattenObservation(self.timelimit_env)
 
@@ -140,11 +164,15 @@ class _GymmaWrapper(MultiAgentEnv):
         actions = self.filter_actions(actions)
 
         self._obs, reward, done, self._info = self._env.step(actions)
-        self._obs = [np.pad(o,
-                            (0, self.longest_observation_space.shape[0] - len(o)),
-                            "constant",
-                            constant_values=0,)
-                     for o in self._obs]
+        self._obs = [
+            np.pad(
+                o,
+                (0, self.longest_observation_space.shape[0] - len(o)),
+                "constant",
+                constant_values=0,
+            )
+            for o in self._obs
+        ]
 
         if isinstance(reward, (list, tuple)):
             reward = sum(reward)

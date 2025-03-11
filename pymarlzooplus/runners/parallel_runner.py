@@ -8,7 +8,7 @@ from torch.multiprocessing import Pipe, Process
 from pymarlzooplus.envs import REGISTRY as env_REGISTRY
 from pymarlzooplus.components.episode_buffer import EpisodeBatch
 from pymarlzooplus.utils.image_encoder import ImageEncoder
-from pymarlzooplus.utils.handle_import_errors import check_env_installation
+from pymarlzooplus.utils.env_utils import check_env_installation
 
 
 # Based (very) heavily on SubprocVecEnv from OpenAI Baselines

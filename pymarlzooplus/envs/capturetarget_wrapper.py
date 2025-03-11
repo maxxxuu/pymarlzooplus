@@ -58,7 +58,12 @@ class _CaptureTargetWrapper(MultiAgentEnv):
         self._seed = seed
 
         # Import and register
-        from capture_target_ai_py.environment import CaptureTarget
+        try:
+            from capture_target_ai_py.environment import CaptureTarget
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError(
+                "Capture Target is not installed!\nPlease follow the instructions in README file."
+            )
         self.gym_registration()
 
         # Keep the original environment

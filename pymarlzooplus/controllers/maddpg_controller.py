@@ -59,10 +59,14 @@ class MADDPGMAC:
         self.hidden_states = None
 
     def select_actions(self, ep_batch, t_ep, t_env=0, test_mode=False):
+
+        # Just for compatibility
+        extra_returns = {}
+
         # Only select actions for the selected batch elements in bs
         agent_outputs = self.forward(ep_batch, t_ep)
         chosen_actions = gumbel_softmax(agent_outputs, hard=True).argmax(dim=-1)
-        return chosen_actions
+        return chosen_actions, extra_returns
 
     def target_actions(self, ep_batch, t_ep):
         agent_outputs = self.forward(ep_batch, t_ep)

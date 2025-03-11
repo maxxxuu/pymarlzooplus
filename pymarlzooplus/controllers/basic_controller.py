@@ -23,6 +23,7 @@ class BasicMAC:
 
     def select_actions(self, ep_batch, t_ep, t_env, bs=slice(None), test_mode=False):
 
+        # Just for compatibility
         extra_returns = {}
 
         avail_actions = ep_batch["avail_actions"][:, t_ep]

@@ -74,7 +74,12 @@ class _PressurePlateWrapper(MultiAgentEnv):
 
         ## Do the "gymnasium make"
         # base env sourced by gym.make with all its args
-        from pressureplate.environment import PressurePlate
+        try:
+            from pressureplate.environment import PressurePlate
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError(
+                "Pressure Plare is not installed!\nPlease follow the instructions in README file."
+            )
         self.original_env = gym.make(f"{key}")
         if hasattr(self.original_env.unwrapped, 'seed'):
             self._seed = self.original_env.unwrapped.seed(self._seed)

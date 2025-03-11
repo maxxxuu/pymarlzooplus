@@ -1,7 +1,6 @@
 .idea/
 results/
 **/__pycache__/
-3rdparty/
 **/overcooked_ai.egg-info/
 **/pressureplate.egg-info/
 **/mpe.egg-info/
@@ -15,5 +14,6 @@ results/
 **/dist/
 **/lib/
 **/.DS_Store
+**/test_runs.log
 
 

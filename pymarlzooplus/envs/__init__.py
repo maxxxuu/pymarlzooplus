@@ -20,6 +20,11 @@ REGISTRY_availability = [
 REGISTRY = {}
 
 try:
+    import pymarlzooplus.envs.lbf_registration_v2
+except ImportError:
+    pass
+
+try:
     import pymarlzooplus.envs.lbf_registration
 except ImportError:
     pass

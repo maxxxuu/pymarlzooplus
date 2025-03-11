@@ -12,13 +12,17 @@ runner_log_interval: 250 # 10000
 learner_log_interval: 250 # 10000
 t_max: 10000 # 2050000
 
-# RWARE
-# RUN: python3 pymarlzooplus/main.py --config=qmix --env-config=gymma with env_args.time_limit=500 env_args.key="rware_v1:rware_v1-tiny-2ag-hard-v1"
-# key choices: rware_v1:rware_v1-small-4ag-hard-v1, rware_v1:rware_v1-tiny-4ag-hard-v1, rware_v1:rware_v1-tiny-2ag-hard-v1
+# RWARE version 1
+# RUN: python3 pymarlzooplus/main.py --config=qmix --env-config=gymma with env_args.time_limit=500 env_args.key="rware:rware-tiny-2ag-hard-v1"
+# key choices: rware:rware-small-4ag-hard-v1, rware:rware-tiny-4ag-hard-v1, rware:rware-tiny-2ag-hard-v1
+
+# RWARE version 2
+# RUN: python3 pymarlzooplus/main.py --config=qmix --env-config=gymma with env_args.time_limit=500 env_args.key="rware:rware-tiny-2ag-hard-v2"
+# key choices: rware:rware-small-4ag-hard-v2, rware:rware-tiny-4ag-hard-v2, rware:rware-tiny-2ag-hard-v2
 
 # LBF
-# RUN: python3 pymarlzooplus/main.py --config=qmix --env-config=gymma with env_args.time_limit=50 env_args.key="lbforaging:Foraging-4s-11x11-3p-2f-coop-v2"
-# key choices: lbforaging:Foraging-4s-11x11-3p-2f-coop-v2, lbforaging:Foraging-2s-11x11-3p-2f-coop-v2, lbforaging:Foraging-2s-8x8-3p-2f-coop-v2, lbforaging:Foraging-2s-9x9-3p-2f-coop-v2, lbforaging:Foraging-7s-20x20-5p-3f-coop-v2, lbforaging:Foraging-2s-12x12-2p-2f-coop-v2, lbforaging:Foraging-8s-25x25-8p-5f-coop-v2, lbforaging:Foraging-7s-30x30-7p-4f-coop-v2
+# RUN: python3 pymarlzooplus/main.py --config=qmix --env-config=gymma with env_args.time_limit=50 env_args.key="lbforaging_v2:Foraging-4s-11x11-3p-2f-coop-v2"
+# key choices: lbforaging_v2:Foraging-4s-11x11-3p-2f-coop-v2, lbforaging_v2:Foraging-2s-11x11-3p-2f-coop-v2, lbforaging_v2:Foraging-2s-8x8-3p-2f-coop-v2, lbforaging_v2:Foraging-2s-9x9-3p-2f-coop-v2, lbforaging_v2:Foraging-7s-20x20-5p-3f-coop-v2, lbforaging_v2:Foraging-2s-12x12-2p-2f-coop-v2, lbforaging_v2:Foraging-8s-25x25-8p-5f-coop-v2, lbforaging_v2:Foraging-7s-30x30-7p-4f-coop-v2
 
 # MPE
 # RUN: python3 pymarlzooplus/main.py --config=qmix --env-config=gymma with env_args.time_limit=25 env_args.key="mpe:SimpleSpeakerListener-v0"

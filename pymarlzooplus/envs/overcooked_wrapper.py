@@ -136,9 +136,14 @@ class _OvercookedWrapper(MultiAgentEnv):
         self._seed = seed  # Just for compatibility since the agents start always from the same position
         self.reward_type = reward_type
 
-        # Gym make
-        from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld
-        from overcooked_ai_py.mdp.overcooked_env import OvercookedEnv
+        # Gymnasium make
+        try:
+            from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld
+            from overcooked_ai_py.mdp.overcooked_env import OvercookedEnv
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError(
+                "Overcooked is not installed!\nPlease follow the instructions in README file."
+            )
         mdp = OvercookedGridworld.from_layout_name(self.key)
         base_env = OvercookedEnv.from_mdp(mdp, horizon=time_limit)
         self.original_env = gym.make("Overcooked-v0", base_env=base_env, featurize_fn=base_env.featurize_state_mdp)

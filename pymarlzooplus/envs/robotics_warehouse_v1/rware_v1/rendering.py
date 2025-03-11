@@ -9,7 +9,6 @@ import sys
 import numpy as np
 import math
 import six
-# from gym import error
 from gymnasium import error
 from rware_v1.warehouse import Direction
 

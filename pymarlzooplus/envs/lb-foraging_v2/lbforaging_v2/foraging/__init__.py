@@ -1,0 +1,1 @@
+from lbforaging_v2.foraging.environment import ForagingEnv

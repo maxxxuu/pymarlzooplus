@@ -58,7 +58,12 @@ class _BoxPushingWrapper(MultiAgentEnv):
         self._seed = seed
 
         # Import and register
-        from box_pushing_ai_py.environment import BoxPushing
+        try:
+            from box_pushing_ai_py.environment import BoxPushing
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError(
+                "Box Pushing is not installed!\nPlease follow the instructions in README file."
+            )
         self.gym_registration()
 
         # Keep the original environment

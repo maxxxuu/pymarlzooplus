@@ -69,6 +69,9 @@ def run(_run, _config, _log):
     # Run and train
     run_sequential(args=args, logger=logger)
 
+    # Wait a little bit before creating the plots to save the corresponding files
+    time.sleep(10)
+
     # Plot results
     print("Creating plots ...")
     plot_single_experiment_results(results_dir, algo_name=_config['name'], env_name=map_name)
@@ -84,9 +87,6 @@ def run(_run, _config, _log):
             print("Thread joined")
 
     print("Exiting script")
-
-    # Making sure the framework really exits
-    # os._exit(os.EX_OK)
 
 
 def evaluate_sequential(args, runner):

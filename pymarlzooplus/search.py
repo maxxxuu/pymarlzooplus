@@ -1,9 +1,6 @@
 import multiprocessing
 import subprocess
-from pathlib import Path
 from itertools import product
-from collections import defaultdict
-import re
 import yaml
 import random
 
@@ -18,13 +15,6 @@ def _flatten_lists(_object):
             yield from _flatten_lists(item)
         else:
             yield item
-
-
-def _filter_configs(configs, mask):
-    ingredient, mask = _get_ingredient_from_mask(mask)
-    regex = re.compile(mask)
-    configs[ingredient] = list(filter(regex.search, configs[ingredient]))
-    return configs
 
 
 def _compute_combinations(config_file, shuffle, seeds):
@@ -43,8 +33,6 @@ def _compute_combinations(config_file, shuffle, seeds):
 
         group_comb.append(tuple([f"{k}={v_i}" for k, v_i in d.items()]))
     combinations.append(group_comb)
-
-    # combinations.append([f"seed={i}" for i in range(seeds)])
 
     click.echo("Found following combinations: ")
     click.echo(click.style(" X ", fg="red", bold=True).join([str(s) for s in combinations]))
@@ -73,17 +61,6 @@ def cli():
     pass
 
 
-@cli.command()
-@click.argument("output", type=click.Path(exists=False, dir_okay=False, writable=True))
-def write(output):
-    from train import ex
-
-    config_dict = dict(ex.configurations[0]())
-    config_dict = {"grid-search": config_dict, "exclude": None}
-    with open(output, "w") as f:
-        documents = yaml.dump(config_dict, f)
-
-
 @cli.group()
 @click.option("--config", type=click.File(), default="config.yaml")
 @click.option("--shuffle/--no-shuffle", default=True)
@@ -109,7 +86,10 @@ def locally(combos, cpus):
     configs = ["python main.py " + " ".join([c for c in combo if c.startswith("--")]) + " with " + " ".join([c for c in combo if not c.startswith("--")]) for combo in combos]
 
     click.confirm(
-        f"There are {click.style(str(len(combos)), fg='red')} combinations of configurations. Up to {cpus} will run in parallel. Continue?",
+        f"There are {click.style(str(len(combos)), fg='red')} combinations of configurations "
+        "(taking into account the number of seeds). "
+        f"Up to {cpus} will run in parallel. "
+        "Continue?",
         abort=True,
     )
     pool = multiprocessing.Pool(processes=cpus)
