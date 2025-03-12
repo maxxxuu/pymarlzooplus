@@ -6,14 +6,15 @@ from gymnasium import spaces
 from gymnasium.utils import seeding
 import numpy as np
 
-from mpe.multi_discrete import MultiDiscrete
-from mpe.rendering import Viewer
+from pymarlzooplus.envs.multiagent_particle_envs.mpe.multi_discrete import MultiDiscrete
+from pymarlzooplus.envs.multiagent_particle_envs.mpe.rendering import Viewer
+
 
 # environment for all agents in the multiagent world
 # currently code assumes that no agents will be created/destroyed at runtime!
 class MultiAgentEnv(gym.Env):
     metadata = {
-        'render.modes' : ['human', 'rgb_array']
+        'render.modes': ['human', 'rgb_array']
     }
 
     def __init__(
@@ -274,14 +275,13 @@ class MultiAgentEnv(gym.Env):
         for i in range(len(self.viewers)):
             # create viewers (if necessary)
             if self.viewers[i] is None:
-                from mpe import rendering
-                self.viewers[i] = rendering.Viewer(700,700)
+                from pymarlzooplus.envs.multiagent_particle_envs.mpe import rendering
+                self.viewers[i] = rendering.Viewer(700, 700)
 
         # create rendering geometry
         if self.render_geoms is None:
             # import rendering only if we need it (and don't import for headless machines)
-            #from gym.envs.classic_control import rendering
-            from mpe import rendering
+            from pymarlzooplus.envs.multiagent_particle_envs.mpe import rendering
             self.render_geoms = []
             self.render_geoms_xform = []
             for entity in self.world.entities:
@@ -303,7 +303,7 @@ class MultiAgentEnv(gym.Env):
 
         results = []
         for i in range(len(self.viewers)):
-            from mpe import rendering
+            from pymarlzooplus.envs.multiagent_particle_envs.mpe import rendering
             # update bounds to center around agent
             cam_range = 1
             if self.shared_viewer:
@@ -322,7 +322,6 @@ class MultiAgentEnv(gym.Env):
             return results[0]
 
         return results
-
 
     def close(self):
         for viewer in self.viewers:

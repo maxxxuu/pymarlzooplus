@@ -1,7 +1,6 @@
-# from gym.envs.registration import register
 from gymnasium import register
 
-import mpe.scenarios as scenarios
+import pymarlzooplus.envs.multiagent_particle_envs.mpe.scenarios as scenarios
 
 simple_spread_scenarios = {
     "simple_spread_3": "SimpleSpread-3-v0",
@@ -22,7 +21,7 @@ for scenario_name, gymkey in simple_spread_scenarios.items():
     # Registers multi-agent particle environments:
     register(
         gymkey,
-        entry_point="mpe.environment:MultiAgentEnv",
+        entry_point="pymarlzooplus.envs.multiagent_particle_envs.mpe.environment:MultiAgentEnv",
         kwargs={
             "world": world,
             "reset_callback": scenario.reset_world,

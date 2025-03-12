@@ -5,11 +5,10 @@ from typing import Tuple, Any, Dict
 import numpy as np
 import gymnasium as gym
 from gymnasium import ObservationWrapper
-from gymnasium.utils import seeding
 from gymnasium.wrappers import TimeLimit as GymTimeLimit
 from gymnasium.utils.step_api_compatibility import step_api_compatibility
 
-from smac.env import MultiAgentEnv
+from pymarlzooplus.envs.multiagentenv import MultiAgentEnv
 
 
 class TimeLimitOvercooked(GymTimeLimit):
@@ -119,7 +118,8 @@ class _OvercookedWrapper(MultiAgentEnv):
             key,
             time_limit=500,
             seed=1,
-            reward_type="sparse"
+            reward_type="sparse",
+            render=False
     ):
 
         # Check key validity
@@ -135,15 +135,11 @@ class _OvercookedWrapper(MultiAgentEnv):
         self.key = key
         self._seed = seed  # Just for compatibility since the agents start always from the same position
         self.reward_type = reward_type
+        self.render_bool = render
 
         # Gymnasium make
-        try:
-            from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld
-            from overcooked_ai_py.mdp.overcooked_env import OvercookedEnv
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError(
-                "Overcooked is not installed!\nPlease follow the instructions in README file."
-            )
+        from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld
+        from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.mdp.overcooked_env import OvercookedEnv
         mdp = OvercookedGridworld.from_layout_name(self.key)
         base_env = OvercookedEnv.from_mdp(mdp, horizon=time_limit)
         self.original_env = gym.make("Overcooked-v0", base_env=base_env, featurize_fn=base_env.featurize_state_mdp)
@@ -173,6 +169,9 @@ class _OvercookedWrapper(MultiAgentEnv):
 
     def step(self, actions):
         """ Returns reward, terminated, info """
+
+        if self.render_bool is True:
+            self.render()
 
         # Fix the order of actions, 'policy_agent_idx' always corresponds to agent 0
         actions = [int(a) for a in actions]

@@ -1,6 +1,5 @@
-# from gym.envs.registration import register
 from gymnasium import register
-import mpe.scenarios as scenarios
+import pymarlzooplus.envs.multiagent_particle_envs.mpe.scenarios as scenarios
 
 
 # Multi-agent envs
@@ -26,7 +25,7 @@ for scenario_name, gymkey in _particles.items():
     # Registers multi-agent particle environments:
     register(
         gymkey,
-        entry_point="mpe.environment:MultiAgentEnv",
+        entry_point="pymarlzooplus.envs.multiagent_particle_envs.mpe.environment:MultiAgentEnv",
         kwargs={
             "world": world,
             "reset_callback": scenario.reset_world,
@@ -44,7 +43,7 @@ for N in range(2, 11, 2):
 
     register(
         gymkey,
-        entry_point="mpe.environment:MultiAgentEnv",
+        entry_point="pymarlzooplus.envs.multiagent_particle_envs.mpe.environment:MultiAgentEnv",
         kwargs={
             "world": world,
             "reset_callback": scenario.reset_world,

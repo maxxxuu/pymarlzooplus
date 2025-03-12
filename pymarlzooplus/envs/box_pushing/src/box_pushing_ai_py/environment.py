@@ -8,8 +8,8 @@ from gymnasium.utils import seeding
 from gymnasium import spaces
 import numpy as np
 
-from box_pushing_ai_py import rendering
-from box_pushing_ai_py.assets import Agent, Box, ACTIONS, DIRECTION
+from pymarlzooplus.envs.box_pushing.src.box_pushing_ai_py import rendering
+from pymarlzooplus.envs.box_pushing.src.box_pushing_ai_py.assets import Agent, Box, ACTIONS, DIRECTION
 
 
 class BoxPushing(gym.Env):

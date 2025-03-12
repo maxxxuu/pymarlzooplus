@@ -1,16 +1,8 @@
-import os
-import sys
 import pytest
-# import gym
 import gymnasium as gym
-# from gym import spaces
 from gymnasium import spaces
 
-TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_DIR = os.path.abspath(os.path.join(TEST_DIR, os.pardir))
-sys.path.insert(0, PROJECT_DIR)
-
-from rware_v1.warehouse import ObserationType, Warehouse, Direction, Action, RewardType
+from pymarlzooplus.envs.robotics_warehouse_v1.rware_v1.warehouse import ObserationType, Warehouse, Direction, Action, RewardType
 
 
 @pytest.fixture
@@ -158,7 +150,7 @@ def test_obs_space_0():
     assert env.observation_space[0]["self"].contains(obs[0]["self"])
     assert env.observation_space[0].contains(obs[0])
     assert env.observation_space.contains(obs)
-    nobs, _, _, _ = env.step(env.action_space.sample())
+    nobs, _, _, _, _ = env.step(env.action_space.sample())
     assert env.observation_space.contains(nobs)
 
 
@@ -177,7 +169,7 @@ def test_obs_space_1():
     )
     obs = env.reset()
     for _ in range(200):
-        obs, _, _, _ = env.step(env.action_space.sample())
+        obs, _, _, _, _ = env.step(env.action_space.sample())
         assert env.observation_space.contains(obs)
 
 
@@ -202,25 +194,25 @@ def test_obs_space_2():
 def test_inactivity_0(env_0):
     env = env_0
     for i in range(9):
-        _, _, done, _ = env.step([Action.NOOP])
+        _, _, done, _, _ = env.step([Action.NOOP])
         assert done == [False]
-    _, _, done, _ = env.step([Action.NOOP])
+    _, _, done, _, _ = env.step([Action.NOOP])
     assert done == [True]
 
 
 def test_inactivity_1(env_0):
     env = env_0
     for i in range(4):
-        _, _, done, _ = env.step([Action.NOOP])
+        _, _, done, _, _ = env.step([Action.NOOP])
         assert done == [False]
 
-    _, reward, _, _, = env.step([Action.FORWARD])
+    _, reward, _, _, _ = env.step([Action.FORWARD])
     assert reward[0] == pytest.approx(1.0)
     for i in range(9):
-        _, _, done, _ = env.step([Action.NOOP])
+        _, _, done, _, _ = env.step([Action.NOOP])
         assert done == [False]
 
-    _, _, done, _ = env.step([Action.NOOP])
+    _, _, done, _, _ = env.step([Action.NOOP])
     assert done == [True]
 
 
@@ -241,25 +233,25 @@ def test_time_limit(time_limit):
     _ = env.reset()
 
     for _ in range(time_limit - 1):
-        _, _, done, _ = env.step(env.action_space.sample())
+        _, _, done, _, _ = env.step(env.action_space.sample())
         assert done == 10 * [False]
 
-    _, _, done, _ = env.step(env.action_space.sample())
+    _, _, done, _, _ = env.step(env.action_space.sample())
     assert done == 10 * [True]
 
 
 def test_inactivity_2(env_0):
     env = env_0
     for i in range(9):
-        _, _, done, _ = env.step([Action.NOOP])
+        _, _, done, _, _ = env.step([Action.NOOP])
         assert done == [False]
-    _, _, done, _ = env.step([Action.NOOP])
+    _, _, done, _, _ = env.step([Action.NOOP])
     assert done == [True]
     env.reset()
     for i in range(9):
-        _, _, done, _ = env.step([Action.NOOP])
+        _, _, done, _, _ = env.step([Action.NOOP])
         assert done == [False]
-    _, _, done, _ = env.step([Action.NOOP])
+    _, _, done, _, _ = env.step([Action.NOOP])
     assert done == [True]
 
 
@@ -284,7 +276,8 @@ def test_fast_obs_0():
 
         env._use_slow_obs()
         env.step(env.action_space.sample())
-        
+
+
 def test_fast_obs_1():
     env = Warehouse(3, 8, 3, 3, 0, 1, 5, 10, None, RewardType.GLOBAL, observation_type=ObserationType.DICT)
     env.reset()
@@ -302,11 +295,12 @@ def test_fast_obs_1():
 
         for i in range(len(fast_obs)):
             print(slow_obs[0])
-            assert list(fast_obs[i]) ==  list(flattened_slow[i])
+            assert list(fast_obs[i]) == list(flattened_slow[i])
 
         env._use_slow_obs()
         env.step(env.action_space.sample())
-        
+
+
 def test_fast_obs_2():
     env = Warehouse(3, 8, 3, 3, 2, 1, 5, 10, None, RewardType.GLOBAL, observation_type=ObserationType.DICT)
     env.reset()
@@ -324,7 +318,7 @@ def test_fast_obs_2():
 
         for i in range(len(fast_obs)):
             print(slow_obs[0])
-            assert list(fast_obs[i]) ==  list(flattened_slow[i])
+            assert list(fast_obs[i]) == list(flattened_slow[i])
 
         env._use_slow_obs()
         env.step(env.action_space.sample())

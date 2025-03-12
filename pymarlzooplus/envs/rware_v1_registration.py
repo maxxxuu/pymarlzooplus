@@ -1,1 +1,1 @@
-from .robotics_warehouse_v1.rware_v1 import *
+from pymarlzooplus.envs.robotics_warehouse_v1.rware_v1 import *

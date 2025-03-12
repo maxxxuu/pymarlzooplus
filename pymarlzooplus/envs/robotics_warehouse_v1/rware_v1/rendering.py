@@ -10,7 +10,7 @@ import numpy as np
 import math
 import six
 from gymnasium import error
-from rware_v1.warehouse import Direction
+from pymarlzooplus.envs.robotics_warehouse_v1.rware_v1.warehouse import Direction
 
 if "Apple" in sys.version:
     if "DYLD_FALLBACK_LIBRARY_PATH" in os.environ:
@@ -108,14 +108,6 @@ class Viewer(object):
     def window_closed_by_user(self):
         self.isopen = False
         exit()
-
-    def set_bounds(self, left, right, bottom, top):
-        assert right > left and top > bottom
-        scalex = self.width / (right - left)
-        scaley = self.height / (top - bottom)
-        self.transform = Transform(
-            translation=(-left * scalex, -bottom * scaley), scale=(scalex, scaley)
-        )
 
     def render(self, env, return_rgb_array=False):
         glClearColor(*_BACKGROUND_COLOR, 0)
@@ -254,8 +246,6 @@ class Viewer(object):
             )
             label.draw()
 
-
-
     def _draw_agents(self, env):
         agents = []
         batch = pyglet.graphics.Batch()
@@ -333,12 +323,6 @@ class Viewer(object):
                 ("c3B", (*_AGENT_DIR_COLOR, *_AGENT_DIR_COLOR)),
             )
         batch.draw()
-
-        # render agent indeces
-        # for agent_idx, agent in enumerate(env.agents):
-        #     col, row = agent.x, agent.y
-        #     self._draw_badge(row, col, agent_idx + 1)
-
 
     def _draw_badge(self, row, col, index):
         resolution = 6

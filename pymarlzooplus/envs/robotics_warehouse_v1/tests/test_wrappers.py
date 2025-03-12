@@ -1,12 +1,6 @@
-import os
-import sys
 import pytest
 
-TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_DIR = os.path.abspath(os.path.join(TEST_DIR, os.pardir))
-sys.path.insert(0, PROJECT_DIR)
-
-from rware_v1.warehouse import Warehouse, RewardType
+from pymarlzooplus.envs.robotics_warehouse_v1.rware_v1.warehouse import Warehouse, RewardType
 
 
 @pytest.fixture

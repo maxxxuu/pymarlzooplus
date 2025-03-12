@@ -1,6 +1,6 @@
 import numpy as np
-from mpe.core import World, Agent, Landmark
-from mpe.scenario import BaseScenario
+from pymarlzooplus.envs.multiagent_particle_envs.mpe.core import World, Agent, Landmark
+from pymarlzooplus.envs.multiagent_particle_envs.mpe.scenario import BaseScenario
 
 
 class Scenario(BaseScenario):
@@ -60,10 +60,10 @@ class Scenario(BaseScenario):
                 if self.is_collision(a, agent):
                     rew -= 1
                     collisions += 1
-        return (rew, collisions, min_dists, occupied_landmarks)
+        return rew, collisions, min_dists, occupied_landmarks
 
-
-    def is_collision(self, obj1, obj2):
+    @staticmethod
+    def is_collision(obj1, obj2):
         delta_pos = obj1.state.p_pos - obj2.state.p_pos
         dist = np.sqrt(np.sum(np.square(delta_pos)))
         dist_min = 2*max(obj1.size, obj2.size)
@@ -91,7 +91,8 @@ class Scenario(BaseScenario):
 
         return rew
 
-    def observation(self, agent, world):
+    @staticmethod
+    def observation(agent, world):
         # get positions of all entities in this agent's reference frame
         entity_pos = []
         for entity in world.landmarks:  # world.entities:

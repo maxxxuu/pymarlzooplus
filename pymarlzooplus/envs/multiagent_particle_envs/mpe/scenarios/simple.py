@@ -1,6 +1,7 @@
 import numpy as np
-from mpe.core import World, Agent, Landmark
-from mpe.scenario import BaseScenario
+from pymarlzooplus.envs.multiagent_particle_envs.mpe.core import World, Agent, Landmark
+from pymarlzooplus.envs.multiagent_particle_envs.mpe.scenario import BaseScenario
+
 
 class Scenario(BaseScenario):
     def make_world(self):
@@ -38,11 +39,13 @@ class Scenario(BaseScenario):
             landmark.state.p_pos = world.np_random.uniform(-1,+1, world.dim_p)
             landmark.state.p_vel = np.zeros(world.dim_p)
 
-    def reward(self, agent, world):
+    @staticmethod
+    def reward(agent, world):
         dist2 = np.sum(np.square(agent.state.p_pos - world.landmarks[0].state.p_pos))
         return -dist2
 
-    def observation(self, agent, world):
+    @staticmethod
+    def observation(agent, world):
         # get positions of all entities in this agent's reference frame
         entity_pos = []
         for entity in world.landmarks:

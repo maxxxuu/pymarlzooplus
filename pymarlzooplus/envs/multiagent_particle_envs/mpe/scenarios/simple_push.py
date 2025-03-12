@@ -1,6 +1,7 @@
 import numpy as np
-from mpe.core import World, Agent, Landmark
-from mpe.scenario import BaseScenario
+from pymarlzooplus.envs.multiagent_particle_envs.mpe.core import World, Agent, Landmark
+from pymarlzooplus.envs.multiagent_particle_envs.mpe.scenario import BaseScenario
+
 
 class Scenario(BaseScenario):
     def make_world(self):
@@ -59,28 +60,30 @@ class Scenario(BaseScenario):
         # Agents are rewarded based on minimum agent distance to each landmark
         return self.adversary_reward(agent, world) if agent.adversary else self.agent_reward(agent, world)
 
-    def agent_reward(self, agent, world):
+    @staticmethod
+    def agent_reward(agent, world):
         # the distance to the goal
         return -np.sqrt(np.sum(np.square(agent.state.p_pos - agent.goal_a.state.p_pos)))
 
-    def adversary_reward(self, agent, world):
+    @staticmethod
+    def adversary_reward(agent, world):
         # keep the nearest good agents away from the goal
-        agent_dist = [np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) for a in world.agents if not a.adversary]
+        agent_dist = [
+            np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) for a in world.agents if not a.adversary
+        ]
         pos_rew = min(agent_dist)
-        #nearest_agent = world.good_agents[np.argmin(agent_dist)]
-        #neg_rew = np.sqrt(np.sum(np.square(nearest_agent.state.p_pos - agent.state.p_pos)))
         neg_rew = np.sqrt(np.sum(np.square(agent.goal_a.state.p_pos - agent.state.p_pos)))
-        #neg_rew = sum([np.sqrt(np.sum(np.square(a.state.p_pos - agent.state.p_pos))) for a in world.good_agents])
         return pos_rew - neg_rew
                
-    def observation(self, agent, world):
+    @staticmethod
+    def observation(agent, world):
         # get positions of all entities in this agent's reference frame
         entity_pos = []
-        for entity in world.landmarks:  # world.entities:
+        for entity in world.landmarks:
             entity_pos.append(entity.state.p_pos - agent.state.p_pos)
         # entity colors
         entity_color = []
-        for entity in world.landmarks:  # world.entities:
+        for entity in world.landmarks:
             entity_color.append(entity.color)
         # communication of all other agents
         comm = []
@@ -90,7 +93,13 @@ class Scenario(BaseScenario):
             comm.append(other.state.c)
             other_pos.append(other.state.p_pos - agent.state.p_pos)
         if not agent.adversary:
-            return np.concatenate([agent.state.p_vel] + [agent.goal_a.state.p_pos - agent.state.p_pos] + [agent.color] + entity_pos + entity_color + other_pos)
+            return np.concatenate(
+                [agent.state.p_vel] +
+                [agent.goal_a.state.p_pos - agent.state.p_pos] +
+                [agent.color] +
+                entity_pos +
+                entity_color +
+                other_pos
+            )
         else:
-            #other_pos = list(reversed(other_pos)) if random.uniform(0,1) > 0.5 else other_pos  # randomize position of other agents in adversary network
             return np.concatenate([agent.state.p_vel] + entity_pos + other_pos)

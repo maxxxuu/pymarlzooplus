@@ -1,9 +1,13 @@
 import numpy as np
 import seaborn as sns
-from mpe.core import World, Agent, Landmark
-from mpe.scenario import BaseScenario
+from pymarlzooplus.envs.multiagent_particle_envs.mpe.core import World, Agent, Landmark
+from pymarlzooplus.envs.multiagent_particle_envs.mpe.scenario import BaseScenario
+
 
 class Scenario(BaseScenario):
+    def __init__(self):
+        self.pair_rewards = None
+
     def make_world(self):
         world = World()
         # set any world properties first
@@ -84,13 +88,13 @@ class Scenario(BaseScenario):
 
     def benchmark_data(self, agent, world):
         # returns data for benchmarking purposes
-        return reward(agent, world)
+        return self.reward(agent, world)
 
-    def calc_rewards(self, world):
+    @staticmethod
+    def calc_rewards(world):
         rews = []
         for speaker in world.speakers:
-            dist = np.sum(np.square(speaker.goal_a.state.p_pos -
-                                    speaker.goal_b.state.p_pos))
+            dist = np.sum(np.square(speaker.goal_a.state.p_pos - speaker.goal_b.state.p_pos))
             rew = -dist
             if dist < (speaker.goal_a.size + speaker.goal_b.size) * 1.5:
                 rew += 10.
@@ -108,27 +112,16 @@ class Scenario(BaseScenario):
         else:
             return self.pair_rewards[agent.goal_a.speak_ind]
 
-    def observation(self, agent, world):
+    @staticmethod
+    def observation(agent, world):
         if agent.listener:
             obs = []
             # give listener index of their speaker
             obs += [agent.speak_ind == np.arange(len(world.speakers))]
             # give listener communication from its speaker
             obs += [world.speakers[agent.speak_ind].state.c]
-            # give listener its own position/velocity,
+            # give to the listener its own position/velocity,
             obs += [agent.state.p_pos, agent.state.p_vel]
-
-            # obs += [world.speakers[agent.speak_ind].state.c]
-            # # # give listener index of their speaker
-            # # obs += [agent.speak_ind == np.arange(len(world.speakers))]
-            # # # give listener all communications
-            # # obs += [speaker.state.c for speaker in world.speakers]
-            # # give listener its own velocity
-            # obs += [agent.state.p_vel]
-            # # give listener locations of all agents
-            # # obs += [a.state.p_pos for a in world.agents]
-            # # give listener locations of all landmarks
-            # obs += [l.state.p_pos for l in world.landmarks]
             return np.concatenate(obs)
         else:  # speaker
             obs = []
@@ -136,15 +129,4 @@ class Scenario(BaseScenario):
             obs += [agent.listen_ind == np.arange(len(world.listeners))]
             # speaker gets position of listener and goal
             obs += [agent.goal_a.state.p_pos, agent.goal_b.state.p_pos]
-
-            # # give speaker index of their listener
-            # # obs += [agent.listen_ind == np.arange(len(world.listeners))]
-            # # # give speaker all communications
-            # # obs += [speaker.state.c for speaker in world.speakers]
-            # # give speaker their goal color
-            # obs += [agent.goal_b.color]
-            # # give speaker their listener's position
-            # obs += [agent.goal_a.state.p_pos]
-            #
-            # obs += [speaker.state.c for speaker in world.speakers]
             return np.concatenate(obs)

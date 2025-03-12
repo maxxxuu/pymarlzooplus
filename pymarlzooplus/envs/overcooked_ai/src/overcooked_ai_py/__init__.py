@@ -1,7 +1,6 @@
-# from gym.envs.registration import register
 from gymnasium import register
 
 register(
     id="Overcooked-v0",
-    entry_point="overcooked_ai_py.mdp.overcooked_env:Overcooked",
+    entry_point="pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.mdp.overcooked_env:Overcooked",
 )

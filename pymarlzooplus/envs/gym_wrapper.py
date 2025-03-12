@@ -1,5 +1,4 @@
 import random
-
 from typing import Any, Dict, Tuple
 
 import numpy as np
@@ -9,7 +8,7 @@ from gymnasium.spaces import flatdim
 from gymnasium.wrappers import TimeLimit as GymTimeLimit
 from gymnasium.utils.step_api_compatibility import step_api_compatibility
 
-from smac.env import MultiAgentEnv
+from pymarlzooplus.envs.multiagentenv import MultiAgentEnv
 
 
 class TimeLimit(GymTimeLimit):
@@ -82,6 +81,11 @@ class FlattenObservation(ObservationWrapper):
 class _GymmaWrapper(MultiAgentEnv):
     def __init__(self, key, time_limit=None, seed=1, **kwargs):
 
+        # Keep the 'render' argument, and delete it from 'kwargs'
+        # since the environment does not accept such an argument
+        self.render_bool = kwargs['render']
+        del kwargs['render']
+
         # Check time_limit consistency
         if 'lbforaging' in key:
             if time_limit is None:
@@ -100,33 +104,22 @@ class _GymmaWrapper(MultiAgentEnv):
         # Fix rware v1 key
         if 'rware' in key and 'v1' in key:
             assert ':' in key, f"key: {key}"
-            key = key.split(':')[0] + '_v1:' + key.split(':')[1]
+            key = 'pymarlzooplus.envs.robotics_warehouse_v1.rware_v1:' + key.split(':')[1]
 
         # Fix lbforaging v2 key
         if 'lbforaging' in key and 'v2' in key:
             assert ':' in key, f"key: {key}"
-            key = key.split(':')[0] + '_v2:' + key.split(':')[1]
+            key = 'pymarlzooplus.envs.lb_foraging_v2.lbforaging_v2:' + key.split(':')[1]
+
+        # Fix mpe key
+        if 'mpe' in key:
+            assert ':' in key, f"key: {key}"
+            key = 'pymarlzooplus.envs.multiagent_particle_envs.mpe:' + key.split(':')[1]
 
         # Wrappers
         self.key = key
         self.episode_limit = time_limit
-        try:
-            self.original_env = gym.make(f"{key}", **kwargs)
-        except ModuleNotFoundError:
-            env_to_print = ""
-            if "mpe" in key:
-                env_to_print = "MPE"
-            elif "rware" in key and 'v1' in key:
-                env_to_print = "RWARE_v1"
-            elif "rware" in key and 'v1' not in key:
-                env_to_print = "RWARE"
-            elif "lbforaging" in key and 'v2' in key:
-                env_to_print = "LBF_v2"
-            elif "lbforaging" in key and 'v2' not in key:
-                env_to_print = "LBF"
-            raise ModuleNotFoundError(
-                f"{env_to_print} is not installed!\nPlease follow the instructions in README file."
-            )
+        self.original_env = gym.make(f"{key}", **kwargs)
         self.timelimit_env = TimeLimit(self.original_env, max_episode_steps=time_limit)
         self._env = FlattenObservation(self.timelimit_env)
 
@@ -159,6 +152,9 @@ class _GymmaWrapper(MultiAgentEnv):
 
     def step(self, actions):
         """ Returns reward, terminated, info """
+
+        if self.render_bool is True:
+            self.render()
 
         actions = [int(a) for a in actions]
         actions = self.filter_actions(actions)

@@ -3,9 +3,9 @@ import random
 
 import numpy as np
 
-from overcooked_ai_py.mdp.actions import Action, Direction
-from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld, Recipe
-from overcooked_ai_py.utils import rnd_int_uniform, rnd_uniform
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.mdp.actions import Action, Direction
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld, Recipe
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.utils import rnd_int_uniform, rnd_uniform
 
 EMPTY = " "
 COUNTER = "X"
@@ -116,7 +116,7 @@ class LayoutGenerator(object):
         outer_shape: outer shape of the environment
         mdp_params_schedule_fn: the schedule for varying mdp params
         """
-        # if outer_shape is not defined, we have to be using one of the defualt layout from names bank
+        # if outer_shape is not defined, we have to be using one of the default layouts from the names' bank
         if outer_shape is None:
             assert type(mdp_params) is dict and "layout_name" in mdp_params
             mdp = OvercookedGridworld.from_layout_name(**mdp_params)
@@ -217,7 +217,7 @@ class LayoutGenerator(object):
     @staticmethod
     def add_generated_mdp_params_orders(mdp_params):
         """
-        adds generated parameters (i.e. generated orders) to mdp_params,
+        adds generated parameters (i.e., generated orders) to mdp_params,
         returns onchanged copy of mdp_params when there is no "generate_all_orders" and "generate_bonus_orders" keys inside mdp_params
         """
         mdp_params = copy.deepcopy(mdp_params)
@@ -294,14 +294,15 @@ class LayoutGenerator(object):
         )
         return OvercookedGridworld.from_grid(mdp_grid, base_param)
 
+    @staticmethod
     def padded_grid_to_layout_grid(
-        self, padded_grid, start_positions, display=False
+            padded_grid, start_positions, display=False
     ):
         if display:
             print("Generated layout")
             print(padded_grid)
 
-        # Start formatting to actual OvercookedGridworld input type
+        # Start formatting to the actual OvercookedGridworld input type
         mdp_grid = padded_grid.convert_to_string()
 
         for i, pos in enumerate(start_positions):
@@ -328,7 +329,8 @@ class LayoutGenerator(object):
 
         return padded_grid
 
-    def dig_space_with_disjoint_sets(self, grid, prop_empty):
+    @staticmethod
+    def dig_space_with_disjoint_sets(grid, prop_empty):
         dsets = DisjointSets([])
         while not (
             grid.proportion_empty() > prop_empty and dsets.num_sets == 1
@@ -349,9 +351,9 @@ class LayoutGenerator(object):
         grid = Grid(shape)
         self.dig_space_with_fringe_expansion(grid, prop_empty)
         self.add_features(grid)
-        # print(grid)
 
-    def dig_space_with_fringe_expansion(self, grid, prop_empty=0.1):
+    @staticmethod
+    def dig_space_with_fringe_expansion(grid, prop_empty=0.1):
         starting_location = grid.get_random_interior_location()
         fringe = Fringe(grid)
         fringe.add(starting_location)
@@ -364,8 +366,9 @@ class LayoutGenerator(object):
                 if grid.is_valid_dig_location(location):
                     fringe.add(location)
 
+    @staticmethod
     def add_features(
-        self, grid, prop_features=0, feature_types=DEFAULT_FEATURE_TYPES
+            grid, prop_features=0, feature_types=DEFAULT_FEATURE_TYPES
     ):
         """
         Places one round of basic features and then adds random features
@@ -387,7 +390,8 @@ class LayoutGenerator(object):
                 grid.add_feature(location, random_feature)
             num_features_placed += 1
 
-    def get_random_starting_positions(self, grid, divider_x=None):
+    @staticmethod
+    def get_random_starting_positions(grid, divider_x=None):
         pos0 = grid.get_random_empty_location()
         pos1 = grid.get_random_empty_location()
         # NOTE: Assuming more than 1 empty location, hacky code

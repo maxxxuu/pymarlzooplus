@@ -8,8 +8,8 @@ import gymnasium as gym
 from gymnasium import spaces
 from gymnasium.utils import seeding
 
-from capture_target_ai_py import rendering
-from capture_target_ai_py.assets import TRANSLATION_TABLE, ACTIONS, DIRECTION
+from pymarlzooplus.envs.capture_target.src.capture_target_ai_py import rendering
+from pymarlzooplus.envs.capture_target.src.capture_target_ai_py.assets import TRANSLATION_TABLE, ACTIONS, DIRECTION
 
 
 class CaptureTarget(gym.Env):

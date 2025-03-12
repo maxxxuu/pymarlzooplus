@@ -1,8 +1,9 @@
 env: "pressureplate"
 
 env_args:
-  key: null # 3 options from gym implemented envs: "pressureplate-linear-4p-v0", "pressureplate-linear-5p-v0", "pressureplate-linear-6p-v0", where the number of agents are 4, 5, or 6, respectively.
+  key: null # 3 options from gym implemented envs: "pressureplate-linear-4p-v0", "pressureplate-linear-5p-v0", "pressureplate-linear-6p-v0", where the number of agents is 4, 5, or 6, respectively.
   time_limit: 500 # Episode horizon. Set by default to 500 by EpisodeRunner wrapper
+  render: False
 
 test_greedy: True
 test_nepisode: 10 # 100

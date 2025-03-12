@@ -1,7 +1,7 @@
 import pygame
 from pygame.locals import DOUBLEBUF, HWSURFACE, QUIT, RESIZABLE, VIDEORESIZE
 
-from overcooked_ai_py.utils import load_from_json
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.utils import load_from_json
 
 
 def run_static_resizeable_window(surface, fps=30):
@@ -34,14 +34,14 @@ def run_static_resizeable_window(surface, fps=30):
     except:
         pygame.display.quit()
         pygame.quit()
-        if event.type != QUIT:  # if user meant to quit error does not matter
+        if event.type != QUIT:  # if user meant to quit, error does not matter
             raise
 
 
 def vstack_surfaces(surfaces, background_color=None):
     """
-    stack surfaces vertically (on y axis)
-    if surfaces have different width fill remaining area with background color
+    stack surfaces vertically (on y-axis)
+    if surfaces have different width fill the remaining area with background color
     """
     result_width = max(surface.get_width() for surface in surfaces)
     result_height = sum(surface.get_height() for surface in surfaces)
@@ -56,7 +56,7 @@ def vstack_surfaces(surfaces, background_color=None):
 
 
 def scale_surface_by_factor(surface, scale_by_factor):
-    """return scaled input surfacem (with size multiplied by scale_by_factor param)
+    """return scaled input surface (with size multiplied by scale_by_factor param)
     scales also content of the surface
     """
     unscaled_size = surface.get_size()
@@ -65,7 +65,10 @@ def scale_surface_by_factor(surface, scale_by_factor):
 
 
 def blit_on_new_surface_of_size(surface, size, background_color=None):
-    """blit surface on new surface of given size of surface (with no resize of its content), filling not covered parts of result area with background color"""
+    """
+    blit surface on new surface of given size of surface (with no resize of its content),
+    filling not covered parts of result area with background color
+    """
     result_surface = pygame.surface.Surface(size)
     if background_color:
         result_surface.fill(background_color)
@@ -74,7 +77,7 @@ def blit_on_new_surface_of_size(surface, size, background_color=None):
 
 
 class MultiFramePygameImage:
-    """use to read frames of images from overcooked-demo repo easly"""
+    """use to read frames of images from overcooked-demo repo easily"""
 
     def __init__(self, img_path, frames_path):
         self.image = pygame.image.load(img_path)

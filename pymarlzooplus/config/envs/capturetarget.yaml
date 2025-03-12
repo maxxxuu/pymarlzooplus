@@ -1,15 +1,16 @@
 env: "capturetarget"
 
 env_args:
-  key: null # Options: CaptureTarget-6x6-1t-2a-v0
+  key: null  # Options: CaptureTarget-6x6-1t-2a-v0
   seed: null  # Episode horizon
-  time_limit: 60 # Maximal steps for termination
-  obs_one_hot: False # Whether to represent observation as one-hot vector
-  intermediate_r: False # Not implemented
-  target_flick_prob: 0.3 # The probability of not observing the target
-  tgt_avoid_agent: True # Whether target keeps moving away from agents.
-  tgt_trans_noise: 0.0 # Target's transition probability for arriving an unintended adjacent cell
-  agent_trans_noise: 0.1 # Agent's transition probability for arriving an unintended adjacent cell
+  time_limit: 60  # Maximal steps for termination
+  obs_one_hot: False  # Whether to represent observation as one-hot vector
+  intermediate_r: False  # Not implemented
+  target_flick_prob: 0.3  # The probability of not observing the target
+  tgt_avoid_agent: True  # Whether target keeps moving away from agents.
+  tgt_trans_noise: 0.0  # Target's transition probability for arriving an unintended adjacent cell
+  agent_trans_noise: 0.1  # Agent's transition probability for arriving an unintended adjacent cell
+  render: False  # Whether to render the environment or not
 
 test_greedy: True
 test_nepisode: 100

@@ -12,7 +12,7 @@ from pathlib import Path
 
 import numpy as np
 
-from overcooked_ai_py.static import LAYOUTS_DIR
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.static import LAYOUTS_DIR
 
 # I/O
 
@@ -121,7 +121,7 @@ def std_err(lst):
 
 
 def mean_and_std_err(lst):
-    "Mean and standard error of list"
+    "Mean and standard error of the list"
     mu = np.mean(lst)
     return mu, std_err(lst)
 
@@ -187,7 +187,7 @@ def rm_idx_from_dict(d, idx):
     return new_d
 
 
-def take_indexes_from_dict(d, indices, keys_to_ignore=[]):
+def take_indexes_from_dict(d, indices, keys_to_ignore=()):
     """
     Takes in a dictionary with lists as values, and returns
     a dictionary with lists as values, but with subsampled indices

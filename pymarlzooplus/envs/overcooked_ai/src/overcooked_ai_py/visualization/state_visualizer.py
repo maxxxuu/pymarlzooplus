@@ -4,8 +4,8 @@ import os
 
 import pygame
 
-from overcooked_ai_py.mdp.actions import Action, Direction
-from overcooked_ai_py.mdp.layout_generator import (
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.mdp.actions import Action, Direction
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.mdp.layout_generator import (
     COUNTER,
     DISH_DISPENSER,
     EMPTY,
@@ -14,20 +14,20 @@ from overcooked_ai_py.mdp.layout_generator import (
     SERVING_LOC,
     TOMATO_DISPENSER,
 )
-from overcooked_ai_py.static import FONTS_DIR, GRAPHICS_DIR
-from overcooked_ai_py.utils import (
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.static import FONTS_DIR, GRAPHICS_DIR
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.utils import (
     classproperty,
     cumulative_rewards_from_rew_list,
     generate_temporary_file_path,
 )
-from overcooked_ai_py.visualization.pygame_utils import (
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.visualization.pygame_utils import (
     MultiFramePygameImage,
     blit_on_new_surface_of_size,
     run_static_resizeable_window,
     scale_surface_by_factor,
     vstack_surfaces,
 )
-from overcooked_ai_py.visualization.visualization_utils import (
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.visualization.visualization_utils import (
     show_image_in_ipython,
     show_ipython_images_slider,
 )
@@ -67,7 +67,7 @@ class StateVisualizer:
         "is_rendering_hud": True,
         "hud_font_size": 10,
         "hud_font_path": roboto_path,
-        "hud_system_font_name": None,  # if set to None use hud_font_path
+        "hud_system_font_name": None,  # if set to None, use hud_font_path
         "hud_font_color": (255, 255, 255),  # white
         "hud_data_default_key_order": [
             "all_orders",
@@ -84,7 +84,7 @@ class StateVisualizer:
         "hud_order_size": 15,
         "is_rendering_cooking_timer": True,
         "show_timer_when_cooked": True,
-        "cooking_timer_font_size": 20,  # # if set to None use cooking_timer_font_path
+        "cooking_timer_font_size": 20,  # if set to None, use cooking_timer_font_path
         "cooking_timer_font_path": roboto_path,
         "cooking_timer_system_font_name": None,
         "cooking_timer_font_color": (255, 0, 0),  # red
@@ -112,7 +112,7 @@ class StateVisualizer:
         pygame.font.init()
         if not hasattr(self, "_font"):
             self._fonts = {}
-        # initializing fonts only if needed because it can take a quite long time,
+        # initializing fonts only if needed because it can take quite a long time,
         #   see https://pygame.readthedocs.io/en/latest/4_text/text.html#initialize-a-font
         if self.is_rendering_hud:
             self.hud_font = self._init_font(
@@ -376,14 +376,14 @@ class StateVisualizer:
         get x and y coordinates in tiles, returns x and y coordinates in pixels
         """
         (x, y) = position
-        return (self.UNSCALED_TILE_SIZE * x, self.UNSCALED_TILE_SIZE * y)
+        return self.UNSCALED_TILE_SIZE * x, self.UNSCALED_TILE_SIZE * y
 
     def _position_in_scaled_pixels(self, position):
         """
         get x and y coordinates in tiles, returns x and y coordinates in pixels
         """
         (x, y) = position
-        return (self.tile_size * x, self.tile_size * y)
+        return self.tile_size * x, self.tile_size * y
 
     def _render_players(self, surface, players):
         def chef_frame_name(direction_name, held_object_name):
@@ -478,7 +478,7 @@ class StateVisualizer:
                         obj.position
                     )
 
-                    # calculate font position to be in center on x axis, and 0.9 from top on y axis
+                    # calculate font position to be in a center on x-axis, and 0.9 from top on y-axis
                     font_position = (
                         tile_pos_x
                         + int(
@@ -502,7 +502,8 @@ class StateVisualizer:
 
         return sorted(hud_data.items(), key=default_order_then_alphabetic)
 
-    def _key_to_hud_text(self, key):
+    @staticmethod
+    def _key_to_hud_text(key):
         return key.replace("_", " ").title() + ": "
 
     def _render_hud_data(self, surface, hud_data):
@@ -514,7 +515,7 @@ class StateVisualizer:
 
         def hud_recipes_position(text_surface, text_surface_position):
             (text_surface_x, text_surface_y) = text_surface_position
-            return (text_surface_x + text_surface.get_width(), text_surface_y)
+            return text_surface_x + text_surface.get_width(), text_surface_y
 
         def get_hud_recipes_surface(orders_dicts):
             order_width = order_height = self.hud_order_size
@@ -667,7 +668,7 @@ class StateVisualizer:
         rescaled_arrow = pygame.transform.scale(
             self.ARROW_IMG, (self.tile_size, self.tile_size)
         )
-        # divide width by math.sqrt(2) to always fit both interact icon and stay icon into single tile
+        # divide width by math.sqrt(2) to always fit both interacted icon and stay icon into a single tile
         rescaled_interact = pygame.transform.scale(
             self.INTERACT_IMG,
             (int(self.tile_size / math.sqrt(2)), self.tile_size),

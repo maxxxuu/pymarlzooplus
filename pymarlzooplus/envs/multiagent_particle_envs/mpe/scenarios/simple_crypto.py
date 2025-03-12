@@ -6,15 +6,15 @@ adversary to goal. Adversary is rewarded for its distance to the goal.
 
 
 import numpy as np
-from mpe.core import World, Agent, Landmark
-from mpe.scenario import BaseScenario
-import random
+from pymarlzooplus.envs.multiagent_particle_envs.mpe.core import World, Agent, Landmark
+from pymarlzooplus.envs.multiagent_particle_envs.mpe.scenario import BaseScenario
 
 
 class CryptoAgent(Agent):
     def __init__(self):
         super(CryptoAgent, self).__init__()
         self.key = None
+
 
 class Scenario(BaseScenario):
 
@@ -42,7 +42,6 @@ class Scenario(BaseScenario):
         # make initial conditions
         self.reset_world(world)
         return world
-
 
     def reset_world(self, world):
         # random properties for agents
@@ -74,28 +73,31 @@ class Scenario(BaseScenario):
             landmark.state.p_pos = world.np_random.uniform(-1, +1, world.dim_p)
             landmark.state.p_vel = np.zeros(world.dim_p)
 
-
-    def benchmark_data(self, agent, world):
+    @staticmethod
+    def benchmark_data(agent, world):
         # returns data for benchmarking purposes
-        return (agent.state.c, agent.goal_a.color)
+        return agent.state.c, agent.goal_a.color
 
     # return all agents that are not adversaries
-    def good_listeners(self, world):
+    @staticmethod
+    def good_listeners(world):
         return [agent for agent in world.agents if not agent.adversary and not agent.speaker]
 
     # return all agents that are not adversaries
-    def good_agents(self, world):
+    @staticmethod
+    def good_agents(world):
         return [agent for agent in world.agents if not agent.adversary]
 
     # return all adversarial agents
-    def adversaries(self, world):
+    @staticmethod
+    def adversaries(world):
         return [agent for agent in world.agents if agent.adversary]
 
     def reward(self, agent, world):
         return self.adversary_reward(agent, world) if agent.adversary else self.agent_reward(agent, world)
 
     def agent_reward(self, agent, world):
-        # Agents rewarded if Bob can reconstruct message, but adversary (Eve) cannot
+        # Agents rewarded if Bob can reconstruct the message, but adversary (Eve) cannot
         good_listeners = self.good_listeners(world)
         adversaries = self.adversaries(world)
         good_rew = 0
@@ -113,15 +115,16 @@ class Scenario(BaseScenario):
                 adv_rew += adv_l1
         return adv_rew + good_rew
 
-    def adversary_reward(self, agent, world):
-        # Adversary (Eve) is rewarded if it can reconstruct original goal
+    @staticmethod
+    def adversary_reward(agent, world):
+        # Adversary (Eve) is rewarded if it can reconstruct the original goal
         rew = 0
         if not (agent.state.c == np.zeros(world.dim_c)).all():
             rew -= np.sum(np.square(agent.state.c - agent.goal_a.color))
         return rew
 
-
-    def observation(self, agent, world):
+    @staticmethod
+    def observation(agent, world):
         # goal color
         goal_color = np.zeros(world.dim_color)
         if agent.goal_a is not None:

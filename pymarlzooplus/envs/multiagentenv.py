@@ -1,4 +1,13 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+
 class MultiAgentEnv(object):
+
+    def __init__(self):
+        self.episode_limit = None
+        self.n_agents = None
 
     def step(self, actions):
         """ Returns reward, terminated, info """
@@ -17,13 +26,15 @@ class MultiAgentEnv(object):
         raise NotImplementedError
 
     def get_state(self):
+        """Returns the global state."""
         raise NotImplementedError
 
     def get_state_size(self):
-        """ Returns the shape of the state"""
+        """Returns the size of the global state."""
         raise NotImplementedError
 
     def get_avail_actions(self):
+        """Returns the available actions of all agents in a list."""
         raise NotImplementedError
 
     def get_avail_agent_actions(self, agent_id):
@@ -49,6 +60,7 @@ class MultiAgentEnv(object):
         raise NotImplementedError
 
     def save_replay(self):
+        """Save a replay."""
         raise NotImplementedError
 
     def get_env_info(self):

@@ -1,6 +1,6 @@
 import numpy as np
-from mpe.core import World, Agent, Landmark
-from mpe.scenario import BaseScenario
+from pymarlzooplus.envs.multiagent_particle_envs.mpe.core import World, Agent, Landmark
+from pymarlzooplus.envs.multiagent_particle_envs.mpe.scenario import BaseScenario
 
 
 class Scenario(BaseScenario):
@@ -54,7 +54,8 @@ class Scenario(BaseScenario):
             landmark.state.p_pos = world.np_random.uniform(-1, +1, world.dim_p)
             landmark.state.p_vel = np.zeros(world.dim_p)
 
-    def benchmark_data(self, agent, world):
+    @staticmethod
+    def benchmark_data(agent, world):
         # returns data for benchmarking purposes
         if agent.adversary:
             return np.sum(np.square(agent.state.p_pos - agent.goal_a.state.p_pos))
@@ -66,11 +67,13 @@ class Scenario(BaseScenario):
             return tuple(dists)
 
     # return all agents that are not adversaries
-    def good_agents(self, world):
+    @staticmethod
+    def good_agents(world):
         return [agent for agent in world.agents if not agent.adversary]
 
     # return all adversarial agents
-    def adversaries(self, world):
+    @staticmethod
+    def adversaries(world):
         return [agent for agent in world.agents if agent.adversary]
 
     def reward(self, agent, world):
@@ -106,7 +109,8 @@ class Scenario(BaseScenario):
                 [np.sqrt(np.sum(np.square(a.state.p_pos - a.goal_a.state.p_pos))) for a in good_agents])
         return pos_rew + adv_rew
 
-    def adversary_reward(self, agent, world):
+    @staticmethod
+    def adversary_reward(agent, world):
         # Rewarded based on proximity to the goal landmark
         shaped_reward = True
         if shaped_reward:  # distance-based reward
@@ -117,8 +121,8 @@ class Scenario(BaseScenario):
                 adv_rew += 5
             return adv_rew
 
-
-    def observation(self, agent, world):
+    @staticmethod
+    def observation(agent, world):
         # get positions of all entities in this agent's reference frame
         entity_pos = []
         for entity in world.landmarks:

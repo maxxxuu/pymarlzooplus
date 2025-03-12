@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from gymnasium.utils import seeding
 
-from smac.env import MultiAgentEnv
+from pymarlzooplus.envs.multiagentenv import MultiAgentEnv
 from pymarlzooplus.utils.image_encoder import ImageEncoder
 from pymarlzooplus.utils.env_utils import pettingzoo_make
 

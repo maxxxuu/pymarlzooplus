@@ -116,14 +116,6 @@ class Viewer:
         self.isopen = False
         exit()
 
-    def set_bounds(self, left, right, bottom, top):
-        assert right > left and top > bottom
-        scalex = self.width / (right - left)
-        scaley = self.height / (top - bottom)
-        self.transform = Transform(
-            translation=(-left * scalex, -bottom * scaley), scale=(scalex, scaley)
-        )
-
     def render(self, env, return_rgb_array=False):
         glClearColor(0.65, 0.65, 0.65, 0.65)
         self.window.clear()
@@ -202,8 +194,6 @@ class Viewer:
         for p in players:
             p.update(scale=self.grid_size / p.width)
         batch.draw()
-        # for p in env.agents:
-        #     self._draw_badge(*(p.x, p.y), p.level)
 
     def _draw_walls(self, env):
         walls = []
@@ -232,7 +222,6 @@ class Viewer:
             for j in range(len(door.x)):
                 row, col = door.y[j], door.x[j]
 
-                # if not len(door.x) > 1:
                 if not door.open:
                     doors.append(
                         pyglet.sprite.Sprite(

@@ -1,6 +1,7 @@
 import numpy as np
-from mpe.core import World, Agent, Landmark
-from mpe.scenario import BaseScenario
+from pymarlzooplus.envs.multiagent_particle_envs.mpe.core import World, Agent, Landmark
+from pymarlzooplus.envs.multiagent_particle_envs.mpe.scenario import BaseScenario
+
 
 class Scenario(BaseScenario):
     def make_world(self):
@@ -28,7 +29,7 @@ class Scenario(BaseScenario):
         for agent in world.agents:
             agent.goal_a = None
             agent.goal_b = None
-        # want other agent to go to the goal landmark
+        # want the other agent to go to the goal landmark
         world.agents[0].goal_a = world.agents[1]
         world.agents[0].goal_b = world.np_random.choice(world.landmarks)
         world.agents[1].goal_a = world.agents[0]
@@ -52,13 +53,15 @@ class Scenario(BaseScenario):
             landmark.state.p_pos = world.np_random.uniform(-1,+1, world.dim_p)
             landmark.state.p_vel = np.zeros(world.dim_p)
 
-    def reward(self, agent, world):
+    @staticmethod
+    def reward(agent, world):
         if agent.goal_a is None or agent.goal_b is None:
             return 0.0
         dist2 = np.sum(np.square(agent.goal_a.state.p_pos - agent.goal_b.state.p_pos))
         return -dist2
 
-    def observation(self, agent, world):
+    @staticmethod
+    def observation(agent, world):
         # goal color
         goal_color = [np.zeros(world.dim_color), np.zeros(world.dim_color)]
         if agent.goal_b is not None:

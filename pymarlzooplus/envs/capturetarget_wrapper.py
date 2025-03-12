@@ -6,7 +6,7 @@ from gymnasium.utils.step_api_compatibility import step_api_compatibility
 from gymnasium.wrappers import TimeLimit as GymTimeLimit
 from gymnasium import register
 
-from smac.env import MultiAgentEnv
+from pymarlzooplus.envs.multiagentenv import MultiAgentEnv
 
 
 class TimeLimitCT(GymTimeLimit):
@@ -54,16 +54,15 @@ class _CaptureTargetWrapper(MultiAgentEnv):
         kwargs['terminate_step'] = time_limit
         del kwargs['time_limit']
 
+        # Keep the 'render' argument, and delete it from 'kwargs'
+        # since the environment does not accept such an argument
+        self.render_bool = kwargs['render']
+        del kwargs['render']
+
         self.key = key
         self._seed = seed
 
-        # Import and register
-        try:
-            from capture_target_ai_py.environment import CaptureTarget
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError(
-                "Capture Target is not installed!\nPlease follow the instructions in README file."
-            )
+        # Gymnasium registration
         self.gym_registration()
 
         # Keep the original environment
@@ -136,7 +135,7 @@ class _CaptureTargetWrapper(MultiAgentEnv):
     def gym_registration():
         register(
             id="CaptureTarget-6x6-1t-2a-v0",
-            entry_point="capture_target_ai_py.environment:CaptureTarget",
+            entry_point="pymarlzooplus.envs.capture_target.src.capture_target_ai_py.environment:CaptureTarget",
             kwargs={
                 "n_target": 1,
                 "n_agent": 2,
@@ -146,6 +145,9 @@ class _CaptureTargetWrapper(MultiAgentEnv):
 
     def step(self, actions):
         """ Returns reward, terminated, info """
+
+        if self.render_bool is True:
+            self.render()
 
         # From torch.tensor to int
         actions = [int(a) for a in actions]

@@ -1,12 +1,12 @@
 import pytest
 import numpy as np
-import lbforaging
-from lbforaging.foraging.environment import Action
-import gym
+from pymarlzooplus.envs.lb_foraging_v2.lbforaging_v2.foraging.environment import Action
+import gymnasium as gym
 
 
 def manhattan_distance(x,y):
-    return sum(abs(a-b) for a,b in zip(x,y))
+    return sum(abs(a-b) for a, b in zip(x, y))
+
 
 @pytest.fixture
 def simple2p1f():
@@ -27,6 +27,7 @@ def simple2p1f():
     env._gen_valid_moves()
     return env
 
+
 @pytest.fixture
 def simple2p1f_sight1():
     env = gym.make("Foraging-8x8-2p-1f-v2", sight=1)
@@ -45,6 +46,7 @@ def simple2p1f_sight1():
     env.players[1].level = 2
     env._gen_valid_moves()
     return env
+
 
 @pytest.fixture
 def simple2p1f_sight2():
@@ -103,14 +105,15 @@ def test_food_spawning_0():
         # we should have 2 foods
         assert len(foods) == 2
 
-        #foods must not be within 2 steps of each other
+        # foods must not be within 2 steps of each other
         assert manhattan_distance(foods[0], foods[1]) > 2
 
-        # food cannot be placed in first or last col/row
+        # food cannot be placed in the first or last col/row
         assert foods[0][0] not in [0, 7]
         assert foods[0][1] not in [0, 7]
         assert foods[1][0] not in [0, 7]
         assert foods[1][1] not in [0, 7]
+
 
 def test_food_spawning_1():
     env = gym.make("Foraging-8x8-2p-3f-v2")
@@ -122,20 +125,23 @@ def test_food_spawning_1():
         # we should have 3 foods
         assert len(foods) == 3
 
-        #foods must not be within 2 steps of each other
+        # foods must not be within 2 steps of each other
         assert manhattan_distance(foods[0], foods[1]) > 2
         assert manhattan_distance(foods[0], foods[2]) > 2
         assert manhattan_distance(foods[1], foods[2]) > 2
+
 
 def test_reward_0(simple2p1f):
     _, rewards, _, _ = simple2p1f.step([5, 5])
     assert rewards[0] == 0.5
     assert rewards[1] == 0.5
 
+
 def test_reward_1(simple2p1f):
     _, rewards, _, _ = simple2p1f.step([0, 5])
     assert rewards[0] == 0
     assert rewards[1] == 1
+
 
 def test_partial_obs_1(simple2p1f_sight1):
     env = simple2p1f_sight1
@@ -143,6 +149,7 @@ def test_partial_obs_1(simple2p1f_sight1):
 
     assert obs[0][-2] == -1
     assert obs[1][-2] == -1
+
 
 def test_partial_obs_2(simple2p1f_sight2):
     env = simple2p1f_sight2
@@ -155,6 +162,7 @@ def test_partial_obs_2(simple2p1f_sight2):
 
     assert obs[0][-2] == -1
     assert obs[1][-2] == -1
+
 
 def test_partial_obs_3(simple2p1f):
     env = simple2p1f

@@ -4,6 +4,7 @@ env_args:
   key: null
   time_limit: 500 # # Episode horizon, by default 500
   reward_type: null # Options: "shaped", "sparse"
+  render: False
 
 test_greedy: True
 test_nepisode: 10 # 100

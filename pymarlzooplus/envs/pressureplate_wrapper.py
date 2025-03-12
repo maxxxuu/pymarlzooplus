@@ -7,7 +7,7 @@ import gymnasium as gym
 from gymnasium.utils.step_api_compatibility import step_api_compatibility
 from gymnasium.wrappers import TimeLimit as GymTimeLimit
 
-from smac.env import MultiAgentEnv
+from pymarlzooplus.envs.multiagentenv import MultiAgentEnv
 
 
 class TimeLimitPressurePlate(GymTimeLimit):
@@ -51,6 +51,7 @@ class _PressurePlateWrapper(MultiAgentEnv):
             key,
             time_limit=500,
             seed=1,
+            render=False
     ):
 
         # Check key validity
@@ -62,6 +63,7 @@ class _PressurePlateWrapper(MultiAgentEnv):
 
         self.key = key
         self._seed = seed
+        self.render_bool = render
 
         # Placeholders
         self.original_env = None
@@ -72,14 +74,8 @@ class _PressurePlateWrapper(MultiAgentEnv):
         self.observation_space = None
         self.action_space = None
 
-        ## Do the "gymnasium make"
-        # base env sourced by gym.make with all its args
-        try:
-            from pressureplate.environment import PressurePlate
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError(
-                "Pressure Plare is not installed!\nPlease follow the instructions in README file."
-            )
+        ## We import the environment to do the "gymnasium make" base env sourced by gym.make with all its args
+        from pymarlzooplus.envs.pressureplate_ai.pressureplate.environment import PressurePlate
         self.original_env = gym.make(f"{key}")
         if hasattr(self.original_env.unwrapped, 'seed'):
             self._seed = self.original_env.unwrapped.seed(self._seed)
@@ -120,6 +116,9 @@ class _PressurePlateWrapper(MultiAgentEnv):
 
     def step(self, actions):
         """ Returns reward, terminated, info """
+
+        if self.render_bool is True:
+            self.render()
 
         # From torch.tensor to int
         actions = [int(a) for a in actions]

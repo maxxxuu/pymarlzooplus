@@ -1,8 +1,7 @@
 """
-2D rendering of the level based foraging domain
+2D rendering of the level-based foraging domain
 """
 
-import math
 import os
 import sys
 

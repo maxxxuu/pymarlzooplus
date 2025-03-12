@@ -5,6 +5,7 @@ env_args:
   seed: null
   time_limit: 60 # Maximal steps for termination
   random_init: True # random initial position of agents
+  render: False
 
 test_greedy: True
 test_nepisode: 100

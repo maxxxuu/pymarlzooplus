@@ -35,7 +35,7 @@ class SearchTree(object):
 
     def A_star_graph_search(self, info=False):
         """
-        Performs a A* Graph Search to find a path to a goal state
+        Performs an A* Graph Search to find a path to a goal state
         """
         start_time = time.time()
         iter_count = 0
@@ -168,7 +168,7 @@ class Graph(object):
     def __init__(self, dense_adjacency_matrix, encoder, decoder, debug=False):
         """
         Each graph node is distinguishable by a key, encoded by the encoder into
-        a index that corresponds to that node in the adjacency matrix defining the graph.
+        an index that corresponds to that node in the adjacency matrix defining the graph.
 
         Arguments:
             dense_adjacency_matrix: 2D array with distances between nodes
@@ -198,7 +198,8 @@ class Graph(object):
             self._ccs = self._get_connected_components()
             return self._ccs
 
-    def shortest_paths(self, dense_adjacency_matrix):
+    @staticmethod
+    def shortest_paths(dense_adjacency_matrix):
         """
         Uses scipy's implementation of shortest paths to compute a distance
         matrix between all elements of the graph
@@ -238,7 +239,7 @@ class Graph(object):
     def get_node_path(self, start_node, goal_node):
         """
         Given a start node key and a goal node key, returns a list of
-        node keys that trace a shortest path from start to goal.
+        node keys that trace the shortest path from start to goal.
         """
         start_index, goal_index = (
             self._encoder[start_node],
@@ -251,7 +252,7 @@ class Graph(object):
     def _get_node_index_path(self, start_index, goal_index):
         """
         Given a start node index and a goal node index, returns a list of
-        node indices that trace a shortest path from start to goal.
+        node indices that trace the shortest path from start to goal.
         """
         assert start_index is not None
 
@@ -322,7 +323,7 @@ class PriorityQueue:
     """Taken from UC Berkeley's CS188 project utils.
 
     Implements a priority queue data structure. Each inserted item
-    has a priority associated with it and the client is usually interested
+    has a priority associated with it, and the client is usually interested
     in quick retrieval of the lowest-priority item in the queue. This
     data structure allows O(1) access to the lowest-priority item.
 

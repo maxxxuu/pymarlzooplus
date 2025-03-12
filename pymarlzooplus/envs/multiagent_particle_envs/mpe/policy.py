@@ -1,6 +1,7 @@
 import numpy as np
 from pyglet.window import key
 
+
 # individual agent policy
 class Policy(object):
 
@@ -9,6 +10,7 @@ class Policy(object):
 
     def action(self, obs):
         raise NotImplementedError()
+
 
 # interactive policy based on keyboard input
 # hard-coded to deal only with movement, not communication
@@ -43,12 +45,13 @@ class InteractivePolicy(Policy):
 
     # keyboard event callbacks
     def key_press(self, k, mod):
-        if k==key.LEFT:  self.move[0] = True
-        if k==key.RIGHT: self.move[1] = True
-        if k==key.UP:    self.move[2] = True
-        if k==key.DOWN:  self.move[3] = True
+        if k == key.LEFT:  self.move[0] = True
+        if k == key.RIGHT: self.move[1] = True
+        if k == key.UP:    self.move[2] = True
+        if k == key.DOWN:  self.move[3] = True
+
     def key_release(self, k, mod):
-        if k==key.LEFT:  self.move[0] = False
-        if k==key.RIGHT: self.move[1] = False
-        if k==key.UP:    self.move[2] = False
-        if k==key.DOWN:  self.move[3] = False
+        if k == key.LEFT:  self.move[0] = False
+        if k == key.RIGHT: self.move[1] = False
+        if k == key.UP:    self.move[2] = False
+        if k == key.DOWN:  self.move[3] = False

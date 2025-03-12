@@ -1,6 +1,7 @@
 import numpy as np
-from mpe.core import World, Agent, Landmark
-from mpe.scenario import BaseScenario
+from pymarlzooplus.envs.multiagent_particle_envs.mpe.core import World, Agent, Landmark
+from pymarlzooplus.envs.multiagent_particle_envs.mpe.scenario import BaseScenario
+
 
 class Scenario(BaseScenario):
     def make_world(self):
@@ -39,7 +40,6 @@ class Scenario(BaseScenario):
         world.agents[0].goal_a = world.agents[1]
         world.agents[0].goal_b = world.np_random.choice(world.landmarks)
 
-
         # random properties for agents
         for i, agent in enumerate(world.agents):
             agent.color = np.array([0.25,0.25,0.25])               
@@ -60,15 +60,17 @@ class Scenario(BaseScenario):
 
     def benchmark_data(self, agent, world):
         # returns data for benchmarking purposes
-        return self.reward(agent, reward)
+        return self.reward(agent, world)
 
-    def reward(self, agent, world):
+    @staticmethod
+    def reward(agent, world):
         # squared distance from listener to landmark
         a = world.agents[0]
         dist2 = np.sum(np.square(a.goal_a.state.p_pos - a.goal_b.state.p_pos))
         return -dist2
 
-    def observation(self, agent, world):
+    @staticmethod
+    def observation(agent, world):
         # goal color
         goal_color = np.zeros(world.dim_color)
         if agent.goal_b is not None:

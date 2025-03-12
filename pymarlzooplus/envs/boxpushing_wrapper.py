@@ -6,7 +6,7 @@ from gymnasium.utils.step_api_compatibility import step_api_compatibility
 from gymnasium.wrappers import TimeLimit as GymTimeLimit
 from gymnasium import register
 
-from smac.env import MultiAgentEnv
+from pymarlzooplus.envs.multiagentenv import MultiAgentEnv
 
 
 class TimeLimitBP(GymTimeLimit):
@@ -54,16 +54,15 @@ class _BoxPushingWrapper(MultiAgentEnv):
         kwargs['terminate_step'] = time_limit
         del kwargs['time_limit']
 
+        # Keep the 'render' argument, and delete it from 'kwargs'
+        # since the environment does not accept such an argument
+        self.render_bool = kwargs['render']
+        del kwargs['render']
+
         self.key = key
         self._seed = seed
 
-        # Import and register
-        try:
-            from box_pushing_ai_py.environment import BoxPushing
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError(
-                "Box Pushing is not installed!\nPlease follow the instructions in README file."
-            )
+        # Gymnasium registration
         self.gym_registration()
 
         # Keep the original environment
@@ -127,7 +126,7 @@ class _BoxPushingWrapper(MultiAgentEnv):
     def gym_registration():
         register(
             id="BoxPushing-6x6-2a-v0",
-            entry_point="box_pushing_ai_py.environment:BoxPushing",
+            entry_point="pymarlzooplus.envs.box_pushing.src.box_pushing_ai_py.environment:BoxPushing",
             kwargs={
                 "n_agent": 2,
                 "grid_dim": [6, 6]
@@ -136,6 +135,9 @@ class _BoxPushingWrapper(MultiAgentEnv):
 
     def step(self, actions):
         """ Returns reward, terminated, info """
+
+        if self.render_bool is True:
+            self.render()
 
         # From torch.tensor to int
         actions = [int(a) for a in actions]

@@ -2,21 +2,21 @@ import copy
 
 import numpy as np
 
-from overcooked_ai_py.agents.agent import (
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.agents.agent import (
     AgentPair,
     GreedyHumanModel,
     RandomAgent,
 )
-from overcooked_ai_py.mdp.layout_generator import LayoutGenerator
-from overcooked_ai_py.mdp.overcooked_env import OvercookedEnv
-from overcooked_ai_py.mdp.overcooked_mdp import (
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.mdp.layout_generator import LayoutGenerator
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.mdp.overcooked_env import OvercookedEnv
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.mdp.overcooked_mdp import (
     Action,
     OvercookedGridworld,
     OvercookedState,
 )
-from overcooked_ai_py.mdp.overcooked_trajectory import DEFAULT_TRAJ_KEYS
-from overcooked_ai_py.planning.planners import NO_COUNTERS_PARAMS
-from overcooked_ai_py.utils import (
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.mdp.overcooked_trajectory import DEFAULT_TRAJ_KEYS
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.planning.planners import NO_COUNTERS_PARAMS
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.utils import (
     cumulative_rewards_from_rew_list,
     is_iterable,
     load_from_json,
@@ -324,8 +324,8 @@ class AgentEvaluator(object):
     @staticmethod
     def check_trajectories(trajectories, from_json=False, **kwargs):
         """
-        Checks that of trajectories are in standard format and are consistent with dynamics of mdp.
-        If the trajectories were saves as json, do not check that they have standard traj keys.
+        Checks that of trajectories are in standard format and are consistent with the dynamics of mdp.
+        If the trajectories were saved as JSON, do not check that they have standard traj keys.
         """
         if not from_json:
             AgentEvaluator._check_standard_traj_keys(set(trajectories.keys()))
@@ -460,7 +460,7 @@ class AgentEvaluator(object):
     @staticmethod
     def make_trajectories_json_serializable(trajectories):
         """
-        Cannot convert np.arrays or special types of ints to JSON.
+        Cannot convert np.Arrays or special types of ints to JSON.
         This method converts all components of a trajectory to standard types.
         """
         dict_traj = copy.deepcopy(trajectories)
@@ -502,7 +502,7 @@ class AgentEvaluator(object):
         return traj_dict
 
     ############################
-    # TRAJ MANINPULATION UTILS #
+    # TRAJ MANIPULATION UTILS #
     ############################
     # TODO: add more documentation!
 

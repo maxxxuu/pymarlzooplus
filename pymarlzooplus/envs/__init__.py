@@ -1,12 +1,4 @@
-from functools import partial
-
-from smac.env import MultiAgentEnv
-
-
-def env_fn(env, **kwargs) -> MultiAgentEnv:
-    return env(**kwargs)
-
-
+# Needed for the imports
 REGISTRY_availability = [
     "gymma",
     "pettingzoo",
@@ -16,62 +8,34 @@ REGISTRY_availability = [
     "boxpushing",
 ]
 
-# In this way, the user doesn't need to install all requirements
-REGISTRY = {}
+from functools import partial  # noqa: E402
 
-try:
-    import pymarlzooplus.envs.lbf_registration_v2
-except ImportError:
-    pass
+from pymarlzooplus.envs.multiagentenv import MultiAgentEnv  # noqa: E402
+from pymarlzooplus.envs.gym_wrapper import _GymmaWrapper  # noqa: E402
+from pymarlzooplus.envs.pettingzoo_wrapper import _PettingZooWrapper  # noqa: E402
+from pymarlzooplus.envs.overcooked_wrapper import _OvercookedWrapper  # noqa: E402
+from pymarlzooplus.envs.pressureplate_wrapper import _PressurePlateWrapper  # noqa: E402
+from pymarlzooplus.envs.capturetarget_wrapper import _CaptureTargetWrapper  # noqa: E402
+from pymarlzooplus.envs.boxpushing_wrapper import _BoxPushingWrapper  # noqa: E402
 
-try:
-    import pymarlzooplus.envs.lbf_registration
-except ImportError:
-    pass
+# Gymnasium registrations
+import pymarlzooplus.envs.lbf_registration_v2  # noqa: E402
+import pymarlzooplus.envs.lbf_registration  # noqa: E402
+import pymarlzooplus.envs.mpe_registration  # noqa: E402
+import pymarlzooplus.envs.rware_v1_registration  # noqa: E402
 
-try:
-    import pymarlzooplus.envs.mpe_registration
-except ImportError:
-    pass
 
-try:
-    import pymarlzooplus.envs.rware_v1_registration
-except ImportError:
-    pass
+def env_fn(env, **kwargs) -> MultiAgentEnv:
+    return env(**kwargs)
 
-try:
-    from pymarlzooplus.envs.gym_wrapper import _GymmaWrapper
-    REGISTRY["gymma"] = partial(env_fn, env=_GymmaWrapper)
-except ImportError:
-    pass
 
-try:
-  from pymarlzooplus.envs.pettingzoo_wrapper import _PettingZooWrapper
-  REGISTRY["pettingzoo"] = partial(env_fn, env=_PettingZooWrapper)
-except ImportError:
-    pass
+REGISTRY = {
+    "gymma": partial(env_fn, env=_GymmaWrapper),
+    "pettingzoo": partial(env_fn, env=_PettingZooWrapper),
+    "overcooked": partial(env_fn, env=_OvercookedWrapper),
+    "pressureplate": partial(env_fn, env=_PressurePlateWrapper),
+    "capturetarget": partial(env_fn, env=_CaptureTargetWrapper),
+    "boxpushing": partial(env_fn, env=_BoxPushingWrapper)
+}
 
-try:
-    from pymarlzooplus.envs.overcooked_wrapper import _OvercookedWrapper
-    REGISTRY["overcooked"] = partial(env_fn, env=_OvercookedWrapper)
-except ImportError:
-    pass
-
-try:
-    from pymarlzooplus.envs.pressureplate_wrapper import _PressurePlateWrapper
-    REGISTRY["pressureplate"] = partial(env_fn, env=_PressurePlateWrapper)
-except ImportError:
-    pass
-  
-try:
-    from pymarlzooplus.envs.capturetarget_wrapper import _CaptureTargetWrapper
-    REGISTRY["capturetarget"] = partial(env_fn, env=_CaptureTargetWrapper)
-except ImportError:
-    pass
-
-try:
-    from pymarlzooplus.envs.boxpushing_wrapper import _BoxPushingWrapper
-    REGISTRY["boxpushing"] = partial(env_fn, env=_BoxPushingWrapper)
-except ImportError:
-    pass
 

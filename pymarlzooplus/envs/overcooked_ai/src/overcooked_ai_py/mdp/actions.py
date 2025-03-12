@@ -76,11 +76,11 @@ class Action(object):
         assert direction in Action.MOTION_ACTIONS
         x, y = point
         dx, dy = direction
-        return (x + dx, y + dy)
+        return x + dx, y + dy
 
     @staticmethod
     def determine_action_for_change_in_pos(old_pos, new_pos):
-        """Determines an action that will enable intended transition"""
+        """Determines an action that will enable the intended transition"""
         if old_pos == new_pos:
             return Action.STAY
         new_x, new_y = new_pos

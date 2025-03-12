@@ -79,7 +79,7 @@ args = {
 #   }
 # }
 
-# Example of arguments for RWARE version 2
+# # Example of arguments for RWARE version 2
 # args = {
 #   "env": "gymma",
 #   "env_args": {

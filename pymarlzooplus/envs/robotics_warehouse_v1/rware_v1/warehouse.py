@@ -2,11 +2,8 @@ from enum import Enum
 from typing import List, Tuple, Optional, Dict, Any
 
 from collections import OrderedDict
-# import gym
 import gymnasium as gym
-from gymnasium.spaces.space import MaskNDArray
 from gymnasium.utils import seeding
-# from gym import spaces
 from gymnasium import spaces
 import numpy as np
 import networkx as nx
@@ -456,7 +453,8 @@ class Warehouse(gym.Env):
                             "features": feature_space
                         }
                     )
-                for _ in range(self.n_agents)]
+                    for _ in range(self.n_agents)
+                ]
             )
         )
 
@@ -954,7 +952,7 @@ class Warehouse(gym.Env):
 
     def render(self, mode="human"):
         if not self.renderer:
-            from rware_v1.rendering import Viewer
+            from pymarlzooplus.envs.robotics_warehouse_v1.rware_v1.rendering import Viewer
 
             self.renderer = Viewer(self.grid_size)
         return self.renderer.render(self, return_rgb_array=mode == "rgb_array")

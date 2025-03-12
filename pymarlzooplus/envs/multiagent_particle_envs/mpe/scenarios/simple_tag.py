@@ -1,6 +1,6 @@
 import numpy as np
-from mpe.core import World, Agent, Landmark
-from mpe.scenario import BaseScenario
+from pymarlzooplus.envs.multiagent_particle_envs.mpe.core import World, Agent, Landmark
+from pymarlzooplus.envs.multiagent_particle_envs.mpe.scenario import BaseScenario
 
 
 class Scenario(BaseScenario):
@@ -21,7 +21,6 @@ class Scenario(BaseScenario):
             agent.adversary = True if i < num_adversaries else False
             agent.size = 0.075 if agent.adversary else 0.05
             agent.accel = 3.0 if agent.adversary else 4.0
-            #agent.accel = 20.0 if agent.adversary else 25.0
             agent.max_speed = 1.0 if agent.adversary else 1.3
         # add landmarks
         world.landmarks = [Landmark() for i in range(num_landmarks)]
@@ -34,7 +33,6 @@ class Scenario(BaseScenario):
         # make initial conditions
         self.reset_world(world)
         return world
-
 
     def reset_world(self, world):
         # random properties for agents
@@ -53,7 +51,6 @@ class Scenario(BaseScenario):
                 landmark.state.p_pos = world.np_random.uniform(-0.9, +0.9, world.dim_p)
                 landmark.state.p_vel = np.zeros(world.dim_p)
 
-
     def benchmark_data(self, agent, world):
         # returns data for benchmarking purposes
         if agent.adversary:
@@ -65,21 +62,22 @@ class Scenario(BaseScenario):
         else:
             return 0
 
-
-    def is_collision(self, agent1, agent2):
+    @staticmethod
+    def is_collision(agent1, agent2):
         delta_pos = agent1.state.p_pos - agent2.state.p_pos
         dist = np.sqrt(np.sum(np.square(delta_pos)))
         dist_min = agent1.size + agent2.size
         return True if dist < dist_min else False
 
     # return all agents that are not adversaries
-    def good_agents(self, world):
+    @staticmethod
+    def good_agents(world):
         return [agent for agent in world.agents if not agent.adversary]
 
     # return all adversarial agents
-    def adversaries(self, world):
+    @staticmethod
+    def adversaries(world):
         return [agent for agent in world.agents if agent.adversary]
-
 
     def reward(self, agent, world):
         # Agents are rewarded based on minimum agent distance to each landmark
@@ -128,8 +126,9 @@ class Scenario(BaseScenario):
                         rew += 10
         return rew
 
-    def observation(self, agent, world):
-        # get positions of all entities in this agent's reference frame
+    @staticmethod
+    def observation(agent, world):
+        # Get positions of all entities in this agent's reference frame
         entity_pos = []
         for entity in world.landmarks:
             if not entity.boundary:

@@ -46,32 +46,23 @@ conda create -y -n pymarlzooplus python=3.8.18
 conda activate pymarlzooplus
 ```
 
-To install and use PyMARLzoo+ as a package, run the following commands:
-```sh
-pip install pymarlzooplus
-``` 
-NOTE: We work on this!
+- To install and use PyMARLzoo+ as a package, run the following commands:
+  ```sh
+  pip install pymarlzooplus
+  ``` 
+  NOTE: We work on this!
 
 
-To build it from source, run the following commands:
-```sh
-git clone https://github.com/AILabDsUnipi/pymarlzooplus.git
-cd pymarlzooplus 
-pip install -e .[<environment>] 
-``` 
-Specify the environment you want to install by changing the ``<environment>`` with the desired environment. 
-The available environments are:
-- ``all`` (it installs all the following environments)
-- ``PettingZoo``
-- ``Overcooked``
-- ``PressurePlate``
-- ``CaptureTarget``
-- ``BoxPushing``
-- ``LBF_V2`` 
-- ``LBF`` 
-- ``RWARE_V1``
-- ``RWARE``
-- ``MPE``
+- To build it from source, run the following commands:
+  ```sh
+  git clone https://github.com/AILabDsUnipi/pymarlzooplus.git
+  cd pymarlzooplus 
+  pip install -e .
+  ``` 
+
+**Known issues**:
+- Before running an atari environment (from PettingZoo) for the first time, you have to run: ``AutoROM -y``
+- Installation error for ``box2d-py``: Run ``sudo apt-get install swig`` and try again the installation.
 
 # Run training
  

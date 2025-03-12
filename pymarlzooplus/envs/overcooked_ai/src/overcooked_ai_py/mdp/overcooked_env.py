@@ -8,24 +8,24 @@ import pygame
 import tqdm
 from pettingzoo.utils.env import ParallelEnv
 
-from overcooked_ai_py.agents.agent import AgentPair
-from overcooked_ai_py.mdp.actions import Action
-from overcooked_ai_py.mdp.overcooked_mdp import (
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.agents.agent import AgentPair
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.mdp.actions import Action
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.mdp.overcooked_mdp import (
     EVENT_TYPES,
     OvercookedGridworld,
 )
-from overcooked_ai_py.mdp.overcooked_trajectory import (
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.mdp.overcooked_trajectory import (
     DEFAULT_TRAJ_KEYS,
     EPISODE_TRAJ_KEYS,
     TIMESTEP_TRAJ_KEYS,
 )
-from overcooked_ai_py.planning.planners import (
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.planning.planners import (
     NO_COUNTERS_PARAMS,
     MediumLevelActionManager,
     MotionPlanner,
 )
-from overcooked_ai_py.utils import append_dictionaries, mean_and_std_err
-from overcooked_ai_py.visualization.state_visualizer import StateVisualizer
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.utils import append_dictionaries, mean_and_std_err
+from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.visualization.state_visualizer import StateVisualizer
 
 DEFAULT_ENV_PARAMS = {"horizon": 400}
 
@@ -39,7 +39,7 @@ class OvercookedEnv(object):
     The environment keeps track of the current state of the agent, updates
     it as the agent takes actions, and provides rewards to the agent.
 
-    E.g. of how to instantiate OvercookedEnv:
+    E.g., of how to instantiate OvercookedEnv:
     > mdp = OvercookedGridworld(...)
     > env = OvercookedEnv.from_mdp(mdp, horizon=400)
     """
@@ -147,8 +147,8 @@ class OvercookedEnv(object):
     @property
     def env_params(self):
         """
-        Env params should be thought of as all of the params of an env WITHOUT the mdp.
-        Alone, env_params is not sufficent to recreate a copy of the Env instance, but it is
+        Env params should be thought of as all the params of an env WITHOUT the mdp.
+        Alone, env_params is not sufficient to recreate a copy of the Env instance, but it is
         together with mdp_params (which is sufficient to build a copy of the Mdp instance).
         """
         return {
@@ -174,7 +174,7 @@ class OvercookedEnv(object):
 
     def __repr__(self):
         """
-        Standard way to view the state of an environment programatically
+        The standard way to view the state of an environment programatically
         is just to print the Env object
         """
         return self.mdp.state_string(self.state)
@@ -579,13 +579,13 @@ class OvercookedEnv(object):
         # Converting to numpy arrays
         trajectories = {k: np.array(v) for k, v in trajectories.items()}
 
-        # Merging all metadata dictionaries, assumes same keys throughout all
+        # Merging all metadata dictionaries assumes the same keys throughout all
         trajectories["metadatas"] = append_dictionaries(
             trajectories["metadatas"]
         )
 
         # TODO: should probably transfer check methods over to Env class
-        from overcooked_ai_py.agents.benchmarking import AgentEvaluator
+        from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.agents.benchmarking import AgentEvaluator
 
         AgentEvaluator.check_trajectories(trajectories, verbose=info)
         return trajectories
@@ -731,8 +731,9 @@ class OvercookedEnvPettingZoo(ParallelEnv):
         ]
         obs, reward, done, truncated, info = self.base_env.step(joint_action)
         # https://gymnasium.farama.org/content/basic_usage/
-        # we have no early termination condition in this env, and the environment only terminates when the time horizon is reached.
-        # therefore, the terminated is always False.
+        # We have no early termination condition in this env,
+        # and the environment only terminates when the time horizon is reached.
+        # Therefore, the terminated is always False.
         terminated = False
 
         def create_dict(value):
@@ -921,7 +922,7 @@ class Overcooked(gym.Env):
             "both_agent_obs": both_agents_ob,
             "overcooked_state": self.base_env.state,
             "other_agent_env_idx": 1 - self.agent_idx,
-        }, {} # Dictionary returned just for compatibility with gymnasium
+        }, {}  # Dictionary returned just for compatibility with gymnasium
 
     def render(self, mode="human", **kwargs): # Use **kwargs just for support with gym
         rewards_dict = {}  # dictionary of details you want rendered in the UI
