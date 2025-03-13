@@ -1,0 +1,9 @@
+services:
+  pymarlzooplus_app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    network_mode: host
+    volumes:
+      - ../:/home/pymarlzooplus
+    command: tail -f /dev/null

@@ -1,4 +1,4 @@
-name: Run Tests on Tag
+name: Tests on latest tag
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get install -y python-opengl
+          sudo apt-get install -y python3-opengl
           pip install -r requirements.txt
           pip install opencv-python-headless
 

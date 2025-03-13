@@ -235,6 +235,7 @@ class TestPymarlzooplusEnvironments(unittest.TestCase):
 
 
         for name, params in self.params_dict.items():
+            print("Running test for environment:", name)
             with self.subTest(environment=name):
                 try:
                     pymarlzooplus(params)

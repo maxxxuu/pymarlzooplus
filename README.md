@@ -1,7 +1,10 @@
 # PyMARLzoo+
+![Static Badge](https://img.shields.io/badge/Python-3.8-blue)
 [![Tests](https://github.com/AILabDsUnipi/pymarlzooplus/actions/workflows/test.yml/badge.svg)](https://github.com/AILabDsUnipi/pymarlzooplus/actions/workflows/test.yml)
+![GitHub License](https://img.shields.io/github/license/AILabDsUnipi/pymarlzooplus)
 
-![PyMARLzoo logo](logo.jpg) 
+
+<img src="https://raw.githubusercontent.com/AILabDsUnipi/pymarlzooplus/main/images/logo.jpg" alt="logo" width=600/>
 
 PyMARLzoo+ is an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), and includes
 - Additional (7) algorithms: 
@@ -66,6 +69,23 @@ conda activate pymarlzooplus
 **Known issues**:
 - Before running an atari environment (from PettingZoo) for the first time, you have to run: ``AutoROM -y``
 - Installation error for ``box2d-py``: Run ``sudo apt-get install swig`` and try again the installation.
+- In case you get `ImportError: Library "GLU" not found.`, run ``sudo apt-get install python3-opengl``.
+- In case you get `IndexError: list index out of range` for pyglet in a non-headless machine using `render=True`, 
+set `__GLX_VENDOR_LIBRARY_NAME=nvidia` and `__NV_PRIME_RENDER_OFFLOAD=1` as environment variables. 
+For example, if you want to run your own file `example.py` , run
+
+```
+__GLX_VENDOR_LIBRARY_NAME=nvidia __NV_PRIME_RENDER_OFFLOAD=1 python example.py
+```
+# Docker
+You can also use the provided Docker files in [docker/](/docker/) to build and run a Docker container with the 
+pymarlzooplus installed as a headless machine.
+
+To build the image, run the container and get into the container, run the following commands after you clone the repository:
+```sh
+docker compose -f docker/docker-compose.yml up --build
+docker exec -it $(docker ps | awk 'NR > 1 {print $1}') /bin/bash
+```
 
 # Run training
  
@@ -93,8 +113,11 @@ You can specify the algorithm arguments:
 
 ## LBF
 
+<img src="https://raw.githubusercontent.com/AILabDsUnipi/pymarlzooplus/main/images/lbf.gif" alt="lbf gif" align="center" width="40%"/>
+
 - As a package (replace ```"algo"``` and ```"scenario"```):
-  ```python
+
+```python
   from pymarlzooplus import pymarlzooplus
   
   params_dict = {
@@ -109,7 +132,8 @@ You can specify the algorithm arguments:
   }
   
   pymarlzooplus(params_dict)
-  ```
+```
+ 
   Find all the LBF arguments in the configuration file [pymarlzooplus/config/envs/gymma.yaml](pymarlzooplus/config/envs/gymma.yaml).
 
 - From source (replace ```<algo>``` and ```<scenario>```):
@@ -132,6 +156,7 @@ All the above scenarios are compatible both with our **training framework** and 
 
 
 ## RWARE
+<img src="https://raw.githubusercontent.com/AILabDsUnipi/pymarlzooplus/main/images/rware.gif"  align="center" height="40%"/>
 
 - As a package (replace ```"algo"``` and ```"scenario"```):
   ```python
@@ -150,6 +175,7 @@ All the above scenarios are compatible both with our **training framework** and 
   
   pymarlzooplus(params_dict)
   ```
+  
   Find all the RWARE arguments in the configuration file [pymarlzooplus/config/envs/gymma.yaml](pymarlzooplus/config/envs/gymma.yaml).
 
 - From source (replace ```<algo>``` and ```<scenario>```):
@@ -167,6 +193,7 @@ All the above scenarios are compatible both with our **training framework** and 
 
 
 ## MPE
+<img src="https://raw.githubusercontent.com/AILabDsUnipi/pymarlzooplus/main/images/mpe.gif" alt="logo" align="center" width="40%"/>
 
 - As a package (replace ```"algo"``` and ```"scenario"```):
   ```python
@@ -214,6 +241,7 @@ All the above scenarios are compatible both with our **training framework** and 
 
 
 ## PettingZoo
+<img src="https://raw.githubusercontent.com/AILabDsUnipi/pymarlzooplus/main/images/pistonball.gif" alt="pistonball gif"  align="center" width="40%"/>
 
 - As a package (replace ```"algo"```, ```"task"```, and ```0000```):
   ```python
@@ -310,6 +338,7 @@ Below, we list more tasks which are compatible only with the **environment API**
 
 
 ## Overcooked
+<img src="https://raw.githubusercontent.com/AILabDsUnipi/pymarlzooplus/main/images/overcooked.gif" alt="overcooked gif"  align="center" width="40%"/>
 
 - As a package (replace ```"algo"```, ```"scenario"```, and ```"rewardType"```):
   ```python
@@ -373,6 +402,7 @@ All the above scenarios are compatible both with our **training framework** and 
 
 
 ## Pressure plate
+<img src="https://raw.githubusercontent.com/AILabDsUnipi/pymarlzooplus/main/images/pressureplate.gif" alt="pressureplate gif"  align="center" width="40%"/>
 
 - As a package (replace ```"algo"``` and ```"scenario"```):
   ```python
@@ -410,6 +440,7 @@ All the above scenarios are compatible both with our **training framework** and 
 
 
 ## Capture Target
+<img src="https://raw.githubusercontent.com/AILabDsUnipi/pymarlzooplus/main/images/capturetarget.gif" alt="capturetarget gif"  align="center" width="40%"/>
 
 - As a package (replace ```"algo"``` and ```"scenario"```):
   ```python
@@ -442,6 +473,8 @@ The above scenario is compatible both with our **training framework** and the **
 
 
 ## Box Pushing
+
+<img src="https://raw.githubusercontent.com/AILabDsUnipi/pymarlzooplus/main/images/boxpushing.gif" alt="boxpushing gif"  align="center" width="40%"/>
 
 - As a package (replace ```"algo"``` and ```"scenario"```):
   ```python

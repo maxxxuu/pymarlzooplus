@@ -1,3 +1,5 @@
+cmake
+twine
 absl-py
 attrs
 gymnasium
