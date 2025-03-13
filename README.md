@@ -1,4 +1,7 @@
 # PyMARLzoo+
+[![Tests](https://github.com/AILabDsUnipi/pymarlzooplus/actions/workflows/test.yml/badge.svg)](https://github.com/AILabDsUnipi/pymarlzooplus/actions/workflows/test.yml)
+
+![PyMARLzoo logo](logo.jpg) 
 
 PyMARLzoo+ is an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), and includes
 - Additional (7) algorithms: 
