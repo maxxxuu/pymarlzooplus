@@ -213,12 +213,6 @@ class ParallelRunner:
                     # Rendering
                     if idx == 0 and test_mode and self.args.render:
                         parent_conn.send(("render", None))
-                    # Print info
-                    if idx == 0:
-                        parent_conn.send(("get_print_info", None))
-                        print_info = parent_conn.recv()
-                        if print_info != "None" and print_info is not None:
-                            self.logger.console_logger.info(print_info)
 
             # Update envs_not_terminated
             envs_not_terminated = [b_idx for b_idx, termed in enumerate(terminated) if not termed]
@@ -272,6 +266,13 @@ class ParallelRunner:
                     pre_transition_data["state"].append(data["state"])
                     pre_transition_data["avail_actions"].append(data["avail_actions"])
                     pre_transition_data["obs"].append(data["obs"])
+
+            # Get print info for all env
+            for idx, parent_conn in enumerate(self.parent_conns):
+                parent_conn.send(("get_print_info", None))
+                print_info = parent_conn.recv()
+                if print_info != "None" and print_info is not None:
+                    self.logger.console_logger.info(print_info)
 
             # Add post-transition data into the batch
             self.batch.update(
