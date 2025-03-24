@@ -34,18 +34,21 @@ class ParallelRunner:
         self.batch_size = self.args.batch_size_run
 
         # Enable multithreading access to GPU
-        th.multiprocessing.set_start_method('spawn')
+        # Check if the start method is set to spawn, if not set it to spawn
+        if th.multiprocessing.get_start_method(allow_none=True) is None:
+            th.multiprocessing.set_start_method('spawn')
 
         # In case of pettingzoo and centralized image encoding, initialize image encoder here
         image_encoder = None
         if self.args.env == 'pettingzoo' and self.args.env_args['centralized_image_encoding'] is True:
-            image_encoder_args = ["parallel_runner",
-                                  self.args.env_args['centralized_image_encoding'],
-                                  self.args.env_args['trainable_cnn'],
-                                  self.args.env_args['image_encoder'],
-                                  self.args.env_args['image_encoder_batch_size'],
-                                  self.args.env_args['image_encoder_use_cuda']
-                                  ]
+            image_encoder_args = [
+                "parallel_runner",
+                self.args.env_args['centralized_image_encoding'],
+                self.args.env_args['trainable_cnn'],
+                self.args.env_args['image_encoder'],
+                self.args.env_args['image_encoder_batch_size'],
+                self.args.env_args['image_encoder_use_cuda']
+            ]
             image_encoder = ImageEncoder(*image_encoder_args)
             image_encoder.share_memory()  # Make model parameters shareable across processes
             self.args.env_args['given_observation_space'] = image_encoder.observation_space
@@ -58,13 +61,16 @@ class ParallelRunner:
         for i in range(self.batch_size):
             env_args[i]["seed"] += i
 
-        self.ps = [Process(target=env_worker,
-                           args=(worker_conn,
-                                 CloudpickleWrapper(partial(env_fn, **env_arg)),
-                                 image_encoder
-                                 )
-                           )
-                   for env_arg, worker_conn in zip(env_args, self.worker_conns)]
+        self.ps = [
+            Process(
+                target=env_worker,
+                args=(
+                    worker_conn,
+                    CloudpickleWrapper(partial(env_fn, **env_arg)),
+                    image_encoder
+                )
+            ) for env_arg, worker_conn in zip(env_args, self.worker_conns)
+        ]
 
         for p in self.ps:
             p.daemon = True
@@ -74,7 +80,7 @@ class ParallelRunner:
         self.parent_conns[0].send(("get_print_info", None))
         time.sleep(5)  # Wait a little to initialize the environment and get the print info
         print_info = self.parent_conns[0].recv()
-        if print_info != "None":
+        if print_info != "None" and print_info is not None:
             self.logger.console_logger.info(print_info)
         self.parent_conns[0].send(("get_env_info", None))
         self.env_info = self.parent_conns[0].recv()
@@ -92,13 +98,15 @@ class ParallelRunner:
         self.log_train_stats_t = -100000
 
     def setup(self, scheme, groups, preprocess, mac, explorer):
-        self.new_batch = partial(EpisodeBatch,
-                                 scheme,
-                                 groups,
-                                 self.batch_size,
-                                 self.episode_limit + 1,
-                                 preprocess=preprocess,
-                                 device=self.args.device)
+        self.new_batch = partial(
+            EpisodeBatch,
+            scheme,
+            groups,
+            self.batch_size,
+            self.episode_limit + 1,
+            preprocess=preprocess,
+            device=self.args.device
+        )
         self.mac = mac
         self.explorer = explorer
         self.scheme = scheme
@@ -164,19 +172,23 @@ class ParallelRunner:
         while True:
 
             # Pass the entire batch of experiences up till now to the agents
-            # Receive the actions for each agent at this timestep in a batch for each un-terminated env
-            actions, extra_returns = self.mac.select_actions(self.batch,
-                                                             t_ep=self.t,
-                                                             t_env=self.t_env,
-                                                             bs=envs_not_terminated,
-                                                             test_mode=test_mode)
+            # Receive the actions for each agent at this timestep in a batch for each unterminated env
+            actions, extra_returns = self.mac.select_actions(
+                self.batch,
+                t_ep=self.t,
+                t_env=self.t_env,
+                bs=envs_not_terminated,
+                test_mode=test_mode
+            )
 
             # Choose actions based on explorer, if applicable. This is for EOI.
             if self.explorer is not None:
-                actions = self.explorer.select_actions(actions,
-                                                       self.t,
-                                                       test_mode,
-                                                       pre_transition_data)
+                actions = self.explorer.select_actions(
+                    actions,
+                    self.t,
+                    test_mode,
+                    pre_transition_data
+                )
 
             cpu_actions = actions.to("cpu").numpy()
 
@@ -198,8 +210,15 @@ class ParallelRunner:
                     if not terminated[idx]:  # Only send the actions to the env if it hasn't terminated
                         parent_conn.send(("step", cpu_actions[action_idx]))
                     action_idx += 1  # actions is not a list over every env
+                    # Rendering
                     if idx == 0 and test_mode and self.args.render:
                         parent_conn.send(("render", None))
+                    # Print info
+                    if idx == 0:
+                        parent_conn.send(("get_print_info", None))
+                        print_info = parent_conn.recv()
+                        if print_info != "None" and print_info is not None:
+                            self.logger.console_logger.info(print_info)
 
             # Update envs_not_terminated
             envs_not_terminated = [b_idx for b_idx, termed in enumerate(terminated) if not termed]
@@ -207,7 +226,7 @@ class ParallelRunner:
             if all_terminated:
                 break
 
-            # Post step data we will insert for the current timestep
+            # Post-step data we will insert for the current timestep
             post_transition_data = {
                 "reward": [],
                 "terminated": []
@@ -254,11 +273,13 @@ class ParallelRunner:
                     pre_transition_data["avail_actions"].append(data["avail_actions"])
                     pre_transition_data["obs"].append(data["obs"])
 
-            # Add post_transition data into the batch
-            self.batch.update(post_transition_data,
-                              bs=envs_not_terminated,
-                              ts=self.t,
-                              mark_filled=False)
+            # Add post-transition data into the batch
+            self.batch.update(
+                post_transition_data,
+                bs=envs_not_terminated,
+                ts=self.t,
+                mark_filled=False
+            )
 
             # Move onto the next timestep
             self.t += 1
@@ -367,16 +388,14 @@ def env_worker(remote, env_fn, image_encoder):
         elif cmd == "save_replay":
             env.save_replay()
         elif cmd == "get_print_info":
-            if "PettingZoo" in type(env).__name__:
-                if env.get_print_info() is None:
-                    remote.send("None")
-                else:
-                    # Simulate the message format of the logger defined in _logging.py
-                    current_time = datetime.datetime.now().strftime('%H:%M:%S')
-                    print_info = f"\n[INFO {current_time}] parallel_runner " + env.get_print_info()
-                    remote.send(print_info)
-            else:
+            print_info = env.get_print_info()
+            if print_info is None:
                 remote.send("None")
+            else:
+                # Simulate the message format of the logger defined in _logging.py
+                current_time = datetime.datetime.now().strftime('%H:%M:%S')
+                print_info = f"\n[INFO {current_time}] parallel_runner " + print_info
+                remote.send(print_info)
         else:
             raise NotImplementedError
 

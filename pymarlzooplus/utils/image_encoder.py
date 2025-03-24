@@ -28,8 +28,8 @@ class ImageEncoder(nn.Module):
 
         assert not (self.centralized_image_encoding is True and self.trainable_cnn is True), \
             "'centralized_image_encoding' and 'trainable_cnn' cannot be both True!"
-        assert not (self.centralized_image_encoding is True and self.called_from == "env"), \
-            "'centralized_image_encoding' cannot be True when 'called_from' is 'env'!"
+        # assert not (self.centralized_image_encoding is True and self.called_from == "env"), \
+        #     "'centralized_image_encoding' cannot be True when 'called_from' is 'env'!"
 
         ## Define image encoder. In this case, a pretrained model is used frozen, i.e., without further training.
         self.image_encoder = None
@@ -218,9 +218,15 @@ class ImageEncoder(nn.Module):
             observations = observations[0]
 
         observations_ = []
-        if self.trainable_cnn is False and \
-           (self.centralized_image_encoding is False or
-            (self.centralized_image_encoding is True and self.called_from == "parallel_runner")):
+        if (
+                self.trainable_cnn is False and
+                (
+                        self.centralized_image_encoding is False or
+                        (
+                                self.centralized_image_encoding is True and self.called_from == "parallel_runner"
+                        )
+                )
+        ):
             # Get image representations
             observations_tmp = []
             observations_tmp_counter = 0
@@ -240,8 +246,10 @@ class ImageEncoder(nn.Module):
                     observations_tmp_counter = 0
         elif self.trainable_cnn is True and self.centralized_image_encoding is False:
             # Preprocess images for a CNN network.
-            observations_ = [self.transform(image=observation_)["image"].detach().cpu().numpy()
-                             for observation_ in observations.values()]
+            observations_ = [
+                self.transform(image=observation_)["image"].detach().cpu().numpy()
+                for observation_ in observations.values()
+            ]
         elif self.trainable_cnn is False and self.centralized_image_encoding is True and self.called_from == "env":
             observations_ = [observations]
         else:

@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import torch
 from gymnasium.utils import seeding
@@ -215,8 +217,8 @@ class ObservationPZ(object):
         self.partial_observation = partial_observation
         self.original_observation_space = self.original_env.observation_space(self.original_env.possible_agents[0])
         self.original_observation_space_shape = self.original_observation_space.shape
-        self.is_image = len(self.original_observation_space_shape) == 3 and self.original_observation_space_shape[2] == 3
-        assert self.is_image, f"Only images are supported, shape: {self.original_observation_space_shape}"
+        self._is_image = len(self.original_observation_space_shape) == 3 and self.original_observation_space_shape[2] == 3
+        assert self._is_image, f"Only images are supported, shape: {self.original_observation_space_shape}"
 
         self.given_observation_space = given_observation_space
         if given_observation_space is not None:
@@ -350,6 +352,8 @@ class _PettingZooWrapper(MultiAgentEnv):
                 "'entombed_cooperative_v3' or 'space_invaders_v2'!"
             )
 
+        super().__init__()
+
         self.key = key
         self.max_cycles = time_limit
         self._seed = seed
@@ -370,21 +374,31 @@ class _PettingZooWrapper(MultiAgentEnv):
         # Placeholders
         self.kwargs = None
         self.original_env = None
-        self.episode_limit = None
-        self.n_agents = None
         self._env = None  # Observation wrapper
         self.__env = None  # TimeLimit wrapper
         self._obs = None
         self._info = None
         self.observation_space = None
-        self.common_observation_space = None
+        self._common_observation_space = None
         self.original_observation_space = None
-        self.is_image = None
+        self._is_image = None
         self.action_space = None
-        self.action_prefix = None
+        self._agent_prefix = None
         self.sum_rewards = None
         self.np_random = None
         self.step_function = None
+        self.internal_print_info = None
+
+        # Check the consistency between the 'render_mode' and the display capabilities of the machine
+        self.render_capable = True
+        if self.render_mode == "human" and 'DISPLAY' not in os.environ:
+            self.render_mode = "rgb_array"
+            self.internal_print_info = (
+                "\n\n###########################################################"
+                "\nThe 'render_mode' is set to 'rgb_array' due to the lack of display capabilities!"
+                "\n###########################################################\n"
+            )
+            self.render_capable = False
 
         # Define the keys for fully cooperative and classic tasks
         self.fully_cooperative_task_keys = [
@@ -488,14 +502,14 @@ class _PettingZooWrapper(MultiAgentEnv):
 
         # Define Observation wrapper
         self.original_observation_space = self.__env.observation_space(self.original_env.possible_agents[0])
-        self.common_observation_space = all(
+        self._common_observation_space = all(
             [
                 self.original_observation_space == self.__env.observation_space(self.original_env.possible_agents[agent_id])
                 for agent_id in range(self.n_agents)
             ]
         )
-        self.is_image = len(self.original_observation_space.shape) == 3 and self.original_observation_space.shape[2] == 3
-        if self.is_image is True:
+        self._is_image = len(self.original_observation_space.shape) == 3 and self.original_observation_space.shape[2] == 3
+        if self._is_image is True:
             self._env = ObservationPZ(
                 self.__env,
                 partial_observation,
@@ -514,7 +528,7 @@ class _PettingZooWrapper(MultiAgentEnv):
             self.step_function = self._env.step
         else:
             # Define the observation space
-            if self.common_observation_space is False:
+            if self._common_observation_space is False:
                 self.original_observation_space = self.original_env.observation_spaces  # dictionary
             self._env = self.__env  # Just for consistency
             self.observation_space = self.original_observation_space
@@ -535,12 +549,12 @@ class _PettingZooWrapper(MultiAgentEnv):
             for agent_idx, tmp_action_space_ in enumerate(tmp_action_spaces_list[1:], start=1):
                 assert tmp_action_space_ == tmp_action_space, (
                     "Difference in action spaces found between agents:\n"
-                     f"agent=0 - action_space={tmp_action_space}, agent={agent_idx} - action_space={tmp_action_space_}"
+                    f"agent=0 - action_space={tmp_action_space}, agent={agent_idx} - action_space={tmp_action_space_}"
                 )
             self.action_space = tmp_action_space.n.item()
         else:
             self.action_space = tmp_action_space
-        self.action_prefix = [action_prefix for action_prefix in self.original_env.possible_agents]
+        self._agent_prefix = [agent_prefix for agent_prefix in self.original_env.possible_agents]
 
         # Create the seed object to control the randomness of the environment reset()
         self.np_random, self._seed = seeding.np_random(self._seed)
@@ -569,8 +583,30 @@ class _PettingZooWrapper(MultiAgentEnv):
         if render_mode is not None:
             self.kwargs["render_mode"] = render_mode
 
+    def common_observation_space(self):
+        return self._common_observation_space
+
+    def is_image(self):
+        return self._is_image
+
+    def get_agent_prefix(self):
+        return self._agent_prefix
+
     def get_print_info(self):
-        return self._env.print_info
+        # Get print info from image encoder
+        print_info = self._env.print_info
+        self._env.print_info = None
+
+        # Get print info from the current class
+        if self.internal_print_info is not None:
+            if print_info is None:
+                print_info = self.internal_print_info
+            else:
+                print_info += self.internal_print_info
+            self.internal_print_info = None
+
+        # Return all print info
+        return print_info
 
     def step(self, actions):
         """ Returns reward, terminated, info """
@@ -595,8 +631,7 @@ class _PettingZooWrapper(MultiAgentEnv):
                 tmp_action = action.detach().cpu().item()
             else:
                 raise NotImplementedError(f"Not supported action type! type(action): {type(action)}")
-
-            fixed_actions[self.action_prefix[action_idx]] = tmp_action
+            fixed_actions[self._agent_prefix[action_idx]] = tmp_action
 
         # Apply action for each agent
         self._obs, rewards, terminations, truncations, self._info = self.step_function(fixed_actions)
@@ -612,7 +647,18 @@ class _PettingZooWrapper(MultiAgentEnv):
             # Keep only 'TimeLimit.truncated' in 'self._info'
             self._info = {'TimeLimit.truncated': self._info['TimeLimit.truncated']}
             return reward, done, {}
-        else:  # The case of NOT fully cooperative tasks
+
+        else:  # The case of non-fully cooperative tasks
+            # Handle the observation format. It should return a dictionary in the format of PettingZoo.
+            if self._is_image is True:
+                assert isinstance(self._obs, tuple)
+                self._obs = {
+                    _agent_prefix: self._obs[agent_id]
+                    for agent_id, _agent_prefix in enumerate(self._agent_prefix)
+                }
+            else:
+                assert isinstance(self._obs, dict)
+            # Handle the timelimit truncation
             timelimit_truncated = self._info['TimeLimit.truncated']
             del self._info['TimeLimit.truncated']
             return (
@@ -622,7 +668,7 @@ class _PettingZooWrapper(MultiAgentEnv):
             )
 
     def get_obs(self):
-        """ Returns all agent observations in a list """
+        """ Returns all agent observations """
         return self._obs
 
     def get_obs_agent(self, agent_id):
@@ -633,7 +679,7 @@ class _PettingZooWrapper(MultiAgentEnv):
         """ Returns the shape of the observation """
 
         # Image observations
-        if self.is_image is True:
+        if self._is_image is True:
             assert (
                     (len(self.observation_space) == 1 and self.trainable_cnn is False) or
                     (len(self.observation_space) == 3 and self.trainable_cnn is True)
@@ -642,7 +688,7 @@ class _PettingZooWrapper(MultiAgentEnv):
 
         # Vector observations
         else:
-            if self.common_observation_space is False:
+            if self._common_observation_space is False:
                 return self.observation_space
             else:
                 if (
@@ -650,7 +696,7 @@ class _PettingZooWrapper(MultiAgentEnv):
                         (isinstance(self._obs, dict) and len(self._obs) == self.n_agents)
                 ):
                     if isinstance(self._obs, tuple):
-                        assert all([self._obs[1][_action_prefix] == {} for _action_prefix in self.action_prefix]), \
+                        assert all([self._obs[1][_agent_prefix] == {} for _agent_prefix in self._agent_prefix]), \
                             f"self._obs: {self._obs}"
                     return self.observation_space.shape
                 else:
@@ -659,33 +705,46 @@ class _PettingZooWrapper(MultiAgentEnv):
     def get_state(self):
 
         # Image observations
-        if self.is_image is True:
+        if self._is_image is True:
+            # The case of encoded images (both for env API and training framework)
             if self.trainable_cnn is False and self.centralized_image_encoding is False:
-                return np.concatenate(self._obs, axis=0).astype(np.float32)
+                if isinstance(self._obs, dict):  # The case of non-fully cooperative tasks
+                    return np.concatenate([_obs for _obs in self._obs.values()], axis=0).astype(np.float32)
+                else:  # The case of fully cooperative tasks
+                    assert isinstance(self._obs, tuple)
+                    return np.concatenate(self._obs, axis=0).astype(np.float32)
+            # The case of raw images (both for env API and training framework)
             elif self.trainable_cnn is True and self.centralized_image_encoding is False:
-                return np.stack(self._obs, axis=0).astype(np.float32)
+                if isinstance(self._obs, dict):  # The case of non-fully cooperative tasks
+                    return np.stack([_obs for _obs in self._obs.values()], axis=0).astype(np.float32)
+                else:  # The case of fully cooperative tasks
+                    assert isinstance(self._obs, tuple)
+                    return np.stack(self._obs, axis=0).astype(np.float32)
+            # The case of encoded images with centralized encoding (only for the training framework)
             elif self.trainable_cnn is False and self.centralized_image_encoding is True:
                 # In this case, the centralized encoder will encode observations and combine them to create the state
                 return None
             else:
                 raise NotImplementedError()
 
-        # Vector observations
+        # Vector observations (only for non-fully cooperative tasks)
         else:
-            if self.common_observation_space is False:
-                # Return observations as given by PettingZoo
-                return self._obs
+            if self._common_observation_space is False:
+                assert isinstance(self._obs, dict)
+                _obs = [self._obs[_agent_prefix] for _agent_prefix in self._agent_prefix]
+                _obs = np.concatenate(_obs, axis=0).astype(np.float32)
+                return _obs
             else:
                 if (
                         (isinstance(self._obs, tuple) and len(self._obs) == 2) or
                         (isinstance(self._obs, dict) and len(self._obs) == self.n_agents)
                 ):
                     if isinstance(self._obs, tuple):
-                        assert all([self._obs[1][_action_prefix] == {} for _action_prefix in self.action_prefix]), \
+                        assert all([self._obs[1][_agent_prefix] == {} for _agent_prefix in self._agent_prefix]), \
                             f"self._obs: {self._obs}"
                         self._obs = self._obs[0]
-                    self._obs = [self._obs[_action_prefix] for _action_prefix in self.action_prefix]
-                    return np.stack(self._obs, axis=0).astype(np.float32)
+                    _obs = [self._obs[_agent_prefix] for _agent_prefix in self._agent_prefix]
+                    return np.stack(_obs, axis=0).astype(np.float32)
                 else:
                     raise NotImplementedError
 
@@ -693,7 +752,7 @@ class _PettingZooWrapper(MultiAgentEnv):
         """ Returns the shape of the state"""
 
         # Image observations
-        if self.is_image is True:
+        if self._is_image is True:
             assert (
                     (len(self.observation_space) == 1 and self.trainable_cnn is False) or
                     (len(self.observation_space) == 3 and self.trainable_cnn is True)
@@ -704,15 +763,15 @@ class _PettingZooWrapper(MultiAgentEnv):
 
         # Vector observations
         else:
-            if self.common_observation_space is False:
-                return None
+            if self._common_observation_space is False:
+                raise NotImplementedError
             else:
                 if (
                         (isinstance(self._obs, tuple) and len(self._obs) == 2) or
                         (isinstance(self._obs, dict) and len(self._obs) == self.n_agents)
                 ):
                     if isinstance(self._obs, tuple):
-                        assert all([self._obs[1][_action_prefix] == {} for _action_prefix in self.action_prefix]), \
+                        assert all([self._obs[1][_agent_prefix] == {} for _agent_prefix in self._agent_prefix]), \
                             f"self._obs: {self._obs}"
                     return tuple((self.n_agents, *self.observation_space.shape))
                 else:
@@ -723,7 +782,7 @@ class _PettingZooWrapper(MultiAgentEnv):
         if isinstance(self.action_space, int):
             avail_actions = []
             for agent_id in range(self.n_agents):
-                avail_agent = self.get_avail_agent_actions(self.action_prefix[agent_id])
+                avail_agent = self.get_avail_agent_actions(self._agent_prefix[agent_id])
                 avail_actions.append(avail_agent)
 
             return avail_actions
@@ -745,7 +804,17 @@ class _PettingZooWrapper(MultiAgentEnv):
             raise NotImplementedError
 
     def sample_actions(self):
-        return [self.original_env.action_space(agent).sample() for agent in self.original_env.agents]
+        """ Returns a random sample of actions """
+        sampled_actions = []
+        for agent in self.original_env.agents:
+            agent_sampled_action = self.original_env.action_space(agent).sample()
+            if isinstance(agent_sampled_action, np.ndarray):
+                assert self.key in ["waterworld_v4", "multiwalker_v9"], f"self.key: {self.key}"
+                sampled_actions.append(agent_sampled_action)
+            else:
+                sampled_actions.append(int(agent_sampled_action))
+
+        return sampled_actions
 
     def reset(self, seed=None):
         """ Returns initial observations and states"""
@@ -788,18 +857,44 @@ class _PettingZooWrapper(MultiAgentEnv):
 
         else:
             self._obs, _ = self._env.reset(seed=self._seed)
+            if self.sum_rewards is False:  # The case of non-fully cooperative tasks
+                # Handle the observation format. It should return a dictionary in the format of PettingZoo.
+                if self._is_image is True:
+                    assert isinstance(self._obs, tuple)
+                    self._obs = {
+                        _agent_prefix: self._obs[agent_id]
+                        for agent_id, _agent_prefix in enumerate(self._agent_prefix)
+                    }
+                else:
+                    assert isinstance(self._obs, dict)
 
         return self.get_obs(), self.get_state()
 
     def render(self):
-        if self.render_mode != "human":  # otherwise it is already rendered
-            # Get image
-            env_image = self.original_env.render()
-            # Convert RGB to BGR
-            env_image = self.cv2.cvtColor(env_image, self.cv2.COLOR_RGB2BGR)
-            # Render
-            self.cv2.imshow(f"Environment: {self.key}", env_image)
-            self.cv2.waitKey(1)
+        if self.render_capable is True:
+            try:
+                if self.render_mode != "human":  # otherwise it is already rendered
+                    # Get image
+                    env_image = self.original_env.render()
+                    # Convert RGB to BGR
+                    env_image = self.cv2.cvtColor(env_image, self.cv2.COLOR_RGB2BGR)
+                    # Render
+                    self.cv2.imshow(f"Environment: {self.key}", env_image)
+                    self.cv2.waitKey(1)
+            except (Exception, SystemExit) as e:
+                self.internal_print_info = (
+                    "\n\n###########################################################"
+                    f"\nError during rendering: \n\n{e}"
+                    f"\n\nRendering will be disabled to continue the training."
+                    "\n###########################################################\n"
+                )
+                self.render_capable = False
+
+    def get_info(self):
+        return self._info
+
+    def get_n_agents(self):
+        return self.n_agents
 
     def close(self):
         self._env.close()

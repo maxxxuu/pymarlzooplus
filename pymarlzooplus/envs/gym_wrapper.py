@@ -1,5 +1,6 @@
 import random
 from typing import Any, Dict, Tuple
+import os
 
 import numpy as np
 import gymnasium as gym
@@ -79,12 +80,9 @@ class FlattenObservation(ObservationWrapper):
 
 
 class _GymmaWrapper(MultiAgentEnv):
-    def __init__(self, key, time_limit=None, seed=1, **kwargs):
+    def __init__(self, key, time_limit=None, seed=1, render=False, **kwargs):
 
-        # Keep the 'render' argument, and delete it from 'kwargs'
-        # since the environment does not accept such an argument
-        self.render_bool = kwargs['render']
-        del kwargs['render']
+        super().__init__()
 
         # Check time_limit consistency
         if 'lbforaging' in key:
@@ -116,9 +114,22 @@ class _GymmaWrapper(MultiAgentEnv):
             assert ':' in key, f"key: {key}"
             key = 'pymarlzooplus.envs.multiagent_particle_envs.mpe:' + key.split(':')[1]
 
-        # Wrappers
         self.key = key
         self.episode_limit = time_limit
+        self.render_bool = render
+
+        # Check the consistency between the 'render_bool' and the display capabilities of the machine
+        self.render_capable = True
+        if self.render_bool is True and 'DISPLAY' not in os.environ:
+            self.render_bool = False
+            self.internal_print_info = (
+                "\n\n###########################################################"
+                "\nThe 'render' is set to 'False' due to the lack of display capabilities!"
+                "\n###########################################################\n"
+            )
+            self.render_capable = False
+
+        # Wrappers
         self.original_env = gym.make(f"{key}", **kwargs)
         self.timelimit_env = TimeLimit(self.original_env, max_episode_steps=time_limit)
         self._env = FlattenObservation(self.timelimit_env)
@@ -150,6 +161,14 @@ class _GymmaWrapper(MultiAgentEnv):
         else:
             raise AttributeError(f"'seed' attribute not found in environment with key: {key}")
 
+    def get_print_info(self):
+        print_info = self.internal_print_info
+
+        # Clear the internal print info
+        self.internal_print_info = None
+
+        return print_info
+
     def step(self, actions):
         """ Returns reward, terminated, info """
 
@@ -160,15 +179,10 @@ class _GymmaWrapper(MultiAgentEnv):
         actions = self.filter_actions(actions)
 
         self._obs, reward, done, self._info = self._env.step(actions)
-        self._obs = [
-            np.pad(
-                o,
-                (0, self.longest_observation_space.shape[0] - len(o)),
-                "constant",
-                constant_values=0,
-            )
+        self._obs = tuple(
+            np.pad(o, (0, self.longest_observation_space.shape[0] - len(o)), "constant", constant_values=0,)
             for o in self._obs
-        ]
+        )
 
         if isinstance(reward, (list, tuple)):
             reward = sum(reward)
@@ -251,16 +265,31 @@ class _GymmaWrapper(MultiAgentEnv):
                 raise AttributeError(f"'seed' attribute not found in environment with key: {self.key}")
 
         self._obs, _ = self._env.reset()
-        self._obs = [np.pad(o,
-                            (0, self.longest_observation_space.shape[0] - len(o)),
-                            "constant",
-                            constant_values=0,)
-                     for o in self._obs]
+        self._obs = tuple(
+            np.pad(o, (0, self.longest_observation_space.shape[0] - len(o)), "constant", constant_values=0,)
+            for o in self._obs
+        )
 
         return self.get_obs(), self.get_state()
 
+    def get_info(self):
+        return self._info
+
+    def get_n_agents(self):
+        return self.n_agents
+
     def render(self):
-        self._env.render()
+        if self.render_capable is True:
+            try:
+                self._env.render()
+            except (Exception, SystemExit) as e:
+                self.internal_print_info = (
+                    "\n\n###########################################################"
+                    f"\nError during rendering: \n\n{e}"
+                    f"\n\nRendering will be disabled to continue the training."
+                    "\n###########################################################\n"
+                )
+                self.render_capable = False
 
     def close(self):
         self._env.close()

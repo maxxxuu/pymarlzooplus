@@ -1,53 +1,19 @@
-cmake
-twine
-absl-py
-attrs
+# General requirements
 gymnasium
-idna
-imageio
 matplotlib
-mpyq
 numpy
-pbr
-Pillow
-pluggy
-portpicker
-probscale
-py
-pygame
-pyparsing
-pysc2
-pytest
-python-dateutil
 PyYAML
-requests
-s2clientprotocol
 sacred
-scipy
 six
-sk-video
-snakeviz
 tensorboard-logger
-albumentations
-tornado
-urllib3
-websocket-client
-whichcraft
-wrapt
-seaborn
 pandas
 torch
-torchvision
 scikit-learn
 pyglet==1.5.27
 tqdm
 pettingzoo[all]
-dill
-ipython
-ipywidgets
 
 # For MPE
-numpy-stl
 seaborn
 
 # For RWARE v1
@@ -60,5 +26,14 @@ rware>1.0.3
 lbforaging>1.1.1
 
 # For PettingZoo
+torchvision
+albumentations==1.4.18
 transformers
 autorom
+
+# For Overcooked
+pygame
+scipy
+dill
+ipython
+ipywidgets

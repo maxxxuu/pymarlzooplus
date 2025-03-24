@@ -1,5 +1,5 @@
 import random
-
+import os
 from typing import Tuple, Any, Dict
 
 import numpy as np
@@ -62,10 +62,10 @@ class ObservationOvercooked(ObservationWrapper):
         # Fix the order of observations, 'policy_agent_idx' always corresponds to agent 0
         assert self.agent_policy_idx == 1 - self.other_agent_idx
         assert self.other_agent_idx == observation['other_agent_env_idx']
-        observation = [
+        observation = (
             observation['both_agent_obs'][self.agent_policy_idx],
             observation['both_agent_obs'][self.other_agent_idx]
-        ]
+        )
 
         return observation
 
@@ -113,14 +113,9 @@ OVERCOOKED_REWARD_TYPE_CHOICES = ["shaped", "sparse"]
 
 class _OvercookedWrapper(MultiAgentEnv):
 
-    def __init__(
-            self,
-            key,
-            time_limit=500,
-            seed=1,
-            reward_type="sparse",
-            render=False
-    ):
+    def __init__(self, key, time_limit=500, seed=1, reward_type="sparse", render=False):
+
+        super().__init__()
 
         # Check key validity
         assert key in OVERCOOKED_KEY_CHOICES, \
@@ -137,6 +132,22 @@ class _OvercookedWrapper(MultiAgentEnv):
         self.reward_type = reward_type
         self.render_bool = render
 
+        # Placeholders
+        self._obs = None
+        self._info = None
+        self.internal_print_info = None
+
+        # Check the consistency between the 'render_bool' and the display capabilities of the machine
+        self.render_capable = True
+        if self.render_bool is True and 'DISPLAY' not in os.environ:
+            self.render_bool = False
+            self.internal_print_info = (
+                "\n\n###########################################################"
+                "\nThe 'render' is set to 'False' due to the lack of display capabilities!"
+                "\n###########################################################\n"
+            )
+            self.render_capable = False
+
         # Gymnasium make
         from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld
         from pymarlzooplus.envs.overcooked_ai.src.overcooked_ai_py.mdp.overcooked_env import OvercookedEnv
@@ -151,7 +162,7 @@ class _OvercookedWrapper(MultiAgentEnv):
         self._env = ObservationOvercooked(self.timelimit_env)
 
         # Define the observation space
-        self.observation_space: tuple = self._env.observation_space # type: ignore[override]
+        self.observation_space: tuple = self._env.observation_space  # type: ignore[override]
 
         # Define the action space
         if hasattr(self._env.action_space, 'n'):
@@ -159,13 +170,17 @@ class _OvercookedWrapper(MultiAgentEnv):
         else:
             raise AttributeError(f"'n' attribute not found in action space in overcooked environment with key: {key}")
 
-        # Placeholders
-        self._obs = None
-        self._info = None
-
         # Needed for rendering
         import cv2
         self.cv2 = cv2
+
+    def get_print_info(self):
+        print_info = self.internal_print_info
+
+        # Clear the internal print info
+        self.internal_print_info = None
+
+        return print_info
 
     def step(self, actions):
         """ Returns reward, terminated, info """
@@ -222,7 +237,6 @@ class _OvercookedWrapper(MultiAgentEnv):
 
         return self.n_agents * self.observation_space[0]
 
-
     def get_avail_actions(self):
         avail_actions = []
         for agent_id in range(self.n_agents):
@@ -237,7 +251,7 @@ class _OvercookedWrapper(MultiAgentEnv):
 
     def get_total_actions(self):
         """ Returns the total number of actions an agent could ever take """
-        return self.action_space
+        return int(self.action_space)
 
     def sample_actions(self):
         return random.choices(range(0, self.get_total_actions()), k=self.n_agents)
@@ -253,11 +267,27 @@ class _OvercookedWrapper(MultiAgentEnv):
 
         return self.get_obs(), self.get_state()
 
+    def get_info(self):
+        return self._info
+
+    def get_n_agents(self):
+        return self.n_agents
+
     def render(self):
-        image = self._env.render()
-        image = self.cv2.cvtColor(image, self.cv2.COLOR_BGR2RGB)
-        self.cv2.imshow("Overcooked", image)
-        self.cv2.waitKey(1)
+        if self.render_capable is True:
+            try:
+                image = self._env.render()
+                image = self.cv2.cvtColor(image, self.cv2.COLOR_BGR2RGB)
+                self.cv2.imshow("Overcooked", image)
+                self.cv2.waitKey(1)
+            except (Exception, SystemExit) as e:
+                self.internal_print_info = (
+                    "\n\n###########################################################"
+                    f"\nError during rendering: \n\n{e}"
+                    f"\n\nRendering will be disabled to continue the training."
+                    "\n###########################################################\n"
+                )
+                self.render_capable = False
 
     def close(self):
         self._env.close()

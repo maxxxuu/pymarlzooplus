@@ -83,8 +83,11 @@ def run(_run, _config, _log):
     for t in threading.enumerate():
         if t.name != "MainThread":
             print("Thread {} is alive! Is daemon: {}".format(t.name, t.daemon))
-            t.join(timeout=1)
-            print("Thread joined")
+            t.join(timeout=2)
+            if t.is_alive():
+                print(f"Thread {t.name} did not terminate.")
+            else:
+                print(f"Thread {t.name} has joined successfully.")
 
     print("Exiting script")
 

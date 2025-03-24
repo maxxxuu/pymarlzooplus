@@ -1,5 +1,5 @@
 import random
-
+import os
 from typing import Tuple, Any, Dict, List
 
 import numpy as np
@@ -46,13 +46,9 @@ PRESSUREPLATE_N_AGENTS_CHOICES = [4, 5, 6]
 
 class _PressurePlateWrapper(MultiAgentEnv):
 
-    def __init__(
-            self,
-            key,
-            time_limit=500,
-            seed=1,
-            render=False
-    ):
+    def __init__(self, key, seed=1, time_limit=500, render=False):
+
+        super().__init__()
 
         # Check key validity
         assert key in PRESSUREPLATE_KEY_CHOICES, \
@@ -73,6 +69,18 @@ class _PressurePlateWrapper(MultiAgentEnv):
         self._info = None
         self.observation_space = None
         self.action_space = None
+        self.internal_print_info = None
+
+        # Check the consistency between the 'render_bool' and the display capabilities of the machine
+        self.render_capable = True
+        if self.render_bool is True and 'DISPLAY' not in os.environ:
+            self.render_bool = False
+            self.internal_print_info = (
+                "\n\n###########################################################"
+                "\nThe 'render' is set to 'False' due to the lack of display capabilities!"
+                "\n###########################################################\n"
+            )
+            self.render_capable = False
 
         ## We import the environment to do the "gymnasium make" base env sourced by gym.make with all its args
         from pymarlzooplus.envs.pressureplate_ai.pressureplate.environment import PressurePlate
@@ -110,9 +118,13 @@ class _PressurePlateWrapper(MultiAgentEnv):
         self._obs = None
         self._info = None
 
-        # Needed for rendering
-        import cv2
-        self.cv2 = cv2
+    def get_print_info(self):
+        print_info = self.internal_print_info
+
+        # Clear the internal print info
+        self.internal_print_info = None
+
+        return print_info
 
     def step(self, actions):
         """ Returns reward, terminated, info """
@@ -175,7 +187,7 @@ class _PressurePlateWrapper(MultiAgentEnv):
 
     def get_total_actions(self):
         """ Returns the total number of actions an agent could ever take """
-        return self.action_space
+        return int(self.action_space)
 
     def sample_actions(self):
         return random.choices(range(0, self.get_total_actions()), k=self.n_agents)
@@ -194,8 +206,24 @@ class _PressurePlateWrapper(MultiAgentEnv):
         self._obs, _ = self._env.reset()
         return self.get_obs(), self.get_state()
 
+    def get_info(self):
+        return self._info
+
+    def get_n_agents(self):
+        return self.n_agents
+
     def render(self):
-        self._env.render()
+        if self.render_capable is True:
+            try:
+                self._env.render()
+            except (Exception, SystemExit) as e:
+                self.internal_print_info = (
+                    "\n\n###########################################################"
+                    f"\nError during rendering: \n\n{e}"
+                    f"\n\nRendering will be disabled to continue the training."
+                    "\n###########################################################\n"
+                )
+                self.render_capable = False
 
     def close(self):
         self._env.close()

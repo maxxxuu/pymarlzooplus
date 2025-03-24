@@ -192,7 +192,7 @@ class World(object):
     # get collision forces for any contact between two entities
     def get_collision_force(self, entity_a, entity_b):
         if (not entity_a.collide) or (not entity_b.collide):
-            return [None, None] # not a collider
+            return [None, None]  # not a collider
         if entity_a is entity_b:
             return [None, None]  # don't collide against itself
         # compute actual distance between entities

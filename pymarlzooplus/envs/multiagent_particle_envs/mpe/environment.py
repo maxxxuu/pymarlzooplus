@@ -5,9 +5,17 @@ import gymnasium as gym
 from gymnasium import spaces
 from gymnasium.utils import seeding
 import numpy as np
+from gymnasium.spaces import MultiDiscrete
 
-from pymarlzooplus.envs.multiagent_particle_envs.mpe.multi_discrete import MultiDiscrete
-from pymarlzooplus.envs.multiagent_particle_envs.mpe.rendering import Viewer
+try:
+    from pymarlzooplus.envs.multiagent_particle_envs.mpe.rendering import Viewer
+except Exception as e:
+    print(
+        "\n#####################################################################################"
+        f"\nCannot import 'Viewer' from 'multiagent_particle_envs.mpe.rendering' due to the following error: \n\n{e}"
+        "\n\nProbably this is a problem of 'pyglet', so rendering will not work."
+        "\n#####################################################################################\n"
+    )
 
 
 # environment for all agents in the multiagent world
@@ -72,19 +80,23 @@ class MultiAgentEnv(gym.Env):
             if len(total_action_space) > 1:
                 # all action spaces are discrete, so simplify to MultiDiscrete action space
                 if all([isinstance(act_space, spaces.Discrete) for act_space in total_action_space]):
-                    act_space = MultiDiscrete([[0, act_space.n - 1] for act_space in total_action_space])
+                    act_counts = [space.n for space in total_action_space]
+                    act_space = MultiDiscrete(act_counts)
+                    act_space.n = int(np.prod(act_space.nvec))
                 else:
                     act_space = spaces.Tuple(total_action_space)
-                self.action_space.append(act_space) # type: ignore[override]
+                self.action_space.append(act_space)  # type: ignore[override]
             else:
-                self.action_space.append(total_action_space[0]) # type: ignore[override]
+                self.action_space.append(total_action_space[0])  # type: ignore[override]
             # observation space
             obs_dim = len(observation_callback(agent, self.world))
-            self.observation_space.append(spaces.Box(low=-np.inf, high=+np.inf, shape=(obs_dim,), dtype=np.float32)) # type: ignore[override]
+            self.observation_space.append(  # type: ignore[override]
+                spaces.Box(low=-np.inf, high=+np.inf, shape=(obs_dim,), dtype=np.float32)
+            )
             agent.action.c = np.zeros(self.world.dim_c)
 
-        self.action_space = spaces.Tuple(tuple(self.action_space)) # type: ignore[override]
-        self.observation_space = spaces.Tuple(tuple(self.observation_space)) # type: ignore[override]
+        self.action_space = spaces.Tuple(tuple(self.action_space))  # type: ignore[override]
+        self.observation_space = spaces.Tuple(tuple(self.observation_space))  # type: ignore[override]
         self.n_agents = self.n
 
         # rendering
@@ -207,7 +219,7 @@ class MultiAgentEnv(gym.Env):
         # process action
         if isinstance(action_space, MultiDiscrete):
             act = []
-            size = action_space.high - action_space.low + 1
+            size = action_space.nvec
             index = 0
             for s in size:
                 act.append(action[index:(index+s)])

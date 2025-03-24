@@ -8,7 +8,15 @@ import gymnasium as gym
 from gymnasium import spaces
 from gymnasium.utils import seeding
 
-from pymarlzooplus.envs.capture_target.src.capture_target_ai_py import rendering
+try:
+    from pymarlzooplus.envs.capture_target.src.capture_target_ai_py import rendering
+except Exception as e:
+    print(
+        "\n#####################################################################################"
+        f"\nCannot import 'rendering' from 'capture_target_ai_py' due to the following error: \n\n{e}"
+        "\n\nProbably this is a problem of 'pyglet', so rendering will not work."
+        "\n#####################################################################################\n"
+    )
 from pymarlzooplus.envs.capture_target.src.capture_target_ai_py.assets import TRANSLATION_TABLE, ACTIONS, DIRECTION
 
 
@@ -29,7 +37,7 @@ class CaptureTarget(gym.Env):
             intermediate_r=False,
             target_flick_prob=0.3,
             obs_one_hot=False,
-            tgt_avoid_agent=False,
+            tgt_avoid_agent=True,
             tgt_trans_noise=0.0,
             agent_trans_noise=0.1
     ):

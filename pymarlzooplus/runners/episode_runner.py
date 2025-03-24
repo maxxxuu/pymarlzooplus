@@ -25,13 +25,14 @@ class EpisodeRunner:
         assert self.batch_size == 1
 
         # Initialize environment
-        assert not (self.args.env == 'pettingzoo' and self.args.env_args['centralized_image_encoding'] is True), \
-            ("In 'episode_runner', the argument 'centralized_image_encoding' of pettingzoo should be False "
-             "since there is only one environment, and thus the encoding can be considered as centralized.")
+        assert not (self.args.env == 'pettingzoo' and self.args.env_args['centralized_image_encoding'] is True), (
+            "In 'episode_runner', the argument 'centralized_image_encoding' of pettingzoo should be False "
+            "since there is only one environment, and thus the encoding can be considered as centralized."
+        )
         self.env = env_REGISTRY[self.args.env](**self.args.env_args)
-        if self.args.env == 'pettingzoo':
-            # Get info from environment to be printed
-            print_info = self.env.get_print_info()
+        # Get info from environment to be printed
+        print_info = self.env.get_print_info()
+        if print_info != "None" and print_info is not None:
             # Simulate the message format of the logger defined in _logging.py
             current_time = datetime.datetime.now().strftime('%H:%M:%S')
             self.logger.console_logger.info(f"\n[INFO {current_time}] episode_runner {print_info}")
@@ -49,13 +50,15 @@ class EpisodeRunner:
         self.log_train_stats_t = -1000000
 
     def setup(self, scheme, groups, preprocess, mac, explorer):
-        self.new_batch = partial(EpisodeBatch,
-                                 scheme,
-                                 groups,
-                                 self.batch_size,
-                                 self.episode_limit + 1,
-                                 preprocess=preprocess,
-                                 device=self.args.device)
+        self.new_batch = partial(
+            EpisodeBatch,
+            scheme,
+            groups,
+            self.batch_size,
+            self.episode_limit + 1,
+            preprocess=preprocess,
+            device=self.args.device
+        )
         self.mac = mac
         self.explorer = explorer
 
@@ -94,21 +97,38 @@ class EpisodeRunner:
 
             # Pass the entire batch of experiences up till now to the agents
             # Receive the actions for each agent at this timestep in a batch of size 1
-            actions, extra_returns = self.mac.select_actions(self.batch,
-                                                             t_ep=self.t,
-                                                             t_env=self.t_env,
-                                                             test_mode=test_mode)
+            actions, extra_returns = self.mac.select_actions(
+                self.batch,
+                t_ep=self.t,
+                t_env=self.t_env,
+                test_mode=test_mode
+            )
 
             # Choose actions based on explorer, if applicable. This is for EOI.
             if self.explorer is not None:
-                actions = self.explorer.select_actions(actions,
-                                                       self.t,
-                                                       test_mode,
-                                                       pre_transition_data)
+                actions = self.explorer.select_actions(
+                    actions,
+                    self.t,
+                    test_mode,
+                    pre_transition_data
+                )
 
+            # Step
             reward, terminated, env_info = self.env.step(actions[0])
+
+            # Render
             if test_mode and self.args.render:
                 self.env.render()
+
+            ## Print info
+            # Get info from environment to be printed
+            print_info = self.env.get_print_info()
+            if print_info != "None" and print_info is not None:
+                # Simulate the message format of the logger defined in _logging.py
+                current_time = datetime.datetime.now().strftime('%H:%M:%S')
+                self.logger.console_logger.info(f"\n[INFO {current_time}] episode_runner {print_info}")
+
+            # Keep track of episode return
             episode_return += reward
 
             post_transition_data = {

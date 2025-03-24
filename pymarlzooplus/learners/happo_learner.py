@@ -336,10 +336,11 @@ class HAPPO:
         surr1 = ratios * adv_targ
         surr2 = th.clamp(ratios, 1 - self.args.eps_clip, 1 + self.args.eps_clip) * adv_targ
         pg_loss = -(
-                th.sum(factor.detach() * th.min(surr1, surr2),
-                       dim=-1,
-                       keepdim=True
-                       ) * mask
+                th.sum(
+                    factor.detach() * th.min(surr1, surr2),
+                    dim=-1,
+                    keepdim=True
+                ) * mask
         ).sum() / mask.sum()
         entropy = entropy.mean()
         pg_loss -= self.args.entropy_coef * entropy
@@ -377,11 +378,12 @@ class HAPPO:
         if self.mac.critic.use_rnn_critic is True:
             hidden_states = batch["hidden_states_critic"]
 
-        critic_returns = self.critic(batch,
-                                     t=0,
-                                     hidden_states=hidden_states,
-                                     masks=mask
-                                     )
+        critic_returns = self.critic(
+            batch,
+            t=0,
+            hidden_states=hidden_states,
+            masks=mask
+        )
         values = critic_returns[0]
         value_pred_clipped = old_values + \
                              (values - old_values).clamp(-self.args.eps_clip, self.args.eps_clip)

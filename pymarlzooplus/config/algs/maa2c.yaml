@@ -3,12 +3,11 @@
 action_selector: "soft_policies"
 mask_before_softmax: True
 
-runner: "parallel" # Choices: "parallel", "episode"
+runner: "parallel"
 
-# parallel 5 processes (max) can be supported by a GPU with 8GB memory.
-buffer_size: 2 # 10
-batch_size_run: 2 # 10
-batch_size: 2 # 10
+buffer_size: 10
+batch_size_run: 10
+batch_size: 10
 
 # update the target network every {} training steps
 target_update_interval_or_tau: 200
@@ -30,4 +29,3 @@ critic_type: "cv_critic"
 
 name: "maa2c"
 
-t_max: 5000 # 20050000

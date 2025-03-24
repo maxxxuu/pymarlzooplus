@@ -31,4 +31,3 @@ critic_type: "cv_critic_ns"
 
 name: "maa2c_ns"
 
-t_max: 20050000

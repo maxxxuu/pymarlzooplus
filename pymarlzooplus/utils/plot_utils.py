@@ -107,7 +107,7 @@ def create_plot(
         assert len(y_data_std) == len(y_data_mean), \
             f"'len(y_data_std)': {len(y_data_std)}, 'len(y_data_mean)': {len(y_data_mean)}"
 
-    # Create new figure
+    # Create a new figure
     plt.figure()
 
     for data_idx in range(len(x_data)):
@@ -498,7 +498,7 @@ def create_multiple_exps_plot(
     legend_order = list(PREDEFINED_MAP_ALGO_COLORS.keys())
     legend_lines_fig_1 = []
     legend_lines_fig_2 = []
-    # First should be the lines which are listed in 'legend_order'
+    # At first, it should be the lines which are listed in 'legend_order'
     for __plot_legend in legend_order:
         if __plot_legend in plot_legends:
             # Find the index of '__plot_legend' in 'plot_legends'

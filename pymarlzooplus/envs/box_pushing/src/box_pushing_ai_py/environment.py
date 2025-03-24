@@ -8,7 +8,15 @@ from gymnasium.utils import seeding
 from gymnasium import spaces
 import numpy as np
 
-from pymarlzooplus.envs.box_pushing.src.box_pushing_ai_py import rendering
+try:
+    from pymarlzooplus.envs.box_pushing.src.box_pushing_ai_py import rendering
+except Exception as e:
+    print(
+        "\n#####################################################################################"
+        f"\nCannot import 'rendering' from 'box_pushing_ai_py' due to the following error: \n\n{e}"
+        "\n\nProbably this is a problem of 'pyglet', so rendering will not work."
+        "\n#####################################################################################\n"
+    )
 from pymarlzooplus.envs.box_pushing.src.box_pushing_ai_py.assets import Agent, Box, ACTIONS, DIRECTION
 
 
@@ -18,7 +26,7 @@ class BoxPushing(gym.Env):
         'video.frames_per_second': 50
     }
 
-    def __init__(self, n_agent, grid_dim, terminate_step=50, random_init=False, *args, **kwargs):
+    def __init__(self, n_agent, grid_dim, terminate_step=60, random_init=True, *args, **kwargs):
 
         self.n_agent = n_agent
 

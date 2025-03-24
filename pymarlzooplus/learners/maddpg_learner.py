@@ -112,7 +112,7 @@ class MADDPGLearner:
         new_actions = th.cat(new_actions, dim=2)
 
         pis = th.cat(pis, dim=1)
-        pis[pis==-1e10] = 0
+        pis[pis == -1e10] = 0
         pis = pis.reshape(-1, 1)
         q = self.critic(inputs[:, :-1], new_actions)
         q = q.reshape(-1, 1)
@@ -139,10 +139,9 @@ class MADDPGLearner:
             self.logger.log_stat("agent_grad_norm", agent_grad_norm.item(), t_env)
             mask_elems = mask.sum().item()
             self.logger.log_stat("td_error_abs", masked_td_error.abs().sum().item() / mask_elems, t_env)
-            self.logger.log_stat("q_taken_mean", (q_taken).sum().item() / mask_elems, t_env)
+            self.logger.log_stat("q_taken_mean", q_taken.sum().item() / mask_elems, t_env)
             self.logger.log_stat("target_mean", targets.sum().item() / mask_elems, t_env)
             self.logger.log_stat("pg_loss", pg_loss.item(), t_env)
-            self.logger.log_stat("agent_grad_norm", agent_grad_norm, t_env)
             self.log_stats_t = t_env
 
     def _build_inputs(self, batch, t=None):
@@ -162,9 +161,10 @@ class MADDPGLearner:
             elif isinstance(t, int):
                 inputs.append(batch["actions_onehot"][:, slice(t - 1, t)])
             else:
-                last_actions = th.cat([th.zeros_like(batch["actions_onehot"][:, 0:1]), batch["actions_onehot"][:, :-1]],
-                                      dim=1)
-                # last_actions = last_actions.view(bs, max_t, 1, -1).repeat(1, 1, self.n_agents, 1)
+                last_actions = th.cat(
+                    [th.zeros_like(batch["actions_onehot"][:, 0:1]), batch["actions_onehot"][:, :-1]],
+                    dim=1
+                )
                 inputs.append(last_actions)
         if self.args.obs_agent_id:
             inputs.append(th.eye(self.n_agents, device=batch.device).unsqueeze(0).unsqueeze(0).expand(bs, max_t, -1, -1))
@@ -197,7 +197,8 @@ class MADDPGLearner:
 
     def load_models(self, path):
         self.mac.load_models(path)
-        # Not quite right but I don't want to save target networks
+        # Not quite right, but I don't want to save target networks
         self.target_mac.load_models(path)
         self.agent_optimiser.load_state_dict(
-            th.load("{}/agent_opt.th".format(path), map_location=lambda storage, loc: storage))
+            th.load("{}/agent_opt.th".format(path), map_location=lambda storage, loc: storage)
+        )

@@ -13,12 +13,12 @@ env_args:
   kwargs: "" # Use in terminal: env_args.kwargs="('arg1',arg1_value), ('arg2',arg2_value)"
 
 test_greedy: True
-test_nepisode: 10 # 100
-test_interval: 500 # 50000
-log_interval: 500 # 50000
-runner_log_interval: 1000 # 10000
-learner_log_interval: 1000 # 10000
-t_max: 2000 # 2050000
+test_nepisode: 100
+test_interval: 50000
+log_interval: 50000
+runner_log_interval: 10000
+learner_log_interval: 10000
+t_max: 2050000
 
 
 ## Butterfly environments
@@ -27,13 +27,13 @@ t_max: 2000 # 2050000
 # https://pettingzoo.farama.org/environments/butterfly/pistonball/
 # key: "pistonball_v6"
 # args: max_cycles=125, render_mode="human", n_pistons=20, time_penalty=-0.1, continuous=True, random_drop=True, random_rotate=True, ball_mass=0.75, ball_friction=0.3, ball_elasticity=1.5
-# RUN:  python3 pymarlzooplus/main.py --config=qmix --env-config=pettingzoo with env_args.key="pistonball_v6" env_args.time_limit=125 env_args.kwargs="('n_pistons',4),"
+# RUN:  python pymarlzooplus/main.py --config=qmix --env-config=pettingzoo with env_args.key="pistonball_v6" env_args.time_limit=125 env_args.kwargs="('n_pistons',4),"
 
 # Cooperative Pong
 # https://pettingzoo.farama.org/environments/butterfly/cooperative_pong/
 # key: "cooperative_pong_v5"
 # args: max_cycles=900, render_mode="human", ball_speed=9, left_paddle_speed=12, right_paddle_speed=12, cake_paddle=True, max_cycles=900, bounce_randomness=False, max_reward=100, off_screen_penalty=-10
-# RUN: python3 pymarlzooplus/main.py --config=qmix --env-config=pettingzoo with env_args.key="cooperative_pong_v5"
+# RUN: python pymarlzooplus/main.py --config=qmix --env-config=pettingzoo with env_args.key="cooperative_pong_v5"
 
 # Knights Archers Zombies
 # https://pettingzoo.farama.org/environments/butterfly/knights_archers_zombies/

@@ -2,17 +2,17 @@ env: "overcooked"
 
 env_args:
   key: null
-  time_limit: 500 # # Episode horizon, by default 500
-  reward_type: null # Options: "shaped", "sparse"
+  time_limit: 500  # Episode horizon, by default 500
+  reward_type: null  # Options: "shaped", "sparse"
   render: False
 
 test_greedy: True
-test_nepisode: 10 # 100
-test_interval: 500 # 50000
-log_interval: 500 # 50000
-runner_log_interval: 1000 # 10000
-learner_log_interval: 1000 # 10000
-t_max: 10000 # 2050000
+test_nepisode: 100
+test_interval: 50000
+log_interval: 50000
+runner_log_interval: 10000
+learner_log_interval: 10000
+t_max: 2050000
 
 # Overcooked
 # https://github.com/HumanCompatibleAI/overcooked_ai

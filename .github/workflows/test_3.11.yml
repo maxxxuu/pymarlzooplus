@@ -20,9 +20,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get install -y python3-opengl
+          sudo apt-get install -y python3-opengl g++-9 gcc-9
+          export CC=gcc-9 CXX=g++-9
           pip install -r requirements.txt
           pip install opencv-python-headless
+          AutoROM -y
 
       - name: Run tests
         run: python -m unittest test.py

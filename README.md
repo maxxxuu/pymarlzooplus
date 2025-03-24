@@ -67,16 +67,35 @@ conda activate pymarlzooplus
   ``` 
 
 **Known issues**:
-- Before running an atari environment (from PettingZoo) for the first time, you have to run: ``AutoROM -y``
-- Installation error for ``box2d-py``: Run ``sudo apt-get install swig`` and try again the installation.
-- In case you get `ImportError: Library "GLU" not found.`, run ``sudo apt-get install python3-opengl``.
+- Before running an atari environment (from PettingZoo) for the first time, you have to run: 
+  ```sh
+  AutoROM -y
+  ```
+- Installation error for ``box2d-py``, run:
+  ```sh
+  sudo apt-get install swig
+  ```
+- In case you get `ImportError: Library "GLU" not found.`, run: 
+  ```sh
+  sudo apt-get install python3-opengl
+  ```
 - In case you get `IndexError: list index out of range` for pyglet in a non-headless machine using `render=True`, 
 set `__GLX_VENDOR_LIBRARY_NAME=nvidia` and `__NV_PRIME_RENDER_OFFLOAD=1` as environment variables. 
-For example, if you want to run your own file `example.py` , run
+  
+  For example, if you want to run your own file `example.py` , run:
+  ```sh
+  __GLX_VENDOR_LIBRARY_NAME=nvidia __NV_PRIME_RENDER_OFFLOAD=1 python example.py
+  ```
+- In case you get `ERROR: Failed building wheel for multi-agent-ale-py`, probably the problem is with the compiler (if `cmake` is already installed), so run:
+    ```sh
+    sudo apt-get install g++-9 gcc-9
+    export CC=gcc-9 CXX=g++-9
+    ```
+- In case you get `SystemError: ffi_prep_closure(): bad user_data (it seems that the version of the libffi library seen at runtime is different from the 'ffi.h' file seen at compile-time)`, probably for `"waterworld_v4"` of PettingZoo, run:
+  ```sh
+  pip install --upgrade --force-reinstall pymunk cffi
+  ```
 
-```
-__GLX_VENDOR_LIBRARY_NAME=nvidia __NV_PRIME_RENDER_OFFLOAD=1 python example.py
-```
 # Docker
 You can also use the provided Docker files in [docker/](/docker/) to build and run a Docker container with the 
 pymarlzooplus installed as a headless machine.
@@ -228,12 +247,12 @@ Available scenarios we run experiments:
 - "mpe:SimpleSpread-8-v0"
 
 More available scenarios:
-- "mpe:MultiSpeakerListener-v0"
+- "mpe:MultiSpeakerListener-v0",
 - "mpe:SimpleAdversary-v0",
 - "mpe:SimpleCrypto-v0",
 - "mpe:SimplePush-v0",
 - "mpe:SimpleReference-v0",
-- "mpe:SimpleTag-v0"
+- "mpe:SimpleTag-v0",
 - "mpe:SimpleWorldComm-v0",
 - "mpe:ClimbingSpread-v0"
 
@@ -534,6 +553,8 @@ args = {
 
 # Initialize environment
 env = env_REGISTRY[args["env"]](**args["env_args"])
+n_agns = env.get_n_agents()
+n_acts = env.get_total_actions()
 # Reset the environment
 obs, state = env.reset()
 done = False
@@ -544,9 +565,10 @@ while not done:
     # Insert the policy's actions here
     actions = env.sample_actions()
     # Apply an environment step
-    reward, done, info = env.step(actions)
+    reward, done, extra_info = env.step(actions)
     obs = env.get_obs()
     state = env.get_state()
+    info = env.get_info()
 # Terminate the environment
 env.close()
 ```

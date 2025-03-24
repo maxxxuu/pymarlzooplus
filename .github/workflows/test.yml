@@ -23,6 +23,7 @@ jobs:
           sudo apt-get install -y python3-opengl
           pip install -r requirements.txt
           pip install opencv-python-headless
+          AutoROM -y
 
       - name: Run tests
         run: python -m unittest test.py

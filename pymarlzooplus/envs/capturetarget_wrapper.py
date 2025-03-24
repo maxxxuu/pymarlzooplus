@@ -1,10 +1,12 @@
 import random
 from typing import Tuple, Any, Dict, List
+import os
 
 import gymnasium as gym
 from gymnasium.utils.step_api_compatibility import step_api_compatibility
 from gymnasium.wrappers import TimeLimit as GymTimeLimit
 from gymnasium import register
+import numpy as np
 
 from pymarlzooplus.envs.multiagentenv import MultiAgentEnv
 
@@ -41,24 +43,18 @@ class TimeLimitCT(GymTimeLimit):
 
 class _CaptureTargetWrapper(MultiAgentEnv):
 
-    def __init__(self, key, seed=1, **kwargs):
+    def __init__(self, key, seed=1, time_limit=500, render=False, **kwargs):
+
+        super().__init__()
 
         # Check time_limit validity
-        if 'time_limit' not in list(kwargs.keys()):
-            kwargs['time_limit'] = 500  # default value of time_limit
-        time_limit = kwargs['time_limit']
         assert isinstance(time_limit, int), \
             f"Invalid time_limit type: {type(time_limit)}, 'time_limit': {time_limit}, is not 'int'!"
 
-        # Fix kwargs time_limit, since the environment defines this arg as 'terminate_step'
+        # Fix kwargs, since the environment defines this arg as 'terminate_step'
         kwargs['terminate_step'] = time_limit
-        del kwargs['time_limit']
 
-        # Keep the 'render' argument, and delete it from 'kwargs'
-        # since the environment does not accept such an argument
-        self.render_bool = kwargs['render']
-        del kwargs['render']
-
+        self.render_bool = render
         self.key = key
         self._seed = seed
 
@@ -87,12 +83,16 @@ class _CaptureTargetWrapper(MultiAgentEnv):
         # Get the number of agents
         if hasattr(self.original_env.unwrapped, 'n_agent'):
             self.n_agents = self.original_env.unwrapped.n_agent
+            # Check if there are only 2 agents
+            assert self.n_agents == 2
         else:
             raise AttributeError(f"'n_agents' attribute not found in the Capture Target environment with key: {key}")
 
         # Define the observation space
         if hasattr(self.original_env.unwrapped, 'obs_size'):
             self._obs_size = self.original_env.unwrapped.obs_size[0]
+            # Check if obs_size is the same for every agent
+            assert all([self._obs_size == obs_size for obs_size in self.original_env.unwrapped.obs_size])
         else:
             raise AttributeError(
                 "'obs_size' attribute not found in 'original_env.unwrapped' "
@@ -102,6 +102,8 @@ class _CaptureTargetWrapper(MultiAgentEnv):
         # Define the action space
         if hasattr(self.original_env.unwrapped, 'n_action'):
             self.action_space = self.original_env.unwrapped.n_action[0]
+            # Check if n_action is the same for every agent
+            assert all([self.action_space == n_action for n_action in self.original_env.unwrapped.n_action])
         else:
             raise AttributeError(
                 "'n_action' attribute not found in 'original_env.unwrapped' "
@@ -111,25 +113,18 @@ class _CaptureTargetWrapper(MultiAgentEnv):
         # Placeholders
         self._obs = None
         self._info = {"TimeLimit.truncated": False}
+        self.internal_print_info = None
 
-        # Check if n_agents is 2
-        assert self.n_agents == 2
-        # Check if obs_size is the same for every agent
-        if hasattr(self.original_env.unwrapped, 'obs_size'):
-            assert all([self._obs_size == obs_size for obs_size in self.original_env.unwrapped.obs_size])
-        else:
-            raise AttributeError(
-                "'obs_size' attribute not found in 'original_env.unwrapped' "
-                f"of the Capture Target environment with key: {key}"
+        # Check the consistency between the 'render_bool' and the display capabilities of the machine
+        self.render_capable = True
+        if self.render_bool is True and 'DISPLAY' not in os.environ:
+            self.render_bool = False
+            self.internal_print_info = (
+                "\n\n###########################################################"
+                "\nThe 'render' is set to 'False' due to the lack of display capabilities!"
+                "\n###########################################################\n"
             )
-        # Check if n_action is the same for every agent
-        if hasattr(self.original_env.unwrapped, 'n_action'):
-            assert all([self.action_space == n_action for n_action in self.original_env.unwrapped.n_action])
-        else:
-            raise AttributeError(
-                "'n_action' attribute not found in 'original_env.unwrapped' "
-                f"of the Capture Target environment with key: {key}"
-            )
+            self.render_capable = False
 
     @staticmethod
     def gym_registration():
@@ -143,6 +138,14 @@ class _CaptureTargetWrapper(MultiAgentEnv):
             },
         )
 
+    def get_print_info(self):
+        print_info = self.internal_print_info
+
+        # Clear the internal print info
+        self.internal_print_info = None
+
+        return print_info
+
     def step(self, actions):
         """ Returns reward, terminated, info """
 
@@ -154,6 +157,8 @@ class _CaptureTargetWrapper(MultiAgentEnv):
 
         # Make the environment step
         self._obs, rewards, done, info = self._env.step(actions)
+        # From numpy to tuple
+        self._obs = tuple(self._obs)
 
         # Add all rewards together. 'rewards' is a list
         rewards = sum(rewards)
@@ -173,8 +178,7 @@ class _CaptureTargetWrapper(MultiAgentEnv):
         return self._obs_size
 
     def get_state(self):
-        # The state is a vector with the observations of all agents flattened
-        return self._obs.flatten()
+        return np.concatenate(self._obs, axis=0).astype(np.float32)
 
     def get_state_size(self):
         """ Returns the flatted shape of the state"""
@@ -209,10 +213,29 @@ class _CaptureTargetWrapper(MultiAgentEnv):
                 raise AttributeError(f"'seed' attribute not found in the Capture Target environment with key: {self.key}")
 
         self._obs, _ = self._env.reset()
+        # From numpy to tuple
+        self._obs = tuple(self._obs)
+
         return self.get_obs(), self.get_state()
 
+    def get_info(self):
+        return self._info
+
+    def get_n_agents(self):
+        return self.n_agents
+
     def render(self):
-        self._env.render()
+        if self.render_capable is True:
+            try:
+                self._env.render()
+            except (Exception, SystemExit) as e:
+                self.internal_print_info = (
+                    "\n\n###########################################################"
+                    f"\nError during rendering: \n\n{e}"
+                    f"\n\nRendering will be disabled to continue the training."
+                    "\n###########################################################\n"
+                )
+                self.render_capable = False
 
     def close(self):
         self._env.close()

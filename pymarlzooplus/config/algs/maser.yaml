@@ -12,7 +12,7 @@ runner: "episode"
 batch_size_run: 1
 
 # Buffer
-buffer_size: 2 # 5000
+buffer_size: 5000
 prioritized_buffer: False
 prioritized_buffer_alpha: 0.6
 
