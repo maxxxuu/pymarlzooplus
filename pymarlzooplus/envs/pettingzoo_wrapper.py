@@ -3,6 +3,7 @@ import os
 import numpy as np
 import torch
 from gymnasium.utils import seeding
+import cv2
 
 from pymarlzooplus.envs.multiagentenv import MultiAgentEnv
 from pymarlzooplus.utils.image_encoder import ImageEncoder
@@ -226,9 +227,6 @@ class ObservationPZ(object):
         assert not (given_observation_space is None and centralized_image_encoding is True)
         assert not (given_observation_space is not None and centralized_image_encoding is False)
 
-        # Placeholders
-        self.cv2 = None
-
     def step(self, actions):
         if hasattr(self.timelimit_env, 'timelimit_step'):
             observations, rewards, terminations, truncations, infos = self.timelimit_env.timelimit_step(actions)
@@ -262,24 +260,24 @@ class ObservationPZ(object):
         image_a = self.replace_color(image_a, agent_1_rgb_values, [0, 0, 0])
         image_a = self.replace_color(image_a, agent_2_rgb_values, [0, 0, 0])
         # Calculate the absolute difference between images
-        diff = self.cv2.absdiff(image_a, image_b)
+        diff = cv2.absdiff(image_a, image_b)
         # Convert the difference to grayscale in order to handle a single threshold for all channels
-        diff_gray = self.cv2.cvtColor(diff, self.cv2.COLOR_RGB2GRAY)
+        diff_gray = cv2.cvtColor(diff, cv2.COLOR_RGB2GRAY)
         # Mask for common areas: where the difference is less than or equal to sensitivity
         common_mask = np.where(diff_gray <= sensitivity, 255, 0).astype(np.uint8)
         # Mask for differences: where the difference is greater than sensitivity
         difference_mask = np.where(diff_gray > sensitivity, 255, 0).astype(np.uint8)
         # Create a 3-channel mask for common and difference areas
-        common_mask_3channel = self.cv2.cvtColor(common_mask, self.cv2.COLOR_GRAY2RGB)
-        difference_mask_3channel = self.cv2.cvtColor(difference_mask, self.cv2.COLOR_GRAY2RGB)
+        common_mask_3channel = cv2.cvtColor(common_mask, cv2.COLOR_GRAY2RGB)
+        difference_mask_3channel = cv2.cvtColor(difference_mask, cv2.COLOR_GRAY2RGB)
         # Extract common areas using common mask
-        common_areas = self.cv2.bitwise_and(image_a, common_mask_3channel)
+        common_areas = cv2.bitwise_and(image_a, common_mask_3channel)
         # Extract differences from both images
-        differences_from_a = self.cv2.bitwise_and(image_a, difference_mask_3channel)
-        differences_from_b = self.cv2.bitwise_and(image_b, difference_mask_3channel)
+        differences_from_a = cv2.bitwise_and(image_a, difference_mask_3channel)
+        differences_from_b = cv2.bitwise_and(image_b, difference_mask_3channel)
         # Combine common areas with differences from both images
-        combined_image = self.cv2.add(common_areas, differences_from_a)
-        combined_image = self.cv2.add(combined_image, differences_from_b)
+        combined_image = cv2.add(common_areas, differences_from_a)
+        combined_image = cv2.add(combined_image, differences_from_b)
         # Create partial obs of agent 1 by removing agent 2 from the combined image
         agent_1_obs_ = self.replace_color(combined_image.copy(), agent_2_rgb_values, [0, 0, 0])
         # Create partial obe of agent 2 by removing agent 1 from the combined image
@@ -366,10 +364,6 @@ class _PettingZooWrapper(MultiAgentEnv):
         self.centralized_image_encoding = centralized_image_encoding
         self._kwargs = kwargs
         self.given_observation_space = given_observation_space
-
-        # Use cv2 for rendering
-        import cv2
-        self.cv2 = cv2
 
         # Placeholders
         self.kwargs = None
@@ -504,7 +498,9 @@ class _PettingZooWrapper(MultiAgentEnv):
         self.original_observation_space = self.__env.observation_space(self.original_env.possible_agents[0])
         self._common_observation_space = all(
             [
-                self.original_observation_space == self.__env.observation_space(self.original_env.possible_agents[agent_id])
+                self.original_observation_space == self.__env.observation_space(
+                    self.original_env.possible_agents[agent_id]
+                )
                 for agent_id in range(self.n_agents)
             ]
         )
@@ -520,7 +516,6 @@ class _PettingZooWrapper(MultiAgentEnv):
                 centralized_image_encoding,
                 given_observation_space
             )
-            self._env.cv2 = self.cv2
             self.__env._obs_wrapper = self._env
             # Define the observation space
             self.observation_space = self._env.observation_space
@@ -877,10 +872,10 @@ class _PettingZooWrapper(MultiAgentEnv):
                     # Get image
                     env_image = self.original_env.render()
                     # Convert RGB to BGR
-                    env_image = self.cv2.cvtColor(env_image, self.cv2.COLOR_RGB2BGR)
+                    env_image = cv2.cvtColor(env_image, cv2.COLOR_RGB2BGR)
                     # Render
-                    self.cv2.imshow(f"Environment: {self.key}", env_image)
-                    self.cv2.waitKey(1)
+                    cv2.imshow(f"Environment: {self.key}", env_image)
+                    cv2.waitKey(1)
             except (Exception, SystemExit) as e:
                 self.internal_print_info = (
                     "\n\n###########################################################"

@@ -2,20 +2,20 @@
 from pymarlzooplus.envs import REGISTRY as env_REGISTRY
 
 ##################################### API for fully cooperative tasks. ###################################
-# ## 'n_agns' (int) is the number of agents in the environment,
-# ## 'n_acts' (int) is the number of actions available to each agent (all the agents have the same actions),
-# ## 'reward' (float) is the sum of all agents' rewards,
-# ## 'done' (bool) is False if at least an agent's done is False,
-# ## 'extra_info' (dict) typically is an empty dictionary,
-# ## 'info' (dict) contains only 'TimeLimit.truncated' (bool) which is False if at least an agent's truncated is False,
-# ## 'obs' (tuple) contains numpy arrays each of which corresponds to an agent:
-#                  a) In the case of encoding the images, the shape of each observation is (cnn_features_dim,),
-#                     as defined by the argument 'cnn_features_dim' (default is 128).
-#                  b) In the case of raw images, the shape of each observation is (3, h, w).
-# ## 'state' (np.ndarray) is the concatenation of all observations:
-#                         a) In the case of encoding the images, the shape is (cnn_features_dim * n_agns,).
-#                         b) In the case of raw images, the shape is (n_agns, 3, h, w).
-#
+## 'n_agns' (int) is the number of agents in the environment.
+## 'n_acts' (int) is the number of actions available to each agent (all the agents have the same actions).
+## 'reward' (float) is the sum of all agents' rewards.
+## 'done' (bool) is False if at least an agent's done is False.
+## 'extra_info' (dict) typically is an empty dictionary.
+## 'info' (dict) contains only 'TimeLimit.truncated' (bool) which is False if at least an agent's truncated is False.
+## 'obs' (tuple) contains numpy arrays, each of which corresponds to an agent:
+##               a) In the case of encoding the images, the shape of each observation is (cnn_features_dim,),
+##                  as defined by the argument 'cnn_features_dim' (default is 128).
+##               b) In the case of raw images, the shape of each observation is (3, h, w).
+## 'state' (np.ndarray) is the concatenation of all observations:
+##                      a) In the case of encoding the images, the shape is (cnn_features_dim * n_agns,).
+##                      b) In the case of raw images, the shape is (n_agns, 3, h, w).
+
 # # Example of arguments for PettingZoo.
 # # Specifically:
 #   - Butterfly (except from "Knights Archers Zombies"),
@@ -153,23 +153,24 @@ env.close()
 
 
 ####################################### API for NON-fully cooperative tasks, two cases: ##############################
-# ## (a) For common observation space (i.e., all agents have the same observation space):
-# ## - 'reward' (dict) is returned as provided by PettingZoo,
-#                      where each element is either np.int64, int, np.float64, or float.
-# ## - 'done' (dict) is returned as provided by PettingZoo, where each element is bool.
-# ## - 'info' (dict) contains 'TimeLimit.truncated', as well as 'truncations' and 'info' dictionaries
-#                    as returned by PettingZoo.
-# ## - 'obs' (dict) is returned in the same format as given by PettingZoo (i.e, the same keys), but in case of images:
-#                   ab) If images are encoded (i.e., 'trainable_cnn' is True), the shape of each
-#                       observation (np.ndarray) is (cnn_features_dim,) as defined by the argument
-#                       'cnn_features_dim' (default is 128).
-#                   bb) If raw images are used (i.e., 'trainable_cnn' is False), the shape of each
-#                       observation (np.ndarray) is (3, h, w).
-# ## - 'state' (np.ndarray) is the concatenation of all observations:
-#                         a) In the case of encoding the images, the shape is (cnn_features_dim * n_agns,).
-# ## (b) For NOT common observation space, the only difference is that:
-# ## - 'state' (dict) contains all the observations in a dictionary as given by PettingZoo.
-#
+## 'n_agns' (int) is the number of agents in the environment.
+## 'common_observation_space' (bool) whether the observations is the shame for all agents
+## - 'reward' (dict) is returned as provided by PettingZoo,
+##                   where each element is either np.int64, int, np.float64, or float.
+## - 'done' (dict) is returned as provided by PettingZoo, where each element is bool.
+## - 'info' (dict) contains 'TimeLimit.truncated' (bool) which is False if at least an agent's truncated is False,
+##                 as well as 'truncations' and 'infos' dictionaries as returned by PettingZoo.
+## - 'obs' (dict) is returned in the same format as given by PettingZoo (i.e, the same keys), but in case of images:
+##                a) If images are encoded (i.e., 'trainable_cnn' is True), the shape of each
+##                   observation (np.ndarray) is (cnn_features_dim,) as defined by the argument
+##                  'cnn_features_dim' (default is 128).
+##                b) If raw images are used (i.e., 'trainable_cnn' is False), the shape of each
+##                   observation (np.ndarray) is (3, h, w).
+## - 'state' (np.ndarray) is the concatenation of all observations:
+##                        a) In the case of encoding the images, the shape is (cnn_features_dim * n_agns,).
+##                        b) In the case of raw images, the shape is (n_agns, 3, h, w).
+##                        c) In the case of vector observations, the shape is (obs_dim * n_agns,).
+
 # # Arguments for PettingZoo.
 # # Specifically:
 # # - Atari (except from "Emtombed: Cooperative" and "Space Invaders"),
@@ -193,6 +194,8 @@ args = {
 
 # Initialize environment
 env = env_REGISTRY[args["env"]](**args["env_args"])
+n_agns = env.get_n_agents()
+common_observation_space = env.common_observation_space()
 # Reset the environment
 obs, state = env.reset()
 done = False
@@ -214,7 +217,16 @@ env.close()
 
 
 ####################################### API for Classic environment ###################################
-# ## We return the original PettingZoo environment.
+## We return the original PettingZoo environment, where:
+## 'observation':
+##      a) All except 'rps_v2': (dict) contains 'observation' (np.array) and 'action_mask' (np.array)
+##      b) 'rps_v2': (np.array)
+## 'reward' (np.int64 | int | np.float64 | float)
+## 'termination' (bool)
+## 'truncation' (bool)
+## 'info' (dict):
+##      a) All except 'hanabi_v5': empty
+##      b) 'hanabi_v5': contains 'action_mask' (np.ndarray) which is equal to observation['action_mask']
 
 # # Arguments for PettingZoo Classic
 # args = {
