@@ -457,7 +457,7 @@ class TestEnvironmentsAPI(unittest.TestCase):
                         for (_agent_id, _reward), _agent_prefix_id in zip(reward.items(), agent_prefix):
                             assert _agent_id == _agent_prefix_id
                             assert isinstance(
-                                _reward, (np.int64, int, np.float64, float)
+                                _reward, (np.int64, np.int32, int, np.float64, float)
                             ), "type(_reward): {}".format(type(_reward))
                         # Check the dones
                         assert isinstance(done, dict)

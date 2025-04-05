@@ -95,7 +95,11 @@ set `__GLX_VENDOR_LIBRARY_NAME=nvidia` and `__NV_PRIME_RENDER_OFFLOAD=1` as envi
   ```sh
   pip install --upgrade --force-reinstall pymunk cffi
   ```
-
+- In case you get `ImportError: ../bin/../lib/libstdc++.so.6: 'version GLIBCXX_3.4.32' not found`, run:
+ 
+```sh
+  conda install -c conda-forge libstdcxx-ng
+```
 # Docker
 You can also use the provided Docker files in [docker/](/docker/) to build and run a Docker container with the 
 pymarlzooplus installed as a headless machine.

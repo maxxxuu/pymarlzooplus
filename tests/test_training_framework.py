@@ -16,6 +16,8 @@ def generate_training_configs(env_type, keys, common_args, algo_names, variants=
             for suffix, override in variants.items():
                 if suffix.endswith("_raw") and algo_name.endswith("_ns"):
                     continue
+                if algo_name in  ["CDS", "COMA", "HAPPO", "IPPO", "EOI", "IA2C"] and suffix.endswith("_raw"):
+                    override.update({"trainable_cnn": True, "centralized_image_encoding": False})
 
                 test_name = f"{env_type}_{key}_{algo_name}"
                 if suffix:
