@@ -68,9 +68,13 @@ class CaptureTarget(gym.Env):
 
         ## Define the observation space
         if obs_one_hot:
-            self.obs_size = [self.x_len * self.y_len] * self.n_agent  # agent position and target position
+            self.obs_size = [
+                                self.x_len * self.y_len * self.n_agent
+                            ] * self.n_agent  # agent position and target position
         else:
-            self.obs_size = [len(grid_dim) * self.n_agent] * self.n_agent  # agent position and target position
+            self.obs_size = [
+                                len(grid_dim) * self.n_agent
+                            ] * self.n_agent  # agent position and target position
         # Check that all agents have the same observation space
         for i in range(self.n_agent):
             assert self.obs_size[i] == self.obs_size[0]

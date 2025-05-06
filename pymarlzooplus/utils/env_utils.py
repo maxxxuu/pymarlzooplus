@@ -738,7 +738,6 @@ def pettingzoo_make(env_name, kwargs):
             return multiwalker_v9.parallel_env(**kwargs)
 
         except ImportError as e:
-            print(e)
             import_error_pt_sisl()
 
     elif env_name == "pursuit_v4":

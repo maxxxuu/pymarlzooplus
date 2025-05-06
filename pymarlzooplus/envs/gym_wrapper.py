@@ -117,8 +117,9 @@ class _GymmaWrapper(MultiAgentEnv):
         self.key = key
         self.episode_limit = time_limit
         self.render_bool = render
-        self.internal_print_info = None
+
         # Check the consistency between the 'render_bool' and the display capabilities of the machine
+        self.internal_print_info = None
         self.render_capable = True
         if self.render_bool is True and 'DISPLAY' not in os.environ:
             self.render_bool = False
