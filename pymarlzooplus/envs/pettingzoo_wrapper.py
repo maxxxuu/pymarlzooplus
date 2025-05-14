@@ -488,10 +488,18 @@ class _PettingZooWrapper(MultiAgentEnv):
         if key == "entombed_cooperative_v3":
             # At each timestep, we apply 4 pettingzoo timesteps,
             # in order to synchronize actions and obs
+            assert self.episode_limit % 4 == 0, (
+                "When 'entombed_cooperative_v3' is used the specified 'episode_limit' should be divisible by 4: {}"
+                .format(self.episode_limit)
+            )
             self.episode_limit = int(self.episode_limit / 4)
         elif key == "space_invaders_v2":
             # At each timestep, we apply 2 pettingzoo timesteps,
             # in order to synchronize actions and obs
+            assert self.episode_limit % 2 == 0, (
+                "When 'space_invaders_v2' is used the specified 'episode_limit' should be divisible by 2: {}"
+                .format(self.episode_limit)
+            )
             self.episode_limit = int(self.episode_limit / 2)
 
         # Define Observation wrapper

@@ -38,7 +38,7 @@ class TestsTrainingFramework(unittest.TestCase):
         all_algos = list(algorithms.keys())
         common = {"time_limit": 2, "seed": 2024}
         pettingzoo_common = {
-            "time_limit": 10,
+            "time_limit": 12,
             "render_mode": "human",
             "image_encoder": "ResNet18",
             "image_encoder_use_cuda": False,

@@ -6,14 +6,16 @@ from pymarlzooplus.components.proportional import Experience
 
 
 class EpisodeBatch:
-    def __init__(self,
-                 scheme,
-                 groups,
-                 batch_size,
-                 max_seq_length,
-                 data=None,
-                 preprocess=None,
-                 device="cpu"):
+    def __init__(
+            self,
+            scheme,
+            groups,
+            batch_size,
+            max_seq_length,
+            data=None,
+            preprocess=None,
+            device="cpu"
+    ):
 
         self.scheme = scheme.copy()
         self.groups = groups
@@ -73,19 +75,25 @@ class EpisodeBatch:
                 shape = vshape
 
             if episode_const:
-                self.data.episode_data[field_key] = th.zeros((batch_size, *shape),
-                                                             dtype=dtype,
-                                                             device=self.device)
+                self.data.episode_data[field_key] = th.zeros(
+                    (batch_size, *shape),
+                    dtype=dtype,
+                    device=self.device
+                )
             else:
-                self.data.transition_data[field_key] = th.zeros((batch_size, max_seq_length, *shape),
-                                                                dtype=dtype,
-                                                                device=self.device)
+                self.data.transition_data[field_key] = th.zeros(
+                    (batch_size, max_seq_length, *shape),
+                    dtype=dtype,
+                    device=self.device
+                )
 
     def extend(self, scheme, groups=None):
-        self._setup_data(scheme,
-                         self.groups if groups is None else groups,
-                         self.batch_size,
-                         self.max_seq_length)
+        self._setup_data(
+            scheme,
+            self.groups if groups is None else groups,
+            self.batch_size,
+            self.max_seq_length
+        )
 
     def to(self, device):
         for k, v in self.data.transition_data.items():
@@ -160,12 +168,14 @@ class EpisodeBatch:
             new_scheme = {key: self.scheme[key] for key in item}
             new_groups = {self.scheme[key]["group"]: self.groups[self.scheme[key]["group"]]
                           for key in item if "group" in self.scheme[key]}
-            ret = EpisodeBatch(new_scheme,
-                               new_groups,
-                               self.batch_size,
-                               self.max_seq_length,
-                               data=new_data,
-                               device=self.device)
+            ret = EpisodeBatch(
+                new_scheme,
+                new_groups,
+                self.batch_size,
+                self.max_seq_length,
+                data=new_data,
+                device=self.device
+            )
             return ret
         else:
             item = self._parse_slices(item)
@@ -197,7 +207,8 @@ class EpisodeBatch:
     def _parse_slices(self, items):
         parsed = []
         # Only batch slice given, add full time slice
-        if (isinstance(items, slice)  # slice a:b
+        if (
+                isinstance(items, slice)  # slice a:b
                 or isinstance(items, int)  # int i
                 or (isinstance(items, (list, np.ndarray, th.LongTensor, th.cuda.LongTensor)))  # [a,b,c]
         ):
@@ -221,20 +232,24 @@ class EpisodeBatch:
         return th.sum(self.data.transition_data["filled"], 1).max(0)[0]
 
     def __repr__(self):
-        return "EpisodeBatch. Batch Size:{} Max_seq_len:{} Keys:{} Groups:{}".format(self.batch_size,
-                                                                                     self.max_seq_length,
-                                                                                     self.scheme.keys(),
-                                                                                     self.groups.keys())
+        return "EpisodeBatch. Batch Size:{} Max_seq_len:{} Keys:{} Groups:{}".format(
+            self.batch_size,
+            self.max_seq_length,
+            self.scheme.keys(),
+            self.groups.keys()
+        )
 
 
 class ReplayBuffer(EpisodeBatch):
     def __init__(self, scheme, groups, args, buffer_size, max_seq_length, preprocess=None, device="cpu"):
-        super(ReplayBuffer, self).__init__(scheme,
-                                           groups,
-                                           buffer_size,
-                                           max_seq_length,
-                                           preprocess=preprocess,
-                                           device=device)
+        super(ReplayBuffer, self).__init__(
+            scheme,
+            groups,
+            buffer_size,
+            max_seq_length,
+            preprocess=preprocess,
+            device=device
+        )
         self.burn_in_period = getattr(args, "burn_in_period", None)
         self.buffer_size = buffer_size  # same as self.batch_size but more explicit
         self.buffer_index = 0
@@ -242,12 +257,16 @@ class ReplayBuffer(EpisodeBatch):
 
     def insert_episode_batch(self, ep_batch):
         if self.buffer_index + ep_batch.batch_size <= self.buffer_size:
-            self.update(ep_batch.data.transition_data,
-                        slice(self.buffer_index, self.buffer_index + ep_batch.batch_size),
-                        slice(0, ep_batch.max_seq_length),
-                        mark_filled=False)
-            self.update(ep_batch.data.episode_data,
-                        slice(self.buffer_index, self.buffer_index + ep_batch.batch_size))
+            self.update(
+                ep_batch.data.transition_data,
+                slice(self.buffer_index, self.buffer_index + ep_batch.batch_size),
+                slice(0, ep_batch.max_seq_length),
+                mark_filled=False
+            )
+            self.update(
+                ep_batch.data.episode_data,
+                slice(self.buffer_index, self.buffer_index + ep_batch.batch_size)
+            )
             self.buffer_index = (self.buffer_index + ep_batch.batch_size)
             self.episodes_in_buffer = max(self.episodes_in_buffer, self.buffer_index)
             self.buffer_index = self.buffer_index % self.buffer_size
@@ -273,20 +292,24 @@ class ReplayBuffer(EpisodeBatch):
             return self[ep_ids]
 
     def __repr__(self):
-        return "ReplayBuffer. {}/{} episodes. Keys:{} Groups:{}".format(self.episodes_in_buffer,
-                                                                        self.buffer_size,
-                                                                        self.scheme.keys(),
-                                                                        self.groups.keys())
+        return "ReplayBuffer. {}/{} episodes. Keys:{} Groups:{}".format(
+            self.episodes_in_buffer,
+            self.buffer_size,
+            self.scheme.keys(),
+            self.groups.keys()
+        )
 
 
 class PrioritizedReplayBuffer(EpisodeBatch):
     def __init__(self, scheme, groups, buffer_size, max_seq_length, alpha, preprocess=None, device="cpu"):
-        super(PrioritizedReplayBuffer, self).__init__(scheme,
-                                                      groups,
-                                                      buffer_size,
-                                                      max_seq_length,
-                                                      preprocess=preprocess,
-                                                      device=device)
+        super(PrioritizedReplayBuffer, self).__init__(
+            scheme,
+            groups,
+            buffer_size,
+            max_seq_length,
+            preprocess=preprocess,
+            device=device
+        )
         self.proportional = Experience(buffer_size, alpha=alpha)
         self.buffer_size = buffer_size  # same as self.batch_size but more explicit
         self.buffer_index = 0
@@ -297,13 +320,16 @@ class PrioritizedReplayBuffer(EpisodeBatch):
             self.proportional.add(100)
 
         if self.buffer_index + ep_batch.batch_size <= self.buffer_size:
-            self.update(ep_batch.data.transition_data,
-                        slice(self.buffer_index, self.buffer_index + ep_batch.batch_size),
-                        slice(0, ep_batch.max_seq_length),
-                        mark_filled=False
-                        )
-            self.update(ep_batch.data.episode_data,
-                        slice(self.buffer_index, self.buffer_index + ep_batch.batch_size))
+            self.update(
+                ep_batch.data.transition_data,
+                slice(self.buffer_index, self.buffer_index + ep_batch.batch_size),
+                slice(0, ep_batch.max_seq_length),
+                mark_filled=False
+            )
+            self.update(
+                ep_batch.data.episode_data,
+                slice(self.buffer_index, self.buffer_index + ep_batch.batch_size)
+            )
             self.buffer_index = (self.buffer_index + ep_batch.batch_size)
             self.episodes_in_buffer = max(self.episodes_in_buffer, self.buffer_index)
             self.buffer_index = self.buffer_index % self.buffer_size
@@ -332,7 +358,9 @@ class PrioritizedReplayBuffer(EpisodeBatch):
         self.proportional.priority_update(indices, priorities)
 
     def __repr__(self):
-        return "PrioritizedReplayBuffer. {}/{} episodes. Keys:{} Groups:{}".format(self.episodes_in_buffer,
-                                                                                   self.buffer_size,
-                                                                                   self.scheme.keys(),
-                                                                                   self.groups.keys())
+        return "PrioritizedReplayBuffer. {}/{} episodes. Keys:{} Groups:{}".format(
+            self.episodes_in_buffer,
+            self.buffer_size,
+            self.scheme.keys(),
+            self.groups.keys()
+        )
