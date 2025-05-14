@@ -4,6 +4,16 @@ import unittest
 
 from tests.config import algorithms
 from pymarlzooplus import pymarlzooplus
+import argparse, sys
+
+
+parser = argparse.ArgumentParser(add_help=False)
+parser.add_argument('--algo', help='Comma-separated list of algorithm names to test', default="QMIX")
+parser.add_argument('--env', help='Comma-separated list of environment types to test')
+args, remaining = parser.parse_known_args()
+sys.argv = [sys.argv[0]] + remaining
+FILTER_ALGOS = [a.strip().upper() for a in args.algo.split(',')] if args.algo else None
+FILTER_ENVS = [e.strip().lower() for e in args.env.split(',')] if args.env else None
 
 
 def generate_training_configs(env_type, keys, common_args, algo_names, variants=None):
@@ -32,8 +42,8 @@ def generate_training_configs(env_type, keys, common_args, algo_names, variants=
 class TestsTrainingFramework(unittest.TestCase):
 
     @classmethod
-    def setUpClass(cls):
-        cls.train_framework_params_dict = {}
+    def setUpClass(self):
+        self.train_framework_params_dict = {}
 
         all_algos = list(algorithms.keys())
         common = {"time_limit": 2, "seed": 2024}
@@ -57,7 +67,7 @@ class TestsTrainingFramework(unittest.TestCase):
             variants=fully_coop_variants,
             algo_names=all_algos
         )
-        cls.train_framework_params_dict.update(fc_configs)
+        self.train_framework_params_dict.update(fc_configs)
 
         partial_obs_variants = {
             "_partial_observation_encoded": {"trainable_cnn": False, "partial_observation": True},
@@ -70,7 +80,7 @@ class TestsTrainingFramework(unittest.TestCase):
             variants=partial_obs_variants,
             algo_names=all_algos
         )
-        cls.train_framework_params_dict.update(partial_configs)
+        self.train_framework_params_dict.update(partial_configs)
 
         overcooked_variants = {"_sparse": {"reward_type": "sparse"}, "_shaped": {"reward_type": "shaped"}}
         overcooked_configs = generate_training_configs(
@@ -80,7 +90,7 @@ class TestsTrainingFramework(unittest.TestCase):
             variants=overcooked_variants,
             algo_names=all_algos,
         )
-        cls.train_framework_params_dict.update(overcooked_configs)
+        self.train_framework_params_dict.update(overcooked_configs)
 
         pressureplate_configs = generate_training_configs(
             env_type="pressureplate",
@@ -88,7 +98,7 @@ class TestsTrainingFramework(unittest.TestCase):
             common_args=common,
             algo_names=all_algos,
         )
-        cls.train_framework_params_dict.update(pressureplate_configs)
+        self.train_framework_params_dict.update(pressureplate_configs)
 
 
         lbf_v2_configs = generate_training_configs(
@@ -97,7 +107,7 @@ class TestsTrainingFramework(unittest.TestCase):
             common_args=common,
             algo_names=all_algos,
         )
-        cls.train_framework_params_dict.update(lbf_v2_configs)
+        self.train_framework_params_dict.update(lbf_v2_configs)
 
         lbf_v3_configs = generate_training_configs(
             env_type="gymma",
@@ -105,7 +115,7 @@ class TestsTrainingFramework(unittest.TestCase):
             common_args=common,
             algo_names=all_algos,
         )
-        cls.train_framework_params_dict.update(lbf_v3_configs)
+        self.train_framework_params_dict.update(lbf_v3_configs)
 
 
         rware_configs = generate_training_configs(
@@ -114,7 +124,7 @@ class TestsTrainingFramework(unittest.TestCase):
             common_args=common,
             algo_names=all_algos,
         )
-        cls.train_framework_params_dict.update(rware_configs)
+        self.train_framework_params_dict.update(rware_configs)
 
         mpe_configs = generate_training_configs(
             env_type="gymma",
@@ -122,7 +132,7 @@ class TestsTrainingFramework(unittest.TestCase):
             common_args=common,
             algo_names=all_algos,
         )
-        cls.train_framework_params_dict.update(mpe_configs)
+        self.train_framework_params_dict.update(mpe_configs)
 
         capturetarget_variants = {"": {}, "_obs_one_hot": {"obs_one_hot": True}, "_wo_tgt_avoid_agent": {"tgt_avoid_agent": False}}
         capturetarget_configs = generate_training_configs(
@@ -132,7 +142,7 @@ class TestsTrainingFramework(unittest.TestCase):
             variants=capturetarget_variants,
             algo_names=all_algos,
         )
-        cls.train_framework_params_dict.update(capturetarget_configs)
+        self.train_framework_params_dict.update(capturetarget_configs)
 
         boxpushing_configs = generate_training_configs(
             env_type="boxpushing",
@@ -140,12 +150,25 @@ class TestsTrainingFramework(unittest.TestCase):
             common_args=common,
             algo_names=all_algos,
         )
-        cls.train_framework_params_dict.update(boxpushing_configs)
+        self.train_framework_params_dict.update(boxpushing_configs)
+
+
+        if FILTER_ALGOS:
+            self.train_framework_params_dict = {
+            name: cfg for name, cfg in self.train_framework_params_dict.items()
+                                                            if any(
+            name.endswith(f"_{algo}") or f"_{algo}_" in name for algo in FILTER_ALGOS)
+                                                            }
+        if FILTER_ENVS:
+            self.train_framework_params_dict = {
+                name: cfg for name, cfg in self.train_framework_params_dict.items()
+                                                            if name.split('_', 1)[0] in FILTER_ENVS
+                                                            }
 
     def test_training_framework(self):
         completed = []
         failed = {}
-
+        print(f"Number of tests to run: {len(self.train_framework_params_dict)}")
         for name, params in self.train_framework_params_dict.items():
             print(
                 "\n\n###########################################"
