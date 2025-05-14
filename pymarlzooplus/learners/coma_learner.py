@@ -1,9 +1,8 @@
 import copy
-from pymarlzooplus.components.episode_buffer import EpisodeBatch
-from pymarlzooplus.modules.critics.coma import COMACritic
-from pymarlzooplus.utils.rl_utils import build_td_lambda_targets
 import torch as th
 from torch.optim import Adam
+
+from pymarlzooplus.components.episode_buffer import EpisodeBatch
 from pymarlzooplus.modules.critics import REGISTRY as critic_registry
 from pymarlzooplus.components.standarize_stream import RunningMeanStd
 
@@ -37,6 +36,7 @@ class COMALearner:
             self.rew_ms = RunningMeanStd(shape=(1,), device=device)
 
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
+
         # Get the relevant quantities
         bs = batch.batch_size
         max_t = batch.max_seq_length
@@ -52,13 +52,13 @@ class COMALearner:
             rewards = (rewards - self.rew_ms.mean) / th.sqrt(self.rew_ms.var)
 
         critic_mask = mask.clone()
-
         mask = mask.repeat(1, 1, self.n_agents).view(-1)
 
-        q_vals, critic_train_stats = self._train_critic(batch, rewards, terminated, actions, avail_actions,
-                                                        critic_mask, bs, max_t)
+        q_vals, critic_train_stats = self._train_critic(
+            batch, rewards, terminated, actions, avail_actions, critic_mask, bs, max_t
+        )
 
-        actions = actions[:,:-1]
+        actions = actions[:, :-1]
 
         mac_out = []
         self.mac.init_hidden(batch.batch_size)
@@ -91,7 +91,13 @@ class COMALearner:
 
         self.critic_training_steps += 1
 
-        if self.args.target_update_interval_or_tau > 1 and (self.critic_training_steps - self.last_target_update_step) / self.args.target_update_interval_or_tau >= 1.0:
+        if (
+                self.args.target_update_interval_or_tau > 1 and
+                (
+                        (self.critic_training_steps - self.last_target_update_step) /
+                        self.args.target_update_interval_or_tau >= 1.0
+                )
+        ):
             self._update_targets_hard()
             self.last_target_update_step = self.critic_training_steps
         elif self.args.target_update_interval_or_tau <= 1.0:
@@ -101,7 +107,6 @@ class COMALearner:
             ts_logged = len(critic_train_stats["critic_loss"])
             for key in ["critic_loss", "critic_grad_norm", "td_error_abs", "q_taken_mean", "target_mean"]:
                 self.logger.log_stat(key, sum(critic_train_stats[key])/ts_logged, t_env)
-
             self.logger.log_stat("advantage_mean", (advantages * mask).sum().item() / mask.sum().item(), t_env)
             self.logger.log_stat("coma_loss", coma_loss.item(), t_env)
             self.logger.log_stat("agent_grad_norm", grad_norm.item(), t_env)
@@ -168,7 +173,7 @@ class COMALearner:
                     nstep_return_t += self.args.gamma ** step * rewards[:, t] * mask[:, t]
                     nstep_return_t += self.args.gamma ** (step + 1) * values[:, t + 1]
                 else:
-                    nstep_return_t += self.args.gamma ** (step) * rewards[:, t] * mask[:, t]
+                    nstep_return_t += self.args.gamma ** step * rewards[:, t] * mask[:, t]
             nstep_values[:, t_start, :] = nstep_return_t
         return nstep_values
 
@@ -193,7 +198,7 @@ class COMALearner:
     def load_models(self, path):
         self.mac.load_models(path)
         self.critic.load_state_dict(th.load("{}/critic.th".format(path), map_location=lambda storage, loc: storage))
-        # Not quite right but I don't want to save target networks
+        # Not quite right, but I don't want to save target networks
         self.target_critic.load_state_dict(self.critic.state_dict())
         self.agent_optimiser.load_state_dict(th.load("{}/agent_opt.th".format(path), map_location=lambda storage, loc: storage))
         self.critic_optimiser.load_state_dict(th.load("{}/critic_opt.th".format(path), map_location=lambda storage, loc: storage))

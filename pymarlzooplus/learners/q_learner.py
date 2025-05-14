@@ -10,6 +10,7 @@ from pymarlzooplus.components.standarize_stream import RunningMeanStd
 class QLearner:
     def __init__(self, mac, scheme, logger, args):
         self.args = args
+        self.n_agents = args.n_agents
         self.mac = mac
         self.logger = logger
 
@@ -29,7 +30,7 @@ class QLearner:
 
         self.optimiser = Adam(params=self.params, lr=args.lr)
 
-        # a little wasteful to deepcopy (e.g. duplicates action selector), but should work for any MAC
+        # a little wasteful to deepcopy (e.g., duplicates action selector), but should work for any MAC
         self.target_mac = copy.deepcopy(mac)
 
         self.training_steps = 0
@@ -107,7 +108,6 @@ class QLearner:
 
         # Td-error
         td_error = (chosen_action_qvals - targets.detach())
-
         mask = mask.expand_as(td_error)
 
         # 0-out the targets that came from padded data
@@ -123,7 +123,13 @@ class QLearner:
         self.optimiser.step()
 
         self.training_steps += 1
-        if self.args.target_update_interval_or_tau > 1 and (self.training_steps - self.last_target_update_step) / self.args.target_update_interval_or_tau >= 1.0:
+        if (
+                self.args.target_update_interval_or_tau > 1 and
+                (
+                        (self.training_steps - self.last_target_update_step) /
+                        self.args.target_update_interval_or_tau >= 1.0
+                )
+        ):
             self._update_targets_hard()
             self.last_target_update_step = self.training_steps
         elif self.args.target_update_interval_or_tau <= 1.0:

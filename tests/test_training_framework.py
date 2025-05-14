@@ -14,9 +14,7 @@ def generate_training_configs(env_type, keys, common_args, algo_names, variants=
         algo_conf = algorithms[algo_name]
         for key in keys:
             for suffix, override in variants.items():
-                if suffix.endswith("_raw") and algo_name.endswith("_ns"):
-                    continue
-                if algo_name in  ["CDS", "COMA", "HAPPO", "IPPO", "EOI", "IA2C"] and suffix.endswith("_raw"):
+                if algo_name not in ["CDS", "EOI", "EMC", "MAT_DEC"] and suffix.endswith("_raw"):
                     override.update({"trainable_cnn": True, "centralized_image_encoding": False})
 
                 test_name = f"{env_type}_{key}_{algo_name}"
@@ -29,6 +27,7 @@ def generate_training_configs(env_type, keys, common_args, algo_names, variants=
                 config["env_args"] = {**common_args, "key": key, **override}
                 configs[test_name] = config
     return configs
+
 
 class TestsTrainingFramework(unittest.TestCase):
 
@@ -125,7 +124,7 @@ class TestsTrainingFramework(unittest.TestCase):
         )
         cls.train_framework_params_dict.update(mpe_configs)
 
-        capturetarget_variants = {"": {},"_obs_one_hot": {"obs_one_hot": True}, "_wo_tgt_avoid_agent": {"tgt_avoid_agent": False}}
+        capturetarget_variants = {"": {}, "_obs_one_hot": {"obs_one_hot": True}, "_wo_tgt_avoid_agent": {"tgt_avoid_agent": False}}
         capturetarget_configs = generate_training_configs(
             env_type="capturetarget",
             keys=["CaptureTarget-6x6-1t-2a-v0"],
@@ -167,6 +166,7 @@ class TestsTrainingFramework(unittest.TestCase):
             for name, tb_str in failed.items():
                 msg += f"\n=== {name} ===\n{tb_str}\n"
             self.fail(msg)
+
 
 if __name__ == "__main__":
     unittest.main()

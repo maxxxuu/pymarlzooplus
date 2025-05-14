@@ -12,7 +12,7 @@ test_interval: 50000
 log_interval: 50000
 runner_log_interval: 10000
 learner_log_interval: 10000
-t_max: 2050000
+t_max: 40050000
 
 # Overcooked
 # https://github.com/HumanCompatibleAI/overcooked_ai

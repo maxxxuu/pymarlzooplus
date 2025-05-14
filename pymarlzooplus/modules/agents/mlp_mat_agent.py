@@ -12,7 +12,7 @@ class MLPMATAgent(nn.Module):
 
         # Currently, only vector-based input is supported
         self.is_image = False
-        assert isinstance(input_shape, int), f"input_shape: {input_shape}"
+        assert isinstance(input_shape, int), "MAT-DEC does not support image obs for the time being!"
 
         self.n_agent = args.n_agents
         self.input_shape = input_shape
@@ -46,19 +46,22 @@ class MLPMATAgent(nn.Module):
 
         batch_size = np.shape(obs)[0]
         v_loc = self.critic(ep_batch, t)
-        output_action, output_action_log = self.discrete_autoregreesive_act(obs,
-                                                                            batch_size,
-                                                                            available_actions,
-                                                                            deterministic
-                                                                            )
+        output_action, output_action_log = self.discrete_autoregreesive_act(
+            obs,
+            batch_size,
+            available_actions,
+            deterministic
+        )
 
         return output_action, output_action_log, v_loc
 
-    def discrete_autoregreesive_act(self,
-                                    obs,
-                                    batch_size,
-                                    available_actions=None,
-                                    deterministic=False):
+    def discrete_autoregreesive_act(
+            self,
+            obs,
+            batch_size,
+            available_actions=None,
+            deterministic=False
+    ):
 
         output_action = torch.zeros((batch_size, self.n_agent, 1), dtype=torch.long, device=self.device)
         output_action_log = torch.zeros_like(output_action, dtype=torch.float32)
@@ -100,13 +103,14 @@ class Decoder(nn.Module):
         self.action_dim = action_dim
         self.n_embd = n_embd
 
-        self.mlp = nn.Sequential(nn.LayerNorm(obs_dim),
-                                 init_(nn.Linear(obs_dim, n_embd), activate=True), nn.GELU(),
-                                 nn.LayerNorm(n_embd),
-                                 init_(nn.Linear(n_embd, n_embd), activate=True), nn.GELU(),
-                                 nn.LayerNorm(n_embd),
-                                 init_(nn.Linear(n_embd, action_dim))
-                                 )
+        self.mlp = nn.Sequential(
+            nn.LayerNorm(obs_dim),
+            init_(nn.Linear(obs_dim, n_embd), activate=True), nn.GELU(),
+            nn.LayerNorm(n_embd),
+            init_(nn.Linear(n_embd, n_embd), activate=True), nn.GELU(),
+            nn.LayerNorm(n_embd),
+            init_(nn.Linear(n_embd, action_dim))
+        )
 
     def forward(self, obs):
 

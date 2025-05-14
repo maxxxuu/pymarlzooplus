@@ -1,4 +1,4 @@
-# --- MADDPG  NSspecific parameters ---
+# --- MADDPG NS specific parameters ---
 
 runner: "episode"
 

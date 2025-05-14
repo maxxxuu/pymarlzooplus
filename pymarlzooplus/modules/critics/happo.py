@@ -125,13 +125,13 @@ class HAPPOCritic(nn.Module):
             inputs[0] = th.concat(input_new, dim=0)
 
             n_cnn_feats = inputs[0].shape[-1]
-            # to [batch size x max steps , n_agents, cnn features dim]
+            # to [batch size x max steps, n_agents, cnn features dim]
             inputs[0] = inputs[0].view(bs * max_t, self.n_agents, n_cnn_feats)
             # to [batch size x max steps , n_agents x cnn features dim]
             inputs[0] = inputs[0].view(bs * max_t, self.n_agents * n_cnn_feats)
-            # to [batch size x max steps , n_agents, n_agents x cnn features dim]
+            # to [batch size x max steps, n_agents, n_agents x cnn features dim]
             inputs[0] = inputs[0].unsqueeze(1).repeat(1, self.n_agents, 1)
-            # to [batch size, max steps , n_agents, n_agents x cnn features dim]
+            # to [batch size, max steps, n_agents, n_agents x cnn features dim]
             inputs[0] = inputs[0].view(bs, max_t, self.n_agents, self.n_agents * n_cnn_feats)
             # to [batch size, max steps, n_agents, cnn features dim x n_agents + extra features]
             inputs = th.cat(inputs, dim=-1)

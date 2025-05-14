@@ -21,7 +21,7 @@ class RNNAgentHAPPO(nn.Module):
         # Use CNN to encode image observations
         self.is_image = False
         if isinstance(input_shape, tuple):  # image input
-            self.cnn = CNNAgent(input_shape, args)  # TODO: image support for 'rnn_feature_agent' and 'rnn_ns_agent'
+            self.cnn = CNNAgent(input_shape, args)
             input_shape = self.cnn.features_dim + input_shape[1]
             self.is_image = True
 
@@ -36,19 +36,23 @@ class RNNAgentHAPPO(nn.Module):
             gain = nn.init.calculate_gain('relu')
 
             def init_(m):
-                return init(m,
-                            [nn.init.xavier_uniform_, nn.init.orthogonal_][self.use_orthogonal_init_rnn],
-                            lambda x: nn.init.constant_(x, 0),
-                            gain=gain)
+                return init(
+                    m,
+                    [nn.init.xavier_uniform_, nn.init.orthogonal_][self.use_orthogonal_init_rnn],
+                    lambda x: nn.init.constant_(x, 0),
+                    gain=gain
+                )
 
-            self.fc1 = nn.Sequential(init_(nn.Linear(input_shape, args.hidden_dim)),
-                                     nn.ReLU(),
-                                     nn.LayerNorm(args.hidden_dim)
-                                     )
-            self.fc2 = nn.Sequential(init_(nn.Linear(args.hidden_dim, args.hidden_dim)),
-                                     nn.ReLU(),
-                                     nn.LayerNorm(args.hidden_dim)
-                                     )
+            self.fc1 = nn.Sequential(
+                init_(nn.Linear(input_shape, args.hidden_dim)),
+                nn.ReLU(),
+                nn.LayerNorm(args.hidden_dim)
+            )
+            self.fc2 = nn.Sequential(
+                init_(nn.Linear(args.hidden_dim, args.hidden_dim)),
+                nn.ReLU(),
+                nn.LayerNorm(args.hidden_dim)
+            )
         else:
             if self.use_orthogonal_init_rnn is True:
                 def init_(m):
@@ -84,10 +88,12 @@ class RNNAgentHAPPO(nn.Module):
                     self.fc2 = init_(nn.Linear(args.hidden_dim, args.n_actions))
         else:
             def init_(m):
-                return init(m,
-                            nn.init.xavier_uniform_,
-                            lambda x: nn.init.constant_(x, 0),
-                            gain=0.01)
+                return init(
+                    m,
+                    nn.init.xavier_uniform_,
+                    lambda x: nn.init.constant_(x, 0),
+                    gain=0.01
+                )
             if self.is_image is False:
                 self.fc3 = init_(nn.Linear(args.hidden_dim, args.n_actions))
             else:
@@ -116,10 +122,11 @@ class RNNAgentHAPPO(nn.Module):
         if self.use_rnn is True:
 
             # hidden_state shape: [batch_size, n_agents, hidden_dim]
-            assert len(hidden_states.shape) == 3 and \
-                   hidden_states.shape[1] == 1 and \
-                   hidden_states.shape[2] == self.args.hidden_dim, \
-                "'hidden_states.shape': {hidden_states.shape}"
+            assert (
+                    len(hidden_states.shape) == 3 and
+                    hidden_states.shape[1] == 1 and
+                    hidden_states.shape[2] == self.args.hidden_dim
+            ), "'hidden_states.shape': {hidden_states.shape}"
 
             initial_x_shape = x.shape
             if len(initial_x_shape) == 3:
@@ -128,19 +135,22 @@ class RNNAgentHAPPO(nn.Module):
                 epi_len = x.shape[1]
                 # shape: [timesteps, batch_size, hidden_dim] --> [timesteps*batch_size, hidden_dim]
                 x = x.transpose(0, 1).reshape(batch_size*epi_len, -1)
-                assert (len(masks.shape) == 3 and
-                       masks.shape[0] == batch_size and
-                       masks.shape[1] == epi_len and
-                       masks.shape[2] == 1), \
-                    f"'masks.shape': {masks.shape}"
+                assert (
+                        len(masks.shape) == 3 and
+                        masks.shape[0] == batch_size and
+                        masks.shape[1] == epi_len and
+                        masks.shape[2] == 1
+                ), f"'masks.shape': {masks.shape}"
                 # shape: [timesteps, batch_size, hidden_dim] --> [timesteps*batch_size, hidden_dim]
                 masks = masks.transpose(0, 1).reshape(batch_size * epi_len, 1)
 
             if x.size(0) == hidden_states.size(0):  # Used in inference
-                x, h = \
-                    self.rnn(x.unsqueeze(0),
-                             (hidden_states * masks.repeat(1, 1).unsqueeze(-1)).transpose(0, 1).contiguous()
-                             )
+                x, h = (
+                    self.rnn(
+                        x.unsqueeze(0),
+                        (hidden_states * masks.repeat(1, 1).unsqueeze(-1)).transpose(0, 1).contiguous()
+                    )
+                )
                 x = x.squeeze(0)
                 h = h.transpose(0, 1)
             else:  # Used in inference
@@ -156,11 +166,9 @@ class RNNAgentHAPPO(nn.Module):
 
                 # Let's figure out which steps in the sequence have a zero for any agent
                 # We will always assume t=0 has a zero in it as that makes the logic cleaner
-                has_zeros = ((masks[1:] == 0.0)
-                             .any(dim=-1)
-                             .nonzero()
-                             .squeeze()
-                             .cpu())
+                has_zeros = (
+                    (masks[1:] == 0.0).any(dim=-1).nonzero().squeeze().cpu()
+                )
 
                 # +1 to correct the masks[1:]
                 if has_zeros.dim() == 0:

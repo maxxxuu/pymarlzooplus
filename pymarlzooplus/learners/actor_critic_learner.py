@@ -97,8 +97,15 @@ class ActorCriticLearner:
         self.agent_optimiser.step()
 
         self.critic_training_steps += 1
-        if (self.args.target_update_interval_or_tau > 1 and
-           (self.critic_training_steps - self.last_target_update_step) / self.args.target_update_interval_or_tau >= 1.0):
+        if (
+                (
+                        self.args.target_update_interval_or_tau > 1 and
+                        (
+                                (self.critic_training_steps - self.last_target_update_step) /
+                                self.args.target_update_interval_or_tau >= 1.0
+                        )
+                )
+        ):
             self._update_targets_hard()
             self.last_target_update_step = self.critic_training_steps
         elif self.args.target_update_interval_or_tau <= 1.0:
@@ -108,7 +115,6 @@ class ActorCriticLearner:
             ts_logged = len(critic_train_stats["critic_loss"])
             for key in ["critic_loss", "critic_grad_norm", "td_error_abs", "q_taken_mean", "target_mean"]:
                 self.logger.log_stat(key, sum(critic_train_stats[key])/ts_logged, t_env)
-
             self.logger.log_stat("advantage_mean", (advantages * mask).sum().item() / mask.sum().item(), t_env)
             self.logger.log_stat("pg_loss", pg_loss.item(), t_env)
             self.logger.log_stat("agent_grad_norm", grad_norm.item(), t_env)

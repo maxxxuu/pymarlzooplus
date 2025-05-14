@@ -9,12 +9,13 @@ class BasicMAC:
         self.n_agents = args.n_agents
         self.args = args
         self.is_image = False  # Image input
-        input_shape = self._get_input_shape(scheme)  # TODO: image support for 'maddpg_controller' and 'non_shared_controller'
+        input_shape = self._get_input_shape(scheme)
         self._build_agents(input_shape)
         self.agent_output_type = args.agent_output_type
         self.action_selector = action_REGISTRY[args.action_selector](args)
         self.algo_name = args.name
         self.scheme = scheme
+
         self.hidden_states = None
         self.learner = None
         self.critic = None
@@ -31,10 +32,12 @@ class BasicMAC:
         agent_outputs = self.forward(ep_batch, t_ep, test_mode=test_mode)
 
         # Only select actions for the selected batch elements in bs
-        chosen_actions = self.action_selector.select_action(agent_outputs[bs],
-                                                            avail_actions[bs],
-                                                            t_env,
-                                                            test_mode=test_mode)
+        chosen_actions = self.action_selector.select_action(
+            agent_outputs[bs],
+            avail_actions[bs],
+            t_env,
+            test_mode=test_mode
+        )
 
         return chosen_actions, extra_returns
 
@@ -50,11 +53,10 @@ class BasicMAC:
 
             if self.mask_before_softmax is True:
                 # Make the logits for unavailable actions very negative to minimise their effect on the softmax
-                reshaped_avail_actions = avail_actions.reshape(ep_batch.batch_size * self.n_agents,
-                                                               -1)
+                reshaped_avail_actions = avail_actions.reshape(ep_batch.batch_size * self.n_agents, -1)
                 agent_outs[reshaped_avail_actions == 0] = -1e10
-            agent_outs = th.nn.functional.softmax(agent_outs, dim=-1)
 
+            agent_outs = th.nn.functional.softmax(agent_outs, dim=-1)
         return agent_outs.view(ep_batch.batch_size, self.n_agents, -1)
 
     def init_hidden(self, batch_size):
@@ -89,7 +91,7 @@ class BasicMAC:
     def _build_inputs(self, batch, t):
 
         # Assumes homogenous agents.
-        # Other MACs might want to e.g. delegate building inputs to each agent
+        # Other MACs might want to, e.g., delegate building inputs to each agent
         bs = batch["batch_size"]
 
         inputs = [batch["obs"][:, t]]
@@ -106,11 +108,12 @@ class BasicMAC:
             inputs = th.cat([x.reshape(bs*self.n_agents, -1) for x in inputs], dim=1)
         else:
             img_ch, img_h, img_w = inputs[0].shape[2:]
-            inputs = [inputs[0].reshape(bs * self.n_agents, img_ch, img_h, img_w),
-                      [] if len(inputs) == 1
-                         else
-                      th.cat([x.reshape(bs * self.n_agents, -1) for x in inputs[1:]], dim=1)
-                      ]
+            inputs = [
+                inputs[0].reshape(bs * self.n_agents, img_ch, img_h, img_w),
+                [] if len(inputs) == 1
+                   else
+                th.cat([x.reshape(bs * self.n_agents, -1) for x in inputs[1:]], dim=1)
+            ]
 
         return inputs
 

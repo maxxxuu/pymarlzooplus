@@ -46,10 +46,8 @@ class CDSExplorer:
             self.target_predict_without_id.to(self._device)
 
     def save_models(self, path):
-        th.save(self.eval_predict_with_id.state_dict(),
-                "{}/pid.th".format(path))
-        th.save(self.eval_predict_without_id.state_dict(),
-                "{}/poid.th".format(path))
+        th.save(self.eval_predict_with_id.state_dict(), "{}/pid.th".format(path))
+        th.save(self.eval_predict_without_id.state_dict(), "{}/poid.th".format(path))
 
     def load_models(self, path):
         self.eval_predict_with_id.load_state_dict(
@@ -82,8 +80,8 @@ class PredictNetwork(nn.Module):
 
         self.optimizer = optim.Adam(self.parameters(), lr=self.lr)
 
-    def forward(self, input):
-        h = F.relu(self.linear1(input))
+    def forward(self, inputs):
+        h = F.relu(self.linear1(inputs))
 
         h = F.relu(self.linear2(h))
         x = self.last_fc(h)

@@ -38,19 +38,21 @@ class IVF(nn.Module):
 
 
 class EOITrainer(object):
-    def __init__(self,
-                 eoi_net,
-                 ivf,
-                 ivf_tar,
-                 n_agent,
-                 n_feature,
-                 ivf_gamma,
-                 ivf_tau,
-                 ivf_lr,
-                 ivf_alpha_intrinsic_r,
-                 eoi_lr,
-                 eoi_b2_reg,
-                 device):
+    def __init__(
+            self,
+            eoi_net,
+            ivf,
+            ivf_tar,
+            n_agent,
+            n_feature,
+            ivf_gamma,
+            ivf_tau,
+            ivf_lr,
+            ivf_alpha_intrinsic_r,
+            eoi_lr,
+            eoi_b2_reg,
+            device
+    ):
 
         super(EOITrainer, self).__init__()
 
@@ -154,10 +156,12 @@ class EOIBatchTrainer(object):
 
         # Train in batches
         for k in range(int((ind - 1) / self.eoi_batch_size)):
-            self.eoi_trainer.train(self.o_t[k * self.eoi_batch_size: (k + 1) * self.eoi_batch_size],
-                                   self.next_o_t[k * self.eoi_batch_size: (k + 1) * self.eoi_batch_size],
-                                   self.a_t[k * self.eoi_batch_size: (k + 1) * self.eoi_batch_size],
-                                   self.d_t[k * self.eoi_batch_size: (k + 1) * self.eoi_batch_size])
+            self.eoi_trainer.train(
+                self.o_t[k * self.eoi_batch_size: (k + 1) * self.eoi_batch_size],
+                self.next_o_t[k * self.eoi_batch_size: (k + 1) * self.eoi_batch_size],
+                self.a_t[k * self.eoi_batch_size: (k + 1) * self.eoi_batch_size],
+                self.d_t[k * self.eoi_batch_size: (k + 1) * self.eoi_batch_size]
+            )
 
 
 class Explorer(object):
@@ -168,6 +172,8 @@ class Explorer(object):
         self.explore_ratio = args.explore_ratio
         self.n_agents = groups["agents"]
         self.device = args.device
+
+        assert not isinstance(scheme["obs"]["vshape"], tuple), "EOI does not support image obs for the time being!"
 
         self.eoi_net = EOINet(
             scheme["obs"]["vshape"],
@@ -261,7 +267,9 @@ class Explorer(object):
 
                     # Change random actions based on Q-values from IVF net
                     j = np.random.randint(self.n_agents)
-                    actions[batch_idx][j] = np.argmax(q_p[j] - 9e15 * (1 - np.array(data["avail_actions"][batch_idx][j])))
+                    actions[batch_idx][j] = np.argmax(
+                        q_p[j] - 9e15 * (1 - np.array(data["avail_actions"][batch_idx][j]))
+                    )
 
         return actions
 

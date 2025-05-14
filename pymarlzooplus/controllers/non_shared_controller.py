@@ -1,15 +1,18 @@
-from pymarlzooplus.modules.agents import REGISTRY as agent_REGISTRY
-from pymarlzooplus.components.action_selectors import REGISTRY as action_REGISTRY
 import torch as th
 
+from pymarlzooplus.modules.agents import REGISTRY as agent_REGISTRY
+from pymarlzooplus.components.action_selectors import REGISTRY as action_REGISTRY
+
+
+# This multi-agent controller does not share parameters between agents
 class NonSharedMAC:
     def __init__(self, scheme, groups, args):
         self.n_agents = args.n_agents
         self.args = args
+        self.is_image = False  # Image input
         input_shape = self._get_input_shape(scheme)
         self._build_agents(input_shape)
         self.agent_output_type = args.agent_output_type
-
         self.action_selector = action_REGISTRY[args.action_selector](args)
 
         self.hidden_states = None
@@ -19,15 +22,24 @@ class NonSharedMAC:
         # Just for compatibility
         extra_returns = {}
 
-        # Only select actions for the selected batch elements in bs
         avail_actions = ep_batch["avail_actions"][:, t_ep]
+
         agent_outputs = self.forward(ep_batch, t_ep, test_mode=test_mode)
-        chosen_actions = self.action_selector.select_action(agent_outputs[bs], avail_actions[bs], t_env, test_mode=test_mode)
+
+        # Only select actions for the selected batch elements in bs
+        chosen_actions = self.action_selector.select_action(
+            agent_outputs[bs],
+            avail_actions[bs],
+            t_env,
+            test_mode=test_mode
+        )
+
         return chosen_actions, extra_returns
 
     def forward(self, ep_batch, t, test_mode=False):
         agent_inputs = self._build_inputs(ep_batch, t)
         avail_actions = ep_batch["avail_actions"][:, t]
+
         agent_outs, self.hidden_states = self.agent(agent_inputs, self.hidden_states)
 
         # Softmax the agent outputs if they're policy logits
@@ -64,7 +76,7 @@ class NonSharedMAC:
 
     def _build_inputs(self, batch, t):
         # Assumes homogenous agents with flat observations.
-        # Other MACs might want to e.g. delegate building inputs to each agent
+        # Other MACs might want to, e.g., delegate building inputs to each agent
         bs = batch.batch_size
         inputs = [batch["obs"][:, t]]
         if self.args.obs_last_action:
@@ -75,13 +87,33 @@ class NonSharedMAC:
         if self.args.obs_agent_id:
             inputs.append(th.eye(self.n_agents, device=batch.device).unsqueeze(0).expand(bs, -1, -1))
 
-        inputs = th.cat([x.reshape(bs*self.n_agents, -1) for x in inputs], dim=1)
+        if self.is_image is False:
+            inputs = th.cat([x.reshape(bs * self.n_agents, -1) for x in inputs], dim=1)
+        else:
+            img_ch, img_h, img_w = inputs[0].shape[2:]
+            inputs = [
+                inputs[0].reshape(bs * self.n_agents, img_ch, img_h, img_w),
+                [] if len(inputs) == 1
+                   else
+                th.cat([x.reshape(bs * self.n_agents, -1) for x in inputs[1:]], dim=1)
+            ]
+
         return inputs
 
     def _get_input_shape(self, scheme):
         input_shape = scheme["obs"]["vshape"]
-        if self.args.obs_last_action:
-            input_shape += scheme["actions_onehot"]["vshape"][0]
-        if self.args.obs_agent_id:
-            input_shape += self.n_agents
+        if isinstance(input_shape, int):  # vector input
+            if self.args.obs_last_action:
+                input_shape += scheme["actions_onehot"]["vshape"][0]
+            if self.args.obs_agent_id:
+                input_shape += self.n_agents
+        elif isinstance(input_shape, tuple):  # image input
+            self.is_image = True
+            input_shape = [input_shape, 0]
+            if self.args.obs_last_action:
+                input_shape[1] += scheme["actions_onehot"]["vshape"][0]
+            if self.args.obs_agent_id:
+                input_shape[1] += self.n_agents
+            input_shape = tuple(input_shape)  # list to tuple
+
         return input_shape

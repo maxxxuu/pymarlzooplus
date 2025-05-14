@@ -23,10 +23,12 @@ class emcMAC(BasicMAC):
             agent_outputs = self.forward(ep_batch, t_ep, test_mode=test_mode)
 
         # Only select actions for the selected batch elements in bs
-        chosen_actions = self.action_selector.select_action(agent_outputs[bs],
-                                                            avail_actions[bs],
-                                                            t_env,
-                                                            test_mode=test_mode)
+        chosen_actions = self.action_selector.select_action(
+            agent_outputs[bs],
+            avail_actions[bs],
+            t_env,
+            test_mode=test_mode
+        )
 
         return chosen_actions, extra_returns
 
@@ -35,9 +37,11 @@ class emcMAC(BasicMAC):
         epi_len = t if batch_inf else 1
         agent_inputs = self._build_inputs(ep_batch, t, batch_inf)
 
-        avail_actions = ep_batch["avail_actions"][:, :t] if batch_inf is True \
-                                                         else \
-                        ep_batch["avail_actions"][:, t:t+1]
+        avail_actions = (
+                            ep_batch["avail_actions"][:, :t] if batch_inf is True
+                                                             else
+                            ep_batch["avail_actions"][:, t:t+1]
+        )
 
         if self.use_individual_Q is True:
             agent_outs, self.hidden_states, individual_Q = self.agent(agent_inputs, self.hidden_states)
@@ -49,9 +53,11 @@ class emcMAC(BasicMAC):
 
             if self.mask_before_softmax is True:
                 # Make the logits for unavailable actions very negative to minimise their effect on the softmax
-                reshaped_avail_actions = avail_actions.transpose(1, 2).reshape(ep_batch.batch_size * self.n_agents,
-                                                                               epi_len,
-                                                                               -1)
+                reshaped_avail_actions = avail_actions.transpose(1, 2).reshape(
+                    ep_batch.batch_size * self.n_agents,
+                    epi_len,
+                    -1
+                )
                 agent_outs[reshaped_avail_actions == 0] = -1e10
             agent_outs = th.nn.functional.softmax(agent_outs, dim=-1)
 
@@ -62,16 +68,20 @@ class emcMAC(BasicMAC):
                     # With probability epsilon, we will pick an available action uniformly
                     epsilon_action_num = reshaped_avail_actions.sum(dim=-1, keepdim=True).float()
 
-                agent_outs = (1 - self.action_selector.epsilon) * agent_outs \
-                             + th.ones_like(agent_outs) * self.action_selector.epsilon / epsilon_action_num
+                agent_outs = (
+                        (1 - self.action_selector.epsilon) * agent_outs
+                        + th.ones_like(agent_outs) * self.action_selector.epsilon / epsilon_action_num
+                )
 
                 if self.mask_before_softmax is True:
                     # Zero out the unavailable actions
                     agent_outs[reshaped_avail_actions == 0] = 0.0
 
         if self.use_individual_Q is True:
-            return agent_outs.view(ep_batch.batch_size, self.n_agents, -1), \
-                   individual_Q.view(ep_batch.batch_size, self.n_agents, -1)
+            return (
+                agent_outs.view(ep_batch.batch_size, self.n_agents, -1),
+                individual_Q.view(ep_batch.batch_size, self.n_agents, -1)
+            )
         else:
             if batch_inf is False:
                 return agent_outs.view(ep_batch.batch_size, self.n_agents, -1)
@@ -87,7 +97,7 @@ class emcMAC(BasicMAC):
     def _build_inputs(self, batch, t, batch_inf):
 
         # Assumes homogenous agents.
-        # Other MACs might want to e.g. delegate building inputs to each agent
+        # Other MACs might want to, e.g., delegate building inputs to each agent
         bs = batch.batch_size
 
         if batch_inf is False:
@@ -120,10 +130,11 @@ class emcMAC(BasicMAC):
                 last_actions[:, 1:] = batch["actions_onehot"][:, :t-1]
                 inputs.append(last_actions)
             if self.args.obs_agent_id:
-                inputs.append(th.eye(self.n_agents, device=batch.device).
-                              view(1, 1, self.n_agents, self.n_agents).
-                              expand(bs, t, -1, -1)
-                              )
+                inputs.append(
+                    th.eye(self.n_agents, device=batch.device).
+                    view(1, 1, self.n_agents, self.n_agents).
+                    expand(bs, t, -1, -1)
+                )
 
             inputs = th.cat([x.transpose(1, 2).reshape(bs*self.n_agents, t, -1) for x in inputs], dim=2)
 

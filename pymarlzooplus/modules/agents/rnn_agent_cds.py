@@ -86,7 +86,8 @@ class RNNAgentCDS(nn.Module):
             gru_out_local = gru_out.reshape(-1, input_shape[1], gru_out.shape[-2], gru_out.shape[-1])
             local_q = th.stack(
                 [mlp(gru_out_local[:, id].reshape(-1, gru_out_local.shape[-1])) for id, mlp in enumerate(self.mlp)],
-                dim=1)
+                dim=1
+            )
             local_q = local_q.reshape(-1, gru_out_local.shape[-2], local_q.shape[-2], local_q.shape[-1])
 
         else:

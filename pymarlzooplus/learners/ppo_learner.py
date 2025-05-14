@@ -36,8 +36,8 @@ class PPOLearner:
             self.rew_ms = RunningMeanStd(shape=(1,), device=device)
 
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
-        # Get the relevant quantities
 
+        # Get the relevant quantities
         rewards = batch["reward"][:, :-1]
         actions = batch["actions"][:, :]
         terminated = batch["terminated"][:, :-1].float()
@@ -49,7 +49,6 @@ class PPOLearner:
             rewards = (rewards - self.rew_ms.mean) / th.sqrt(self.rew_ms.var)
 
         mask = mask.repeat(1, 1, self.n_agents)
-
         critic_mask = mask.clone()
 
         old_mac_out = []
@@ -65,6 +64,7 @@ class PPOLearner:
         old_log_pi_taken = th.log(old_pi_taken + 1e-10)
 
         for k in range(self.args.epochs):
+
             mac_out = []
             self.mac.init_hidden(batch.batch_size)
             for t in range(batch.max_seq_length - 1):
@@ -73,11 +73,12 @@ class PPOLearner:
             mac_out = th.stack(mac_out, dim=1)  # Concat over time
 
             pi = mac_out
-            advantages, critic_train_stats = self.train_critic_sequential(self.critic, self.target_critic, batch, rewards,
-                                                                          critic_mask)
+            advantages, critic_train_stats = self.train_critic_sequential(
+                self.critic, self.target_critic, batch, rewards, critic_mask
+            )
             advantages = advantages.detach()
-            # Calculate policy grad with mask
 
+            # Calculate policy grad with mask
             pi[mask == 0] = 1.0
 
             pi_taken = th.gather(pi, dim=3, index=actions).squeeze(3)
@@ -99,8 +100,13 @@ class PPOLearner:
         self.old_mac.load_state(self.mac)
 
         self.critic_training_steps += 1
-        if self.args.target_update_interval_or_tau > 1 and (
-                self.critic_training_steps - self.last_target_update_step) / self.args.target_update_interval_or_tau >= 1.0:
+        if (
+                self.args.target_update_interval_or_tau > 1 and
+                (
+                        (self.critic_training_steps - self.last_target_update_step) /
+                        self.args.target_update_interval_or_tau >= 1.0
+                )
+        ):
             self._update_targets_hard()
             self.last_target_update_step = self.critic_training_steps
         elif self.args.target_update_interval_or_tau <= 1.0:
@@ -118,6 +124,7 @@ class PPOLearner:
             self.log_stats_t = t_env
 
     def train_critic_sequential(self, critic, target_critic, batch, rewards, mask):
+
         # Optimise critic
         with th.no_grad():
             target_vals = target_critic(batch)
@@ -167,12 +174,12 @@ class PPOLearner:
                 if t >= rewards.size(1):
                     break
                 elif step == nsteps:
-                    nstep_return_t += self.args.gamma ** (step) * values[:, t] * mask[:, t]
+                    nstep_return_t += self.args.gamma ** step * values[:, t] * mask[:, t]
                 elif t == rewards.size(1) - 1 and self.args.add_value_last_step:
-                    nstep_return_t += self.args.gamma ** (step) * rewards[:, t] * mask[:, t]
+                    nstep_return_t += self.args.gamma ** step * rewards[:, t] * mask[:, t]
                     nstep_return_t += self.args.gamma ** (step + 1) * values[:, t + 1]
                 else:
-                    nstep_return_t += self.args.gamma ** (step) * rewards[:, t] * mask[:, t]
+                    nstep_return_t += self.args.gamma ** step * rewards[:, t] * mask[:, t]
             nstep_values[:, t_start, :] = nstep_return_t
         return nstep_values
 
@@ -201,7 +208,7 @@ class PPOLearner:
     def load_models(self, path):
         self.mac.load_models(path)
         self.critic.load_state_dict(th.load("{}/critic.th".format(path), map_location=lambda storage, loc: storage))
-        # Not quite right but I don't want to save target networks
+        # Not quite right, but I don't want to save target networks
         self.target_critic.load_state_dict(self.critic.state_dict())
         self.agent_optimiser.load_state_dict(
             th.load("{}/agent_opt.th".format(path), map_location=lambda storage, loc: storage))

@@ -17,7 +17,7 @@ class RNNAgent(nn.Module):
         # Use CNN to encode image observations
         self.is_image = False
         if isinstance(input_shape, tuple):  # image input
-            self.cnn = CNNAgent(input_shape, args)  # TODO: image support for 'rnn_feature_agent' and 'rnn_ns_agent'
+            self.cnn = CNNAgent(input_shape, args)
             input_shape = self.cnn.features_dim + input_shape[1]
             self.is_image = True
 
@@ -29,14 +29,14 @@ class RNNAgent(nn.Module):
         self.fc2 = nn.Linear(args.hidden_dim, args.n_actions)
 
     def init_hidden(self):
-        # make hidden states on same device as model
+        # make hidden states on the same device as the model
         return self.fc1.weight.new(1, self.args.hidden_dim).zero_()
 
     def forward(self, inputs, hidden_state):
 
         if self.is_image is True:
             inputs[0] = self.cnn(inputs[0])
-            if len(inputs[1] > 0):
+            if len(inputs[1]) > 0:
                 inputs = th.concat(inputs, dim=1)
             else:
                 inputs = inputs[0]

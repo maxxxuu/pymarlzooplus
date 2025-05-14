@@ -19,11 +19,12 @@ class happoMAC(BasicMAC):
 
         agent_outputs = self.forward(ep_batch, t_ep, test_mode=test_mode, agent_id=agent_id)
 
-        select_actions_returns = self.action_selector.select_action(agent_outputs[bs],
-                                                                    avail_actions[bs],
-                                                                    t_env,
-                                                                    test_mode=test_mode
-                                                                    )
+        select_actions_returns = self.action_selector.select_action(
+            agent_outputs[bs],
+            avail_actions[bs],
+            t_env,
+            test_mode=test_mode
+        )
         # Get actions, log probs, and hidden states
         chosen_actions, chosen_log_probs = select_actions_returns
         if self.agent.use_rnn is True:
@@ -36,8 +37,7 @@ class happoMAC(BasicMAC):
             self.critic.hidden_states = critic_returns[1]
             extra_returns.update({'hidden_states_critic': self.critic.hidden_states.clone().detach()})
 
-        extra_returns.update({'log_probs': chosen_log_probs.clone().detach(),
-                              'values': values[bs].clone().detach()})
+        extra_returns.update({'log_probs': chosen_log_probs.clone().detach(), 'values': values[bs].clone().detach()})
 
         return chosen_actions, extra_returns
 
@@ -76,9 +76,9 @@ class happoMAC(BasicMAC):
                     reshaped_avail_actions = avail_actions.reshape(ep_batch["batch_size"] * self.n_agents,
                                                                    -1)
                 else:
-                    reshaped_avail_actions = avail_actions.transpose(1, 2).reshape(ep_batch["batch_size"] * self.n_agents,
-                                                                                   epi_len,
-                                                                                   -1)
+                    reshaped_avail_actions = avail_actions.transpose(1, 2).reshape(
+                        ep_batch["batch_size"] * self.n_agents, epi_len, -1
+                    )
                 # Make the logits for unavailable actions very negative to minimise their effect on the softmax
                 agent_outs[reshaped_avail_actions == 0] = -1e10
             agent_outs = th.nn.functional.softmax(agent_outs, dim=-1)
@@ -95,7 +95,7 @@ class happoMAC(BasicMAC):
     def _build_inputs(self, batch, t, batch_inf, agent_id):
 
         # Assumes homogenous agents.
-        # Other MACs might want to e.g. delegate building inputs to each agent
+        # Other MACs might want to, e.g., delegate building inputs to each agent
         bs = batch["batch_size"]
 
         # Keep only the values corresponding to agent_id
@@ -136,10 +136,11 @@ class happoMAC(BasicMAC):
                 last_actions[:, 1:] = batch_actions_onehot[:, :t-1]
                 inputs.append(last_actions)
             if self.args.obs_agent_id:
-                inputs.append(th.eye(self.n_agents, device=batch.device).
-                              view(1, 1, self.n_agents, self.n_agents).
-                              expand(bs, t, -1, -1)
-                              )
+                inputs.append(
+                    th.eye(self.n_agents, device=batch.device).
+                    view(1, 1, self.n_agents, self.n_agents).
+                    expand(bs, t, -1, -1)
+                )
 
             inputs = th.cat([x.transpose(1, 2).reshape(bs * self.n_agents, t, -1) for x in inputs], dim=2)
 

@@ -1,9 +1,9 @@
 # code heavily adapted from https://github.com/oxwhirl/facmac/
 import copy
 from pymarlzooplus.components.episode_buffer import EpisodeBatch
-from pymarlzooplus.modules.critics.maddpg import MADDPGCritic
+
 import torch as th
-from torch.optim import RMSprop, Adam
+from torch.optim import Adam
 from pymarlzooplus.controllers.maddpg_controller import gumbel_softmax
 from pymarlzooplus.modules.critics import REGISTRY as critic_registry
 from pymarlzooplus.components.standarize_stream import RunningMeanStd
@@ -37,7 +37,11 @@ class MADDPGLearner:
         if self.args.standardise_rewards:
             self.rew_ms = RunningMeanStd(shape=(1,), device=device)
 
+        self.is_image = self.mac.is_image
+        assert self.critic.is_image == self.is_image, "Critic and MAC must have the same input type"
+
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
+
         # Get the relevant quantities
         rewards = batch["reward"][:, :-1]
         actions = batch["actions_onehot"]
@@ -54,7 +58,10 @@ class MADDPGLearner:
         # Train the critic
         inputs = self._build_inputs(batch)
         actions = actions.view(batch_size, -1, 1, self.n_agents * self.n_actions).expand(-1, -1, self.n_agents, -1)
-        q_taken = self.critic(inputs[:, :-1], actions[:, :-1].detach())
+        if self.is_image is False:  # Vector observation
+            q_taken = self.critic(inputs[:, :-1], actions[:, :-1].detach())
+        else:  # Image observation
+            q_taken = self.critic([x[:, :-1] for x in inputs], actions[:, :-1].detach())
         q_taken = q_taken.view(batch_size, -1, 1)
 
         # Use the target actor and target critic network to compute the target q
@@ -66,7 +73,10 @@ class MADDPGLearner:
         target_actions = th.stack(target_actions, dim=1)  # Concat over time
 
         target_actions = target_actions.view(batch_size, -1, 1, self.n_agents * self.n_actions).expand(-1, -1, self.n_agents, -1)
-        target_vals = self.target_critic(inputs[:, 1:], target_actions.detach())
+        if self.is_image is False:  # Vector observation
+            target_vals = self.target_critic(inputs[:, 1:], target_actions.detach())
+        else:  # Image observation
+            target_vals = self.target_critic([x[:, 1:] for x in inputs], target_actions.detach())
         target_vals = target_vals.view(batch_size, -1, 1)
 
         if self.args.standardise_returns:
@@ -114,7 +124,10 @@ class MADDPGLearner:
         pis = th.cat(pis, dim=1)
         pis[pis == -1e10] = 0
         pis = pis.reshape(-1, 1)
-        q = self.critic(inputs[:, :-1], new_actions)
+        if self.is_image is False:  # Vector observation
+            q = self.critic(inputs[:, :-1], new_actions)
+        else:  # Image observation
+            q = self.critic([x[:, :-1] for x in inputs], new_actions)
         q = q.reshape(-1, 1)
         mask = mask.reshape(-1, 1)
 
@@ -127,7 +140,13 @@ class MADDPGLearner:
         agent_grad_norm = th.nn.utils.clip_grad_norm_(self.agent_params, self.args.grad_norm_clip)
         self.agent_optimiser.step()
 
-        if self.args.target_update_interval_or_tau > 1 and (episode_num - self.last_target_update_episode) / self.args.target_update_interval_or_tau >= 1.0:
+        if (
+                self.args.target_update_interval_or_tau > 1 and
+                (
+                        (episode_num - self.last_target_update_episode) /
+                        self.args.target_update_interval_or_tau >= 1.0
+                )
+        ):
             self._update_targets_hard()
             self.last_target_update_episode = episode_num
         elif self.args.target_update_interval_or_tau <= 1.0:
@@ -149,8 +168,13 @@ class MADDPGLearner:
         max_t = batch.max_seq_length if t is None else 1
         ts = slice(None) if t is None else slice(t, t + 1)
 
-        inputs = []
-        inputs.append(batch["state"][:, ts].unsqueeze(2).expand(-1, -1, self.n_agents, -1))
+        # state
+        if self.is_image is False:  # Vector observation
+            inputs = [batch["state"][:, ts].unsqueeze(2).expand(-1, -1, self.n_agents, -1)]
+        else:
+            inputs = [batch["state"][:, ts]]
+
+        # observation
         if self.args.obs_individual_obs:
             inputs.append(batch["obs"][:, ts])
 
@@ -166,10 +190,21 @@ class MADDPGLearner:
                     dim=1
                 )
                 inputs.append(last_actions)
+
+        # agent id
         if self.args.obs_agent_id:
             inputs.append(th.eye(self.n_agents, device=batch.device).unsqueeze(0).unsqueeze(0).expand(bs, max_t, -1, -1))
 
-        inputs = th.cat(inputs, dim=-1)
+        if self.is_image is False:  # Vector observation
+            inputs = th.cat(inputs, dim=-1)
+        elif (
+                self.is_image is True and (self.args.obs_last_action is True or self.args.obs_agent_id is True)
+        ):  # Image observation
+            extra_input_index = 2 if self.args.obs_individual_obs else 1
+            inputs[extra_input_index] = th.cat([x for x in inputs[extra_input_index:]], dim=-1)
+            if len(inputs) > extra_input_index + 1:
+                del inputs[extra_input_index + 1:]  # remove the last inputs since they are already concatenated
+
         return inputs
 
     def _update_targets_hard(self):
