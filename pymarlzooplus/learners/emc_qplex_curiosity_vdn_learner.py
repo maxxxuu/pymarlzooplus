@@ -47,16 +47,18 @@ class EMC_qplex_curiosity_vdn_Learner:
         if self.args.standardise_rewards:
             self.rew_ms = RunningMeanStd(shape=(1,), device=self._device)
 
-    def sub_train(self,
-                  batch: EpisodeBatch,
-                  t_env: int,
-                  episode_num: int,
-                  mac,
-                  mixer,
-                  optimiser,
-                  params,
-                  intrinsic_rewards,
-                  ec_buffer=None):
+    def sub_train(
+            self,
+            batch: EpisodeBatch,
+            t_env: int,
+            episode_num: int,
+            mac,
+            mixer,
+            optimiser,
+            params,
+            intrinsic_rewards,
+            ec_buffer=None
+    ):
 
         # Get the relevant quantities
         rewards = batch["reward"][:, :-1]
@@ -102,8 +104,9 @@ class EMC_qplex_curiosity_vdn_Learner:
             target_max_qvals = target_mac_out.max(dim=3)[0]
             target_next_actions = cur_max_actions.detach()
 
-            cur_max_actions_onehot = to_cuda(th.zeros(cur_max_actions.squeeze(3).shape + (self.n_actions,)),
-                                             self.args.device)
+            cur_max_actions_onehot = to_cuda(
+                th.zeros(cur_max_actions.squeeze(3).shape + (self.n_actions,)), self.args.device
+            )
             cur_max_actions_onehot = cur_max_actions_onehot.scatter_(3, cur_max_actions, 1)
         else:
             # Calculate the Q-Values necessary for the target
@@ -119,29 +122,40 @@ class EMC_qplex_curiosity_vdn_Learner:
         # Mix
         if mixer is not None:
             if self.args.mixer == "dmaq_qatten":
-                ans_chosen, q_attend_regs, head_entropies = \
-                    mixer(chosen_action_qvals, batch["state"][:, :-1], is_v=True)
-                ans_adv, _, _ = mixer(chosen_action_qvals, batch["state"][:, :-1], actions=actions_onehot,
-                                      max_q_i=max_action_qvals, is_v=False)
+                ans_chosen, q_attend_regs, head_entropies = mixer(
+                    chosen_action_qvals, batch["state"][:, :-1], is_v=True
+                )
+                ans_adv, _, _ = mixer(
+                    chosen_action_qvals, batch["state"][:, :-1], actions=actions_onehot,
+                    max_q_i=max_action_qvals, is_v=False
+                )
                 chosen_action_qvals = ans_chosen + ans_adv
             else:
                 ans_chosen = mixer(chosen_action_qvals, batch["state"][:, :-1], is_v=True)
-                ans_adv = mixer(chosen_action_qvals, batch["state"][:, :-1], actions=actions_onehot,
-                                max_q_i=max_action_qvals, is_v=False)
+                ans_adv = mixer(
+                    chosen_action_qvals, batch["state"][:, :-1],
+                    actions=actions_onehot,
+                    max_q_i=max_action_qvals,
+                    is_v=False
+                )
                 chosen_action_qvals = ans_chosen + ans_adv
 
             if self.args.double_q:
                 if self.args.mixer == "dmaq_qatten":
                     target_chosen, _, _ = self.target_mixer(target_chosen_qvals, batch["state"][:, 1:], is_v=True)
-                    target_adv, _, _ = self.target_mixer(target_chosen_qvals, batch["state"][:, 1:],
-                                                         actions=cur_max_actions_onehot,
-                                                         max_q_i=target_max_qvals, is_v=False)
+                    target_adv, _, _ = self.target_mixer(
+                        target_chosen_qvals, batch["state"][:, 1:],
+                        actions=cur_max_actions_onehot,
+                        max_q_i=target_max_qvals, is_v=False
+                    )
                     target_max_qvals = target_chosen + target_adv
                 else:
                     target_chosen = self.target_mixer(target_chosen_qvals, batch["state"][:, 1:], is_v=True)
-                    target_adv = self.target_mixer(target_chosen_qvals, batch["state"][:, 1:],
-                                                   actions=cur_max_actions_onehot,
-                                                   max_q_i=target_max_qvals, is_v=False)
+                    target_adv = self.target_mixer(
+                        target_chosen_qvals, batch["state"][:, 1:],
+                        actions=cur_max_actions_onehot,
+                        max_q_i=target_max_qvals, is_v=False
+                    )
                     target_max_qvals = target_chosen + target_adv
             else:
                 target_max_qvals = self.target_mixer(target_max_qvals, batch["state"][:, 1:], is_v=True)
@@ -164,11 +178,9 @@ class EMC_qplex_curiosity_vdn_Learner:
                         ec_buffer.qec_found += 1
                 qec_input_new.append(qec_tmp)
             qec_input_new = th.stack(qec_input_new, dim=0)
-
-            # print("qec_mean:", np.mean(ec_buffer.qecwatch))
-            episodic_q_hit_pro = 1.0 * ec_buffer.qec_found / self.args.batch_size / ec_buffer.update_counter / batch.max_seq_length
-            # print("qec_fount: %.2f" % episodic_q_hit_pro)
-
+            episodic_q_hit_pro = (
+                    1.0 * ec_buffer.qec_found / self.args.batch_size / ec_buffer.update_counter / batch.max_seq_length
+            )
         targets = intrinsic_rewards + rewards + self.args.gamma * (1 - terminated) * target_max_qvals
 
         # Td-error
@@ -236,31 +248,37 @@ class EMC_qplex_curiosity_vdn_Learner:
 
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int, ec_buffer=None):
 
-        intrinsic_rewards = self.vdn_learner.train(batch,
-                                                   t_env,
-                                                   episode_num,
-                                                   imac=self.mac,
-                                                   timac=self.target_mac)
+        intrinsic_rewards = self.vdn_learner.train(
+            batch,
+            t_env,
+            episode_num,
+            imac=self.mac,
+            timac=self.target_mac
+        )
         if self.args.prioritized_buffer:
-            masked_td_error, mask = self.sub_train(batch,
-                                                   t_env,
-                                                   episode_num,
-                                                   self.mac,
-                                                   self.mixer,
-                                                   self.optimiser,
-                                                   self.params,
-                                                   intrinsic_rewards=intrinsic_rewards,
-                                                   ec_buffer=ec_buffer)
+            masked_td_error, mask = self.sub_train(
+                batch,
+                t_env,
+                episode_num,
+                self.mac,
+                self.mixer,
+                self.optimiser,
+                self.params,
+                intrinsic_rewards=intrinsic_rewards,
+                ec_buffer=ec_buffer
+            )
         else:
-            self.sub_train(batch,
-                           t_env,
-                           episode_num,
-                           self.mac,
-                           self.mixer,
-                           self.optimiser,
-                           self.params,
-                           intrinsic_rewards=intrinsic_rewards,
-                           ec_buffer=ec_buffer)
+            self.sub_train(
+                batch,
+                t_env,
+                episode_num,
+                self.mac,
+                self.mixer,
+                self.optimiser,
+                self.params,
+                intrinsic_rewards=intrinsic_rewards,
+                ec_buffer=ec_buffer
+            )
 
         if (episode_num - self.last_target_update_episode) / self.args.target_update_interval >= 1.0:
             self._update_targets(ec_buffer)
@@ -300,7 +318,6 @@ class EMC_qplex_curiosity_vdn_Learner:
         if self.mixer is not None:
             self.mixer.load_state_dict(th.load("{}/mixer.th".format(path), map_location=lambda storage, loc: storage))
             self.target_mixer.load_state_dict(
-                th.load("{}/mixer.th".format(path),
-                        map_location=lambda storage, loc: storage)
+                th.load("{}/mixer.th".format(path), map_location=lambda storage, loc: storage)
             )
         self.optimiser.load_state_dict(th.load("{}/opt.th".format(path), map_location=lambda storage, loc: storage))

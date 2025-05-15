@@ -14,7 +14,8 @@ args, remaining = parser.parse_known_args()
 sys.argv = [sys.argv[0]] + remaining
 FILTER_ALGOS = [a.strip().upper() for a in args.algo.split(',')] if args.algo else None
 FILTER_ENVS = [e.strip().lower() for e in args.env.split(',')] if args.env else None
-ALGO_RAW_IMGS_NOT_SUPPORTED = ["CDS", "MASER","EMC"]
+ALGO_RAW_IMGS_NOT_SUPPORTED = ["CDS", "MASER", "EMC", "EOI", "MAT_DEC", "HAPPO"]
+
 
 def generate_training_configs(env_type, keys, common_args, algo_names, variants=None):
     if variants is None:
@@ -24,7 +25,7 @@ def generate_training_configs(env_type, keys, common_args, algo_names, variants=
         algo_conf = algorithms[algo_name]
         for key in keys:
             for suffix, override in variants.items():
-                if algo_name not in ["CDS", "EOI", "EMC", "MAT_DEC"] and suffix.endswith("_raw"):
+                if algo_name not in ALGO_RAW_IMGS_NOT_SUPPORTED and suffix.endswith("_raw"):
                     override.update({"trainable_cnn": True, "centralized_image_encoding": False})
 
                 test_name = f"{env_type}_{key}_{algo_name}"

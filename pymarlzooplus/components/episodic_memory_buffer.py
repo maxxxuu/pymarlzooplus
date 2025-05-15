@@ -4,13 +4,16 @@ from pymarlzooplus.components.lrn_knn import LRUKNN
 
 class EpisodicMemoryBuffer:
     def __init__(self, args, scheme):
+
+        assert not isinstance(scheme['state']['vshape'], tuple), "EMC does not support image obs for the time being!"
+
         self.ec_buffer = LRUKNN(args.emdqn_buffer_size, args.emdqn_latent_dim, 'game')
         self.rng = np.random.RandomState(123456)  # deterministic, erase 123456 for stochastic
         state_dim = scheme['state']['vshape']
-        if type(state_dim) != int:
-            state_dim = int(np.prod(scheme['state']['vshape']))
-        self.random_projection = self.rng.normal(loc=0, scale=1. / np.sqrt(args.emdqn_latent_dim),
-                                                 size=(args.emdqn_latent_dim, state_dim))
+        self.random_projection = self.rng.normal(
+            loc=0, scale=1. / np.sqrt(args.emdqn_latent_dim),
+            size=(args.emdqn_latent_dim, state_dim)
+        )
         self.q_episodic_memory_cwatch = []
         self.args = args
         self.update_counter = 0

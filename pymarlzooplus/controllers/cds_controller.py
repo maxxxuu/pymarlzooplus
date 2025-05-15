@@ -7,7 +7,7 @@ class cdsMAC(BasicMAC):
     def __init__(self, scheme, groups, args):
         super().__init__(scheme, groups, args)
 
-        assert self.is_image is False, "EMC does not support image obs for the time being!"
+        assert self.is_image is False, "CDS does not support image obs for the time being!"
 
     def forward(self, ep_batch, t, test_mode=False):
 
@@ -20,8 +20,7 @@ class cdsMAC(BasicMAC):
 
             if self.mask_before_softmax is True:
                 # Make the logits for unavailable actions very negative to minimise their effect on the softmax
-                reshaped_avail_actions = avail_actions.reshape(ep_batch.batch_size * self.n_agents,
-                                                               -1)
+                reshaped_avail_actions = avail_actions.reshape(ep_batch.batch_size * self.n_agents, -1)
 
                 agent_outs[reshaped_avail_actions == 0] = -1e10
             agent_outs = th.nn.functional.softmax(agent_outs, dim=-1)
@@ -33,8 +32,10 @@ class cdsMAC(BasicMAC):
                     # With probability epsilon, we will pick an available action uniformly
                     epsilon_action_num = reshaped_avail_actions.sum(dim=-1, keepdim=True).float()
 
-                agent_outs = (1 - self.action_selector.epsilon) * agent_outs \
-                             + th.ones_like(agent_outs) * self.action_selector.epsilon / epsilon_action_num
+                agent_outs = (
+                        (1 - self.action_selector.epsilon) * agent_outs
+                        + th.ones_like(agent_outs) * self.action_selector.epsilon / epsilon_action_num
+                )
 
                 if self.mask_before_softmax is True:
                     # Zero out the unavailable actions

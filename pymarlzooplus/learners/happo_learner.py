@@ -8,6 +8,7 @@ from pymarlzooplus.components.episode_buffer import EpisodeBatch
 from pymarlzooplus.modules.critics import REGISTRY as critic_registry
 from pymarlzooplus.components.standarize_stream import PopArt
 
+
 class HAPPOLearner:
     def __init__(self, mac, scheme, logger, args):
         self.args = args
@@ -31,14 +32,16 @@ class HAPPOLearner:
             assert self.learners[0].mac.agent.use_rnn == self.learners[agent_id].mac.agent.use_rnn
             assert self.learners[0].mac.critic.use_rnn_critic == self.learners[agent_id].mac.critic.use_rnn_critic
 
-            agent_action, agent_extra_returns = \
-                self.learners[agent_id].mac.select_actions(ep_batch,
-                                                           t_ep,
-                                                           t_env,
-                                                           bs=bs,
-                                                           test_mode=test_mode,
-                                                           agent_id=agent_id
-                                                           )
+            agent_action, agent_extra_returns = (
+                self.learners[agent_id].mac.select_actions(
+                    ep_batch,
+                    t_ep,
+                    t_env,
+                    bs=bs,
+                    test_mode=test_mode,
+                    agent_id=agent_id
+                )
+            )
             actions.append(agent_action)
             extra_returns["log_probs"].append(agent_extra_returns["log_probs"])
             extra_returns["values"].append(agent_extra_returns["values"])
@@ -50,13 +53,11 @@ class HAPPOLearner:
         actions = th.concat(actions, dim=1)
         extra_returns["log_probs"] = th.concat(extra_returns["log_probs"], dim=1)
         extra_returns["values"] = th.concat(extra_returns["values"], dim=1)
-        assert (actions.shape ==
-                extra_returns["log_probs"].shape ==
-                extra_returns["values"].shape
-                ), (f"'actions.shape': {actions.shape}, "
-                    f"\n'extra_returns['log_probs'].shape': {extra_returns['log_probs'].shape}"
-                    f"\n'extra_returns['values'].shape': {extra_returns['values'].shape}"
-                    )
+        assert (actions.shape == extra_returns["log_probs"].shape == extra_returns["values"].shape), (
+            f"'actions.shape': {actions.shape}, "
+            f"\n'extra_returns['log_probs'].shape': {extra_returns['log_probs'].shape}"
+            f"\n'extra_returns['values'].shape': {extra_returns['values'].shape}"
+        )
 
         if self.learners[0].mac.agent.use_rnn is True:
             extra_returns["hidden_states"] = th.concat(extra_returns["hidden_states"], dim=1)
@@ -73,13 +74,9 @@ class HAPPOLearner:
             assert self.learners[0].mac.critic.use_rnn_critic == self.learners[agent_id].mac.critic.use_rnn_critic
 
             if self.learners[agent_id].mac.agent.use_rnn is True:
-                self.learners[agent_id].mac.hidden_states = \
-                    self.learners[agent_id]. \
-                        mac. \
-                        agent. \
-                        init_hidden(). \
-                        unsqueeze(0). \
-                        expand(batch_size, 1, -1)  # shape: [batch_size, agents, hidden_dim]
+                self.learners[agent_id].mac.hidden_states = (
+                    self.learners[agent_id].mac.agent.init_hidden().unsqueeze(0).expand(batch_size, 1, -1)
+                )  # shape: [batch_size, agents, hidden_dim]
             if self.learners[agent_id].critic.use_rnn_critic is True:
                 self.learners[agent_id].critic.init_hidden(batch_size)
 
@@ -183,10 +180,11 @@ class HAPPO:
         values = batch["values"][:, :, self.agent_id]
 
         for step in reversed(range(rewards.shape[1])):
-            delta = (rewards[:, step]
-                     + self.gamma * self.value_normalizer.denormalize(values[:, step + 1]) * mask[:, step]
-                     - self.value_normalizer.denormalize(values[:, step])
-                     )
+            delta = (
+                rewards[:, step]
+                + self.gamma * self.value_normalizer.denormalize(values[:, step + 1]) * mask[:, step]
+                - self.value_normalizer.denormalize(values[:, step])
+            )
             gae = delta + self.gamma * self.gae_lambda * mask[:, step] * gae
             returns[:, step] = gae + self.value_normalizer.denormalize(values[:, step])
 
@@ -225,13 +223,14 @@ class HAPPO:
             # Get the action executed
             actions = batch["actions"][:, :-1]
 
-            mac_out = self.mac.forward(batch,
-                                       t=batch.max_seq_length-1,
-                                       hidden_states=hidden_states,
-                                       masks=mask,
-                                       agent_id=agent_id,
-                                       batch_inf=True
-                                       )
+            mac_out = self.mac.forward(
+                batch,
+                t=batch.max_seq_length-1,
+                hidden_states=hidden_states,
+                masks=mask,
+                agent_id=agent_id,
+                batch_inf=True
+            )
         else:
             agent_id = 0
 
@@ -241,17 +240,18 @@ class HAPPO:
             if self.mac.agent.use_rnn is True:
                 hidden_states = batch["hidden_states"]
 
-            mac_out = self.mac.forward(batch,
-                                       # zero because we create a minibatch with only one timestep
-                                       # in the 'create_mini_batch' function
-                                       t=0,
-                                       hidden_states=hidden_states,
-                                       masks=mask,
-                                       # zero because we have already kept
-                                       # the right agent in the 'create_mini_batch' function
-                                       agent_id=agent_id,
-                                       batch_inf=False
-                                       ).unsqueeze(2)
+            mac_out = self.mac.forward(
+                batch,
+                # zero because we create a minibatch with only one timestep
+                # in the 'create_mini_batch' function
+                t=0,
+                hidden_states=hidden_states,
+                masks=mask,
+                # zero because we have already kept
+                # the right agent in the 'create_mini_batch' function
+                agent_id=agent_id,
+                batch_inf=False
+            ).unsqueeze(2)
 
         pi = mac_out
         pi = pi[:, :, 0, :].unsqueeze(2)
@@ -259,10 +259,11 @@ class HAPPO:
         # Calculate policy grad with mask
         pi = th.where(mask.unsqueeze(-1).expand_as(pi) == 0, th.ones_like(pi), pi)
 
-        pi_taken = th.gather(pi,
-                             dim=3,
-                             index=actions[:, :, agent_id, :].unsqueeze(2)
-                             ).squeeze(3)
+        pi_taken = th.gather(
+            pi,
+            dim=3,
+            index=actions[:, :, agent_id, :].unsqueeze(2)
+        ).squeeze(3)
         log_pi_taken = th.log(pi_taken + 1e-10)
         entropy = -th.sum(pi * th.log(pi + 1e-10), dim=-1)
 

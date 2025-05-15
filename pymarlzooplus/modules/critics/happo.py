@@ -4,7 +4,6 @@ import math
 import numpy as np
 import torch as th
 import torch.nn as nn
-import torch.nn.functional as F
 
 from ..agents.cnn_agent import CNNAgent
 from pymarlzooplus.utils.torch_utils import init
@@ -24,17 +23,19 @@ class HAPPOCritic(nn.Module):
         self.use_rnn_critic = args.use_rnn_critic
         self.use_orthogonal_init_rnn_critic = args.use_orthogonal_init_rnn_critic
         self.use_feature_normalization_critic = args.use_feature_normalization_critic
+        self.cnn_features_dim = args.cnn_features_dim
 
-        assert not (self.use_rnn_critic is False and self.use_orthogonal_init_rnn_critic is True), \
-            (f"'self.use_rnn_critic' is {self.use_rnn_critic} "
-             f"but 'self.use_orthogonal_init_rnn_critic' is {self.use_orthogonal_init_rnn_critic} !")
+        assert not (self.use_rnn_critic is False and self.use_orthogonal_init_rnn_critic is True), (
+            f"'self.use_rnn_critic' is {self.use_rnn_critic} "
+            f"but 'self.use_orthogonal_init_rnn_critic' is {self.use_orthogonal_init_rnn_critic} !"
+        )
 
         input_shape, n_extra_feat = self._get_input_shape(scheme)
         self.output_type = "v"
         if isinstance(input_shape, np.int64) or isinstance(input_shape, int):  # Vector input
             self.state_dim = input_shape
         elif isinstance(input_shape, tuple) and (len(input_shape[0]) == 4) and (input_shape[0][1] == 3):  # Image input
-            self.state_dim = (args.cnn_features_dim * input_shape[0][0]) + input_shape[1]  # multiply with n_agents
+            self.state_dim = (self.cnn_features_dim * input_shape[0][0]) + input_shape[1]  # multiply with n_agents
         else:
             raise ValueError(f"Invalid 'input_shape': {input_shape}")
 
@@ -44,61 +45,56 @@ class HAPPOCritic(nn.Module):
         if self.is_image is False and self.use_feature_normalization_critic is True:
             self.feature_norm = nn.LayerNorm(self.state_dim - n_extra_feat)
 
-        if self.is_image is False:
-            gain = nn.init.calculate_gain('relu')
+        # Layers initialization
+        def init_(m):
+            return init(
+                m,
+                [nn.init.xavier_uniform_, nn.init.orthogonal_][self.use_orthogonal_init_rnn_critic],
+                lambda x: nn.init.constant_(x, 0),
+                gain=nn.init.calculate_gain('relu')
+            )
 
-            def init_(m):
-                return init(m,
-                            [nn.init.xavier_uniform_, nn.init.orthogonal_][self.use_orthogonal_init_rnn_critic],
-                            lambda x: nn.init.constant_(x, 0),
-                            gain=gain)
+        # MLP layers
+        self.fc1 = nn.Sequential(
+            init_(nn.Linear(self.state_dim, args.hidden_dim)),
+            nn.ReLU(),
+            nn.LayerNorm(args.hidden_dim)
+        )
+        if self.is_image is True:
+            self.fc2 = nn.Sequential(
+                init_(nn.Linear(args.hidden_dim, args.hidden_dim)),
+                nn.ReLU(),
+                nn.LayerNorm(args.hidden_dim)
+            )
 
-            self.fc1 = nn.Sequential(init_(nn.Linear(self.state_dim, args.hidden_dim)),
-                                     nn.ReLU(),
-                                     nn.LayerNorm(args.hidden_dim)
-                                     )
-            self.fc2 = nn.Sequential(init_(nn.Linear(args.hidden_dim, args.hidden_dim)),
-                                     nn.ReLU(),
-                                     nn.LayerNorm(args.hidden_dim)
-                                     )
-        else:
-            if self.use_orthogonal_init_rnn_critic is True:
-                def init_(m):
-                    return init(m, nn.init.orthogonal_, lambda x: nn.init.constant_(x, 0), gain=gain)
-                self.fc1 = init_(nn.Linear(self.state_dim, args.hidden_dim))
-            else:
-                self.fc1 = nn.Linear(self.state_dim, args.hidden_dim)
-
+        # RNN layer
         self.hidden_states = None
         if self.use_rnn_critic is True:
-
             self.rnn = nn.GRU(
                 args.hidden_dim,
                 args.hidden_dim,
                 num_layers=1
             )
             self.after_rnn_norm = nn.LayerNorm(args.hidden_dim)
-
             if self.use_orthogonal_init_rnn_critic is True:
-
                 for name, param in self.rnn.named_parameters():
                     if 'bias' in name:
                         nn.init.constant_(param, 0)
                     elif 'weight' in name:
                         nn.init.orthogonal_(param)
 
+        # Output layer
         if self.use_orthogonal_init_rnn_critic is True:
             self.v_out = init_(nn.Linear(args.hidden_dim, 1))
-
         else:
             self.v_out = nn.Linear(args.hidden_dim, 1)
 
-
     def init_hidden(self, batch_size):
-        self.hidden_states = th.zeros((1, self.args.hidden_dim)). \
-                to(self.fc1[0].weight.device). \
-                unsqueeze(0). \
-                expand(batch_size, 1, -1)  # shape: [batch_size, timesteps, hidden_dim]
+        self.hidden_states = th.zeros(
+            (1, self.args.hidden_dim)
+        ).to(
+            self.fc1[0].weight.device
+        ).unsqueeze(0).expand(batch_size, 1, -1)  # shape: [batch_size, timesteps, hidden_dim]
 
     def forward(self, batch, t=None, hidden_states=None, masks=None):
         inputs, bs, max_t = self._build_inputs(batch, t=t)
@@ -108,32 +104,18 @@ class HAPPOCritic(nn.Module):
             height = inputs[0].shape[4]
             width = inputs[0].shape[5]
             # Reshape the states
-            # from [batch size, max steps, n_agents, channels, height, width]
-            # to [batch size x max steps x n_agents, channels, height, width]
+            # from [batch size, max steps, real_n_agents, channels, height, width]
+            # to [batch size x max steps x real_n_agents, channels, height, width]
             inputs[0] = inputs[0].reshape(-1, channels, height, width)
-            total_samples = inputs[0].shape[0]
-            n_batches = math.ceil(total_samples / bs)
-
-            # state-images are processed in batches due to memory limitations
-            input_new = []
-            for batch in range(n_batches):
-                # from [batch size, channels, height, width]
-                # to [batch size, cnn features dim]
-                input_new.append(self.cnn(inputs[0][batch * bs:(batch + 1) * bs]))
-
-            # to [batch size x max steps x n_agents, cnn features dim]
-            inputs[0] = th.concat(input_new, dim=0)
-
-            n_cnn_feats = inputs[0].shape[-1]
-            # to [batch size x max steps, n_agents, cnn features dim]
-            inputs[0] = inputs[0].view(bs * max_t, self.n_agents, n_cnn_feats)
-            # to [batch size x max steps , n_agents x cnn features dim]
-            inputs[0] = inputs[0].view(bs * max_t, self.n_agents * n_cnn_feats)
-            # to [batch size x max steps, n_agents, n_agents x cnn features dim]
+            # to [batch size x max steps x real_n_agents, cnn features dim]
+            inputs[0] = self.cnn(inputs[0])
+            # to [batch size x max steps, real_n_agents x cnn features dim]
+            inputs[0] = inputs[0].view(bs * max_t, self.real_n_agents * self.cnn_features_dim)
+            # to [batch size x max steps, n_agents, real_n_agents x cnn features dim]
             inputs[0] = inputs[0].unsqueeze(1).repeat(1, self.n_agents, 1)
-            # to [batch size, max steps, n_agents, n_agents x cnn features dim]
-            inputs[0] = inputs[0].view(bs, max_t, self.n_agents, self.n_agents * n_cnn_feats)
-            # to [batch size, max steps, n_agents, cnn features dim x n_agents + extra features]
+            # to [batch size, max steps, n_agents, real_n_agents x cnn features dim]
+            inputs[0] = inputs[0].view(bs, max_t, self.n_agents, self.real_n_agents * self.cnn_features_dim)
+            # to [batch size, max steps, n_agents, cnn features dim x real_n_agents + extra features]
             inputs = th.cat(inputs, dim=-1)
 
             x = self.fc1(inputs)
@@ -155,10 +137,12 @@ class HAPPOCritic(nn.Module):
                 x = x.squeeze(1).squeeze(1)
 
             if x.size(0) == hidden_states.size(0):  # Used in inference
-                x, h = \
-                    self.rnn(x.unsqueeze(0),
-                             (hidden_states * masks.repeat(1, 1).unsqueeze(-1)).transpose(0, 1).contiguous()
-                             )
+                x, h = (
+                    self.rnn(
+                        x.unsqueeze(0),
+                        (hidden_states * masks.repeat(1, 1).unsqueeze(-1)).transpose(0, 1).contiguous()
+                    )
+                )
                 x = x.squeeze(0)
                 h = h.transpose(0, 1)
             else:  # Used in training
@@ -176,11 +160,9 @@ class HAPPOCritic(nn.Module):
 
                 # Let's figure out which steps in the sequence have a zero for any agent
                 # We will always assume t=0 has a zero in it as that makes the logic cleaner
-                has_zeros = ((masks[1:] == 0.0)
-                             .any(dim=-1)
-                             .nonzero()
-                             .squeeze()
-                             .cpu())
+                has_zeros = (
+                    (masks[1:] == 0.0).any(dim=-1).nonzero().squeeze().cpu()
+                )
 
                 # +1 to correct the masks[1:]
                 if has_zeros.dim() == 0:
@@ -235,37 +217,37 @@ class HAPPOCritic(nn.Module):
             inputs = [batch["state"][:, ts]]
 
         # individual observations
-        assert not (self.args.obs_individual_obs is True and self.is_image is True), \
+        assert not (self.args.obs_individual_obs is True and self.is_image is True), (
             "In case of state image, obs_individual_obs is not supported."
+        )
         if self.args.obs_individual_obs:
             inputs.append(batch["obs"][:, ts].view(bs, max_t, -1).unsqueeze(2).repeat(1, 1, self.n_agents, 1))
 
         # last actions
         if self.args.obs_last_action:
             if t == 0:
-                inputs.append(th.zeros_like(batch["actions_onehot"][:, 0:1]).
-                                    view(bs, max_t, 1, -1).
-                                    repeat(1, 1, self.n_agents, 1)
-                              )
+                inputs.append(
+                    th.zeros_like(batch["actions_onehot"][:, 0:1]).view(bs, max_t, 1, -1).repeat(1, 1, self.n_agents, 1)
+                )
             elif isinstance(t, int):
-                inputs.append(batch["actions_onehot"][:, slice(t-1, t)].
-                                view(bs, max_t, 1, -1).
-                                repeat(1, 1, self.n_agents, 1)
-                              )
+                inputs.append(
+                    batch["actions_onehot"][:, slice(t-1, t)].view(bs, max_t, 1, -1).repeat(1, 1, self.n_agents, 1)
+                )
             else:
-                last_actions = th.cat([th.zeros_like(batch["actions_onehot"][:, 0:1]),
-                                       batch["actions_onehot"][:, :-1]],
-                                      dim=1
-                                      )
+                last_actions = th.cat(
+                    [th.zeros_like(batch["actions_onehot"][:, 0:1]), batch["actions_onehot"][:, :-1]],
+                    dim=1
+                )
                 last_actions = last_actions.view(bs, max_t, 1, -1).repeat(1, 1, self.n_agents, 1)
                 inputs.append(last_actions)
 
         if self.is_image is False:
             inputs = th.cat(inputs, dim=-1)
         else:
-            inputs[1] = th.cat(inputs[1:], dim=-1)
-            del inputs[2]
-            assert len(inputs) == 2, "length of inputs: {}".format(len(inputs))
+            if len(inputs) > 2:
+                inputs[1] = th.cat(inputs[1:], dim=-1)
+                del inputs[2]
+                assert len(inputs) == 2, "length of inputs: {}".format(len(inputs))
         return inputs, bs, max_t
 
     def _get_input_shape(self, scheme):
@@ -284,8 +266,9 @@ class HAPPOCritic(nn.Module):
             input_shape += n_extra_feat
         # image-state
         elif isinstance(input_shape, tuple):
-            assert self.args.obs_individual_obs is False, \
+            assert self.args.obs_individual_obs is False, (
                 "In case of state-image, 'obs_individual_obs' argument is not supported."
+            )
             self.is_image = True
             input_shape = [input_shape, 0]
             if self.args.obs_last_action:

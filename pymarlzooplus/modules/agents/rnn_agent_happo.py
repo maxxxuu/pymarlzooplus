@@ -25,42 +25,39 @@ class RNNAgentHAPPO(nn.Module):
             input_shape = self.cnn.features_dim + input_shape[1]
             self.is_image = True
 
-        assert not (self.use_rnn is False and self.use_orthogonal_init_rnn is True), \
-            (f"'self.use_rnn' is {self.use_rnn} "
-             f"but 'self.use_orthogonal_init_rnn' is {self.use_orthogonal_init_rnn} !")
+        assert self.is_image is False, "HAPPO does not support image obs for the time being!"
+
+        assert not (self.use_rnn is False and self.use_orthogonal_init_rnn is True),  (
+            f"'self.use_rnn' is {self.use_rnn} "
+            f"but 'self.use_orthogonal_init_rnn' is {self.use_orthogonal_init_rnn} !"
+        )
 
         if self.is_image is False and self.use_feature_normalization is True:
             self.feature_norm = nn.LayerNorm(input_shape)
 
-        if self.is_image is False:
-            gain = nn.init.calculate_gain('relu')
-
-            def init_(m):
-                return init(
-                    m,
-                    [nn.init.xavier_uniform_, nn.init.orthogonal_][self.use_orthogonal_init_rnn],
-                    lambda x: nn.init.constant_(x, 0),
-                    gain=gain
-                )
-
-            self.fc1 = nn.Sequential(
-                init_(nn.Linear(input_shape, args.hidden_dim)),
-                nn.ReLU(),
-                nn.LayerNorm(args.hidden_dim)
+        # Layers initialization
+        def init_(m):
+            return init(
+                m,
+                [nn.init.xavier_uniform_, nn.init.orthogonal_][self.use_orthogonal_init_rnn],
+                lambda x: nn.init.constant_(x, 0),
+                gain=nn.init.calculate_gain('relu')
             )
+
+        # MLP layers
+        self.fc1 = nn.Sequential(
+            init_(nn.Linear(input_shape, args.hidden_dim)),
+            nn.ReLU(),
+            nn.LayerNorm(args.hidden_dim)
+        )
+        if self.is_image is False:
             self.fc2 = nn.Sequential(
                 init_(nn.Linear(args.hidden_dim, args.hidden_dim)),
                 nn.ReLU(),
                 nn.LayerNorm(args.hidden_dim)
             )
-        else:
-            if self.use_orthogonal_init_rnn is True:
-                def init_(m):
-                    return init(m, nn.init.orthogonal_, lambda x: nn.init.constant_(x, 0), gain=gain)
-                self.fc1 = init_(nn.Linear(input_shape, args.hidden_dim))
-            else:
-                self.fc1 = nn.Linear(input_shape, args.hidden_dim)
 
+        # RNN layer
         if self.use_rnn is True:
             self.rnn = nn.GRU(
                 args.hidden_dim,
@@ -71,17 +68,15 @@ class RNNAgentHAPPO(nn.Module):
         else:
             self.rnn = nn.Linear(args.hidden_dim, args.hidden_dim)
 
+        # Output layer
         if self.use_orthogonal_init_rnn is True:
-
+            def init_(m):
+                return init(m, nn.init.orthogonal_, lambda x: nn.init.constant_(x, 0), 0.01)
             for name, param in self.rnn.named_parameters():
                 if 'bias' in name:
                     nn.init.constant_(param, 0)
                 elif 'weight' in name:
                     nn.init.orthogonal_(param)
-
-                def init_(m):
-                    return init(m, nn.init.orthogonal_, lambda x: nn.init.constant_(x, 0), 0.01)
-
                 if self.is_image is False:
                     self.fc3 = init_(nn.Linear(args.hidden_dim, args.n_actions))
                 else:
@@ -106,7 +101,7 @@ class RNNAgentHAPPO(nn.Module):
 
         if self.is_image is True:
             inputs[0] = self.cnn(inputs[0])
-            if len(inputs[1] > 0):
+            if len(inputs[1]) > 0:
                 inputs = th.concat(inputs, dim=1)
             else:
                 inputs = inputs[0]

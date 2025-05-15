@@ -1,19 +1,22 @@
 # Code based on the original implementation available at: https://github.com/Jiwonjeon9603/MASER
 
 import copy
-from pymarlzooplus.components.episode_buffer import EpisodeBatch
-from pymarlzooplus.modules.mixers.vdn import VDNMixer
-from pymarlzooplus.modules.mixers.qmix import QMixer
+
 import torch as th
 from torch.optim import RMSprop
 import torch.nn.functional as F
 import torch.nn as nn
 
+from pymarlzooplus.components.episode_buffer import EpisodeBatch
+from pymarlzooplus.modules.mixers.vdn import VDNMixer
+from pymarlzooplus.modules.mixers.qmix import QMixer
 
 class MASERQLearner:
     def __init__(self, mac, scheme, logger, args):
         self.args = args
         self.mac = mac
+
+        assert self.mac.is_image is False, "MASER does not support image obs for the time being!"
 
         self.logger = logger
         self.n_agents = args.n_agents
@@ -42,7 +45,7 @@ class MASERQLearner:
 
         self.optimiser = RMSprop(params=self.params, lr=args.lr, alpha=args.optim_alpha, eps=args.optim_eps)
 
-        # a little wasteful to deepcopy (e.g. duplicates action selector), but should work for any MAC
+        # a little wasteful to deepcopy (e.g., duplicates action selector), but should work for any MAC
         self.target_mac = copy.deepcopy(mac)
 
         self.log_stats_t = -self.args.learner_log_interval - 1
