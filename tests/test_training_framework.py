@@ -14,7 +14,7 @@ args, remaining = parser.parse_known_args()
 sys.argv = [sys.argv[0]] + remaining
 FILTER_ALGOS = [a.strip().upper() for a in args.algo.split(',')] if args.algo else None
 FILTER_ENVS = [e.strip().lower() for e in args.env.split(',')] if args.env else None
-ALGO_RAW_IMGS_NOT_SUPPORTED = ["CDS", "MASER", "EMC", "EOI", "MAT_DEC", "HAPPO"]
+ALGO_RAW_IMGS_NOT_SUPPORTED = ["CDS", "MASER", "EMC", "EOI", "MAT-DEC", "HAPPO", "QPLEX"]
 
 
 def generate_training_configs(env_type, keys, common_args, algo_names, variants=None):
@@ -25,9 +25,6 @@ def generate_training_configs(env_type, keys, common_args, algo_names, variants=
         algo_conf = algorithms[algo_name]
         for key in keys:
             for suffix, override in variants.items():
-                if algo_name not in ALGO_RAW_IMGS_NOT_SUPPORTED and suffix.endswith("_raw"):
-                    override.update({"trainable_cnn": True, "centralized_image_encoding": False})
-
                 test_name = f"{env_type}_{key}_{algo_name}"
                 if suffix:
                     test_name += suffix
@@ -59,7 +56,7 @@ class TestsTrainingFramework(unittest.TestCase):
         }
         fully_coop_variants = {
             "_encoded": {"trainable_cnn": False},
-            "_raw": {"trainable_cnn": True},
+            "_raw": {"trainable_cnn": True,  "centralized_image_encoding": False},
         }
         fc_configs = generate_training_configs(
             env_type="pettingzoo",
@@ -72,7 +69,7 @@ class TestsTrainingFramework(unittest.TestCase):
 
         partial_obs_variants = {
             "_partial_observation_encoded": {"trainable_cnn": False, "partial_observation": True},
-            "_partial_observation_raw": {"trainable_cnn": True, "partial_observation": True},
+            "_partial_observation_raw": {"trainable_cnn": True, "partial_observation": True,  "centralized_image_encoding": False},
         }
         partial_configs = generate_training_configs(
             env_type="pettingzoo",
@@ -181,8 +178,8 @@ class TestsTrainingFramework(unittest.TestCase):
                     pymarlzooplus(params)
                     completed.append(name)
                 except (Exception, SystemExit) as e:
-                    tb_str = traceback.format_exc()
-                    if "raw" in name and any(algo in name for algo in ALGO_RAW_IMGS_NOT_SUPPORTED):
+                    tb_str = ''.join(traceback.format_exc())
+                    if "AssertionError" in tb_str and "raw" in name and any(algo in name for algo in ALGO_RAW_IMGS_NOT_SUPPORTED):
                         completed.append(name)
                     else:
                         failed[name] = tb_str

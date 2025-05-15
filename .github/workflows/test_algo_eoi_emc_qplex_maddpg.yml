@@ -1,4 +1,4 @@
-name: Tests for IA2C algo
+name: Tests for EOI, EMC, QPLEX, MADDPG algo
 
 on:
   pull_request:
@@ -30,5 +30,14 @@ jobs:
           pip install opencv-python-headless
           AutoROM -y
 
-      - name: Run tests
-        run: python -m tests.test_training_framework --algo IA2C
+      - name: Run tests for EOI
+        run: python -m tests.test_training_framework --algo EOI
+
+      - name: Run tests for EMC
+        run: python -m tests.test_training_framework --algo EMC
+
+      - name: Run tests for QPLEX
+        run: python -m tests.test_training_framework --algo QPLEX
+
+      - name: Run tests for MADDPG
+        run: python -m tests.test_training_framework --algo MADDPG

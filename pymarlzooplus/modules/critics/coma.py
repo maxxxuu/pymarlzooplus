@@ -1,11 +1,8 @@
-import math
-
-import numpy as np
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ..agents.cnn_agent import CNNAgent
+from pymarlzooplus.utils.trainable_image_encoder import TrainableImageEncoder
 
 
 class COMACritic(nn.Module):
@@ -30,7 +27,7 @@ class COMACritic(nn.Module):
             self.state_dim = input_shape
 
         if self.is_image is True:
-            self.cnn = CNNAgent([input_shape[0][1:]], args)
+            self.cnn = TrainableImageEncoder([input_shape[0][1:]], args)
 
         # Set up network layers
         self.fc1 = nn.Linear(self.state_dim, args.hidden_dim)

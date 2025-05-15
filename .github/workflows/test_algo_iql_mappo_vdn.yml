@@ -1,4 +1,4 @@
-name: Tests for MADDPG algo
+name: Tests for IQL, MAPPO, VDN algo
 
 on:
   pull_request:
@@ -30,5 +30,11 @@ jobs:
           pip install opencv-python-headless
           AutoROM -y
 
-      - name: Run tests
-        run: python -m tests.test_training_framework --algo MADDPG
+      - name: Run tests for IQL
+        run: python -m tests.test_training_framework --algo IQL
+
+      - name: Run tests for VDN
+        run: python -m tests.test_training_framework --algo VDN
+
+      - name: Run tests for MAPPO
+        run: python -m tests.test_training_framework --algo MAPPO

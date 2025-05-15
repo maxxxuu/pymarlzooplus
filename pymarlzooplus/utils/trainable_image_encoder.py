@@ -2,7 +2,7 @@ import torch as th
 import torch.nn as nn
 
 
-class CNNAgent(nn.Module):
+class TrainableImageEncoder(nn.Module):
     """
     NatureCNN network, or in other words,
     CNN from DQN Nature paper:
@@ -13,7 +13,7 @@ class CNNAgent(nn.Module):
     https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/torch_layers.py
     """
     def __init__(self, input_shape, args):
-        super(CNNAgent, self).__init__()
+        super(TrainableImageEncoder, self).__init__()
         self.args = args
 
         self.features_dim = args.cnn_features_dim

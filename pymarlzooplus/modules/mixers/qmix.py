@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-from ..agents.cnn_agent import CNNAgent
+from pymarlzooplus.utils.trainable_image_encoder import TrainableImageEncoder
 
 
 class QMixer(nn.Module):
@@ -27,7 +27,7 @@ class QMixer(nn.Module):
         self.embed_dim = args.mixing_embed_dim
         # cnn
         if self.is_image is True:
-            self.cnn = CNNAgent([args.state_shape[1:]], args)
+            self.cnn = TrainableImageEncoder([args.state_shape[1:]], args)
 
         if getattr(args, "hypernet_layers", 1) == 1:
             self.hyper_w_1 = nn.Linear(self.state_dim, self.embed_dim * self.n_agents)

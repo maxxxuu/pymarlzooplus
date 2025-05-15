@@ -2,7 +2,7 @@ import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 
-from pymarlzooplus.modules.agents.cnn_agent import CNNAgent
+from pymarlzooplus.utils.trainable_image_encoder import TrainableImageEncoder
 
 
 class MLP(nn.Module):
@@ -18,7 +18,7 @@ class MLP(nn.Module):
         # Use CNN to encode image observations
         self.is_image = False
         if isinstance(self.input_shape, tuple):  # image input
-            self.cnn = CNNAgent((self.input_shape[0][1:],), args)
+            self.cnn = TrainableImageEncoder((self.input_shape[0][1:],), args)
             self.n_agents_for_state = self.input_shape[0][0]
             # state
             if self.critic_type == "ac_critic_ns":  # Individual observation
