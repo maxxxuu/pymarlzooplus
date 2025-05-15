@@ -46,7 +46,7 @@ class TestsTrainingFramework(unittest.TestCase):
         self.train_framework_params_dict = {}
 
         all_algos = list(algorithms.keys())
-        common = {"time_limit": 2, "seed": 2024}
+        common = {"time_limit": 12, "seed": 2024}
         pettingzoo_common = {
             "time_limit": 12,
             "render_mode": "human",

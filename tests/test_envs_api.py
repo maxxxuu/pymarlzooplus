@@ -16,6 +16,7 @@ from tests.config import (
     pettingzoo_non_fully_coop_env_butterfly_mpe_sisl_keys, pettingzoo_non_fully_coop_env_atari_keys,
 )
 
+
 class TestEnvironmentsAPI(unittest.TestCase):
     
     # noinspection PyUnresolvedReferences
@@ -34,7 +35,7 @@ class TestEnvironmentsAPI(unittest.TestCase):
                 "env": "pettingzoo",
                 "env_args": {
                     "key": pettingzoo_fully_coop_env_key,
-                    "time_limit": 10,
+                    "time_limit": 12,
                     "render_mode": "human",
                     "image_encoder": "ResNet18",
                     "image_encoder_use_cuda": False,
@@ -48,7 +49,7 @@ class TestEnvironmentsAPI(unittest.TestCase):
                 "env": "pettingzoo",
                 "env_args": {
                     "key": pettingzoo_fully_coop_env_key,
-                    "time_limit": 10,
+                    "time_limit": 12,
                     "render_mode": "human",
                     "image_encoder": "ResNet18",
                     "image_encoder_use_cuda": False,
@@ -64,7 +65,7 @@ class TestEnvironmentsAPI(unittest.TestCase):
                 "env": "pettingzoo",
                 "env_args": {
                     "key": pettingzoo_fully_coop_partial_obs_env_key,
-                    "time_limit": 10,
+                    "time_limit": 12,
                     "render_mode": "human",
                     "image_encoder": "ResNet18",
                     "image_encoder_use_cuda": False,
@@ -81,7 +82,7 @@ class TestEnvironmentsAPI(unittest.TestCase):
                 "env": "pettingzoo",
                 "env_args": {
                     "key": pettingzoo_fully_coop_partial_obs_env_key,
-                    "time_limit": 10,
+                    "time_limit": 12,
                     "render_mode": "human",
                     "image_encoder": "ResNet18",
                     "image_encoder_use_cuda": False,
@@ -199,7 +200,7 @@ class TestEnvironmentsAPI(unittest.TestCase):
                 "env": "pettingzoo",
                 "env_args": {
                     "key": pettingzoo_non_fully_coop_env_atari_key,
-                    "time_limit": 10,
+                    "time_limit": 12,
                     "render_mode": "human",
                     "image_encoder": "ResNet18",
                     "image_encoder_use_cuda": False,
@@ -213,7 +214,7 @@ class TestEnvironmentsAPI(unittest.TestCase):
                 "env": "pettingzoo",
                 "env_args": {
                     "key": pettingzoo_non_fully_coop_env_atari_key,
-                    "time_limit": 10,
+                    "time_limit": 12,
                     "render_mode": "human",
                     "image_encoder": "ResNet18",
                     "image_encoder_use_cuda": False,
@@ -231,7 +232,7 @@ class TestEnvironmentsAPI(unittest.TestCase):
                 "env": "pettingzoo",
                 "env_args": {
                     "key": pettingzoo_non_fully_coop_env_butterfly_mpe_sisl_key,
-                    "time_limit": 10,
+                    "time_limit": 12,
                     "render_mode": "human",
                     "kwargs": "",
                     "seed": 2024
@@ -606,6 +607,7 @@ class TestEnvironmentsAPI(unittest.TestCase):
             for name, tb_str in failed.items():
                 msg += f"\n=== {name} ===\n{tb_str}\n"
             self.fail(msg)
+
 
 if __name__ == '__main__':
     unittest.main()
