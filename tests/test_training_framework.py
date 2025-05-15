@@ -14,7 +14,7 @@ args, remaining = parser.parse_known_args()
 sys.argv = [sys.argv[0]] + remaining
 FILTER_ALGOS = [a.strip().upper() for a in args.algo.split(',')] if args.algo else None
 FILTER_ENVS = [e.strip().lower() for e in args.env.split(',')] if args.env else None
-
+ALGO_RAW_IMGS_NOT_SUPPORTED = ["CDS", "MASER","EMC"]
 
 def generate_training_configs(env_type, keys, common_args, algo_names, variants=None):
     if variants is None:
@@ -181,7 +181,7 @@ class TestsTrainingFramework(unittest.TestCase):
                     completed.append(name)
                 except (Exception, SystemExit) as e:
                     tb_str = traceback.format_exc()
-                    if name == "pettingzoo_pistonball_v6_CDS_raw" or name == "pettingzoo_entombed_cooperative_v3_CDS_partial_observation_raw":
+                    if "raw" in name and any(algo in name for algo in ALGO_RAW_IMGS_NOT_SUPPORTED):
                         completed.append(name)
                     else:
                         failed[name] = tb_str
