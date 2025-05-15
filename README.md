@@ -22,6 +22,7 @@ PyMARLzoo+ is an extension of [EPyMARL](https://github.com/uoe-agents/epymarl), 
 - Support for [Box Pushing](https://github.com/yuchen-x/MacDeepMARL/blob/master/src/rlmamr/my_env/box_pushing.py) environment.
 - Support for [LBF](https://github.com/semitable/lb-foraging) environment.
 - Support for [RWARE](https://github.com/semitable/robotic-warehouse) environment.
+- Support for [MPE](https://github.com/openai/multiagent-particle-envs) environment.
 
 Algorithms (9) maintained from EPyMARL:
 - COMA
