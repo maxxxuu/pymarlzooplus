@@ -13,8 +13,11 @@ USER root
 RUN /bin/bash -c "python3 -m pip install pip==24.0"
 RUN /bin/bash -c "python3 -m pip install wheel==0.38.4 setuptools==65.5.0"
 
-COPY . /home/pymarlzooplus
-WORKDIR /home/pymarlzooplus
+WORKDIR /opt
+RUN git clone https://github.com/AILabDsUnipi/pymarlzooplus.git pymarlzooplus-installed
+
+WORKDIR /opt/pymarlzooplus-installed
+
 RUN /bin/bash -c "python3 -m pip install -e ."
 RUN /bin/bash -c "AutoROM -y"
 CMD ["tail", "-f", "/dev/null"]

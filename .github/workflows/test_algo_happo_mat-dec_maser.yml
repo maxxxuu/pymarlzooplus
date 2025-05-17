@@ -1,4 +1,4 @@
-name: Tests for QMIX algo
+name: Tests for HAPPO, MAT-DEC, MASER algo
 
 on:
   pull_request:
@@ -13,6 +13,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    env:
+      PYGLET_HEADLESS: "True"
 
     steps:
       - name: Checkout code
@@ -30,5 +33,12 @@ jobs:
           pip install opencv-python-headless
           AutoROM -y
 
-      - name: Run tests
-        run: python -m tests.test_training_framework --algo QMIX
+      - name: Run tests for HAPPO
+        run: python -m tests.test_training_framework --algo HAPPO
+
+      - name: Run tests for MAT-DEC
+        run: python -m tests.test_training_framework --algo MAT-DEC
+
+      - name: Run tests for MASER
+        run: python -m tests.test_training_framework --algo MASER
+

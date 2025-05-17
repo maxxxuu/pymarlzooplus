@@ -1,11 +1,10 @@
 # code adapted from https://github.com/AnujMahajanOxf/MAVEN
-import math
 
 import numpy as np
 import torch as th
 import torch.nn as nn
 
-from ..agents.cnn_agent import CNNAgent
+from pymarlzooplus.utils.trainable_image_encoder import TrainableImageEncoder
 from pymarlzooplus.utils.torch_utils import init
 
 
@@ -40,7 +39,7 @@ class HAPPOCritic(nn.Module):
             raise ValueError(f"Invalid 'input_shape': {input_shape}")
 
         if self.is_image is True:
-            self.cnn = CNNAgent([input_shape[0][1:]], args)
+            self.cnn = TrainableImageEncoder([input_shape[0][1:]], args)
 
         if self.is_image is False and self.use_feature_normalization_critic is True:
             self.feature_norm = nn.LayerNorm(self.state_dim - n_extra_feat)
@@ -60,7 +59,7 @@ class HAPPOCritic(nn.Module):
             nn.ReLU(),
             nn.LayerNorm(args.hidden_dim)
         )
-        if self.is_image is True:
+        if self.is_image is False:
             self.fc2 = nn.Sequential(
                 init_(nn.Linear(args.hidden_dim, args.hidden_dim)),
                 nn.ReLU(),

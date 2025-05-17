@@ -27,7 +27,10 @@ jobs:
           export CC=gcc-9 CXX=g++-9
           pip install -r requirements.txt
           pip install opencv-python-headless
-          AutoROM --accept-license -y
+          pip install autorom[accept-rom-license]
+
+      - name: Run Python script to automate AutoROM
+        run: python tests/autorom_run.py
 
       - name: Run tests
         run: python -m unittest tests.test_envs_api

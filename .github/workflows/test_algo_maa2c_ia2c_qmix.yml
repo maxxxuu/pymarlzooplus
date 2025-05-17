@@ -1,4 +1,4 @@
-name: Tests for MASER algo
+name: Tests for MAA2C, IA2C, QMIX algo
 
 on:
   pull_request:
@@ -30,5 +30,11 @@ jobs:
           pip install opencv-python-headless
           AutoROM -y
 
-      - name: Run tests
-        run: python -m tests.test_training_framework --algo MASER
+      - name: Run tests for MAA2C
+        run: python -m tests.test_training_framework --algo MAA2C
+
+      - name: Run tests for IA2C
+        run: python -m tests.test_training_framework --algo IA2C
+
+      - name: Run tests for QMIX
+        run: python -m tests.test_training_framework --algo QMIX

@@ -3,7 +3,7 @@ import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .cnn_agent import CNNAgent
+from pymarlzooplus.utils.trainable_image_encoder import TrainableImageEncoder
 
 
 class RNNAgent(nn.Module):
@@ -17,7 +17,7 @@ class RNNAgent(nn.Module):
         # Use CNN to encode image observations
         self.is_image = False
         if isinstance(input_shape, tuple):  # image input
-            self.cnn = CNNAgent(input_shape, args)
+            self.cnn = TrainableImageEncoder(input_shape, args)
             input_shape = self.cnn.features_dim + input_shape[1]
             self.is_image = True
 
