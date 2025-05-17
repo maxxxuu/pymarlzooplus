@@ -4,13 +4,14 @@ on:
   release:
     types: [created]
 
-permissions:
-  contents: read            # default needed for checkout
-  id-token: write           # ← this enables OIDC
-
 jobs:
   release-build:
     runs-on: ubuntu-latest
+    # Specifying a GitHub environment is optional, but strongly encouraged
+    environment: pypi
+    permissions:
+      # IMPORTANT: this permission is mandatory for Trusted Publishing
+      id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -28,10 +29,5 @@ jobs:
       - name: Build wheel
         run: python -m build
 
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.5.0
-        with:
-          user: AILabDsUnipi
-          password: "${{ secrets.PYPI_API_TOKEN }}"
-
-
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
