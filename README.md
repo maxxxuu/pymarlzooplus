@@ -71,8 +71,7 @@ conda activate pymarlzooplus
 - To install and use PyMARLzoo+ as a package, run the following commands:
   ```sh
   pip install pymarlzooplus
-  ``` 
-  NOTE: We work on this!
+  ```
 
 
 - To build it from source, run the following commands:
