@@ -13,8 +13,7 @@ required.append(opencv_pack)
 
 setup(
     name='pymarlzooplus',
-    use_scm_version=True,
-    setup_requires=['setuptools_scm'],
+    version="1.0.0",
     author='AILabDsUnipi',
     author_email='gp.papadopoulos.george@gmail.com',
     description='An extended benchmarking of multi-agent reinforcement learning algorithms',
