@@ -594,6 +594,36 @@ env.close()
 ```
 The code above can be used as is (changing the arguments accordingly) **with the fully cooperative tasks** (see section [Run training](#run-training) to find out which tasks are fully cooperative).
 
+### Returned values
+
+- **n_agns** *(int)*  
+  Number of agents in the environment.
+
+- **n_acts** *(int)*  
+  Number of available actions per agent (all agents share the same action space).
+
+- **reward** *(float)*  
+  Sum of all agents’ rewards for the current step.
+
+- **done** *(bool)*  
+  `False` if **any** agent is still active; `True` only when **all** agents are done.
+
+- **extra_info** *(dict)*  
+  Typically is an empty dictionary.
+
+- **info** *(dict)*  
+  Contains a single key, `"TimeLimit.truncated"`, which is `False` if **any** agent’s time limit has **not** been exceeded.
+
+- **obs** *(tuple of numpy arrays)*  
+  One array per agent.  
+  - If using encoding of images, each observation has shape `(cnn_features_dim,)` (default `128`).  
+  - If using raw images, each observation has shape `(3, h, w)`.
+
+- **state** *(numpy array)*  
+  The global state:  
+  - With encoding of images, shape `(cnn_features_dim * n_agns,)`.  
+  - With raw images, shape `(n_agents, 3, h, w)`.  
+
 In the file [pymarlzooplus/scripts/api_script.py](pymarlzooplus/scripts/api_script.py), you can find a complete example for all the supported environments.
 
 For a description of each environment's arguments, please see the corresponding config file in [pymarlzooplus/config/envs](pymarlzooplus/config/envs). 
