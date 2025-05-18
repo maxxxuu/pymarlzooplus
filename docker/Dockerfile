@@ -14,9 +14,9 @@ RUN /bin/bash -c "python3 -m pip install pip==24.0"
 RUN /bin/bash -c "python3 -m pip install wheel==0.38.4 setuptools==65.5.0"
 
 WORKDIR /opt
-RUN git clone https://github.com/AILabDsUnipi/pymarlzooplus.git pymarlzooplus-installed
+RUN git clone https://github.com/AILabDsUnipi/pymarlzooplus.git pymarlzooplus
 
-WORKDIR /opt/pymarlzooplus-installed
+WORKDIR /opt/pymarlzooplus
 
 RUN /bin/bash -c "python3 -m pip install -e ."
 RUN /bin/bash -c "AutoROM -y"

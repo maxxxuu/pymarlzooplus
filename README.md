@@ -2,7 +2,8 @@
 ![Python Versions](https://img.shields.io/badge/Python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11-blue)
 [![Tests](https://github.com/AILabDsUnipi/pymarlzooplus/actions/workflows/test.yml/badge.svg)](https://github.com/AILabDsUnipi/pymarlzooplus/actions/workflows/test.yml)
 ![GitHub License](https://img.shields.io/github/license/AILabDsUnipi/pymarlzooplus)
-
+![PyPi version](https://img.shields.io/pypi/v/pymarlzooplus)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 
 <img src="https://raw.githubusercontent.com/AILabDsUnipi/pymarlzooplus/main/images/logo.jpg" alt="logo" width=600/>
 
@@ -116,6 +117,18 @@ set `__GLX_VENDOR_LIBRARY_NAME=nvidia` and `__NV_PRIME_RENDER_OFFLOAD=1` as envi
   conda install -c conda-forge libstdcxx-ng
 ```
 # Docker
+The docker image is available at [Docker Hub](https://hub.docker.com/r/AILabDsUnipi/pymarlzooplus).
+### How to use the Docker image
+Pull the image from Docker Hub with the following command:
+```sh
+docker pull ailabdsunipi/pymarlzooplus:latest
+```
+You can run the image with the following command:
+```sh
+docker run -it --rm -v /path/to/your/project:/home  ailabdsunipi/pymarlzooplus:latest bash
+```
+
+### How to build the Docker image
 You can also use the provided Docker files in [docker/](/docker/) to build and run a Docker container with the 
 pymarlzooplus installed as a headless machine.
 
@@ -719,7 +732,7 @@ Thank you for contributing to the project and helping us improve!
   - QPLEX
 - [ ] Docstrings for all code
 - [ ] Make the code to be more abstract and modular 
-- [ ] Publish Docker Image
+- [x] Publish Docker Image
 
 
 # License
