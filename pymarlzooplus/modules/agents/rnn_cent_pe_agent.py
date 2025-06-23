@@ -46,9 +46,13 @@ class RNNCentPEAgent(nn.Module):
             print("batch input")
             pass
         x = F.relu(self.fc1(inputs))
-        h_in = hidden_state.view(-1, self.n_agents, self.args.hidden_dim)
+
         if self.use_rnn:
+            # GRUCell only accept 2D inputs
+            h_in = hidden_state.contiguous().view(-1, self.args.hidden_dim)
+            x = x.view(-1, self.args.hidden_dim)
             h = self.rnn(x, h_in)
+            h = h.view(-1, self.n_agents, self.args.hidden_dim)
         else:
             h = F.relu(self.rnn(x))
         q = self.fc2(h)
