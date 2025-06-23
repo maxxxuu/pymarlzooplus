@@ -5,6 +5,7 @@ from .mat_controller import MATMAC
 from .happo_controller import happoMAC
 from .emc_controller import emcMAC
 from .cds_controller import cdsMAC
+from .cent_controller import CentMAC
 
 REGISTRY = {"basic_mac": BasicMAC,
             "non_shared_mac": NonSharedMAC,
@@ -12,6 +13,7 @@ REGISTRY = {"basic_mac": BasicMAC,
             "mat_mac": MATMAC,
             "happo_mac": happoMAC,
             "emc_mac": emcMAC,
-            "cds_mac": cdsMAC
+            "cds_mac": cdsMAC,
+            "cent_mac": CentMAC,
             }
 
