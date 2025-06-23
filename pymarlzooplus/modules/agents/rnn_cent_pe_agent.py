@@ -42,9 +42,9 @@ class RNNCentPEAgent(nn.Module):
         # input [bs, n_agents, input_size]
         if self.is_image is False and inputs.size(0) == self.n_agents:
             inputs = inputs.unsqueeze(0)
-        else:
-            print("batch input")
-            pass
+        # else:
+        #     print("batch input")
+        #     pass
         x = F.relu(self.fc1(inputs))
 
         if self.use_rnn:
