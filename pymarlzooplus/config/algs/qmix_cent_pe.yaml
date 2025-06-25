@@ -31,7 +31,7 @@ learner: "q_learner"
 double_q: True
 use_rnn: True
 mixer: "qmix"
-hidden_dim: 128 # For RWARE
+#hidden_dim: 128 # For RWARE
 mixing_embed_dim: 32
 hypernet_layers: 2
 hypernet_embed: 64

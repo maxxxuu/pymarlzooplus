@@ -29,7 +29,7 @@ agent_output_type: "q"
 learner: "q_learner"
 double_q: True
 mixer: "qmix"
-hidden_dim: 128 # For RWARE
+#hidden_dim: 128 # For RWARE
 use_rnn: True
 mixing_embed_dim: 32
 hypernet_layers: 2
