@@ -29,7 +29,7 @@ learner: "dmaq_qatten_learner"
 double_q: True
 mixer: "dmaq"
 use_rnn: True
-hidden_dim: 128 # For RWARE
+#hidden_dim: 128 # For RWARE
 mixing_embed_dim: 32
 hypernet_embed: 64
 adv_hypernet_layers: 3
