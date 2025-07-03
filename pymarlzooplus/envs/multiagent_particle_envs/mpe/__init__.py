@@ -12,7 +12,7 @@ _particles = {
     "simple_push": "SimplePush-v0",
     "simple_reference": "SimpleReference-v0",
     "simple_speaker_listener": "SimpleSpeakerListener-v0",
-    "simple_spread": "SimpleSpread-v0",
+    "simple_spread": "SimpleSpread-v1",
     "simple_tag": "SimpleTag-v0",
     "simple_world_comm": "SimpleWorldComm-v0",
     "climbing_spread": "ClimbingSpread-v0",

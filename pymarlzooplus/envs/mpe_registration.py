@@ -3,10 +3,10 @@ from gymnasium import register
 import pymarlzooplus.envs.multiagent_particle_envs.mpe.scenarios as scenarios
 
 simple_spread_scenarios = {
-    "simple_spread_3": "SimpleSpread-3-v0",
-    "simple_spread_4": "SimpleSpread-4-v0",
-    "simple_spread_5": "SimpleSpread-5-v0",
-    "simple_spread_8": "SimpleSpread-8-v0",
+    "simple_spread_3": "SimpleSpread-3-v1",
+    "simple_spread_4": "SimpleSpread-4-v1",
+    "simple_spread_5": "SimpleSpread-5-v1",
+    "simple_spread_8": "SimpleSpread-8-v1",
 }
 
 for scenario_name, gymkey in simple_spread_scenarios.items():

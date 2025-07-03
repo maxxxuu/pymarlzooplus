@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 import torch.nn.utils.parametrize as P
+import torch.nn.functional as F
 
 
 class PESymetryMean(nn.Module):
@@ -24,6 +25,26 @@ class PESymetryMean(nn.Module):
         x = x + x_mean
         return x
 
+class PESymetryMeanTanh(nn.Module):
+    def __init__(self, in_dim: int, out_dim: int, pos: bool = False) -> None:
+        """
+
+        pos : if pos=True, all the weights will be positive
+        """
+        super(PESymetryMeanTanh, self).__init__()
+        self.diagonal = nn.Linear(in_dim, out_dim)
+        self.rest = nn.Linear(in_dim, out_dim, bias=False)
+        if pos:
+            P.register_parametrization(self.diagonal, "weight", SoftplusParameterization())
+            P.register_parametrization(self.rest, "weight", SoftplusParameterization())
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # x_mean = x.mean(0, keepdim=True)
+        x_mean = x.mean(-2, keepdim=True)
+        x_mean = self.rest(x_mean)
+        x = self.diagonal(x)
+        x = x + F.tanh(x_mean)
+        return x
 
 class PESymetryMax(nn.Module):
     def __init__(self, in_dim: int, out_dim: int) -> None:
