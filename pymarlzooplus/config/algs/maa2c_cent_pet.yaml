@@ -29,5 +29,5 @@ standardise_rewards: True
 q_nstep: 5 # 1 corresponds to normal r + gammaV
 critic_type: "cv_critic"
 
-name: "maa2c_cent_pe"
+name: "maa2c_cent_pet"
 
