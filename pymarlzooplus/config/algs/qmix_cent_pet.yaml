@@ -30,7 +30,7 @@ agent_output_type: "q"
 learner: "q_learner"
 double_q: True
 #use_rnn: True
-use_rnn: False  # For spread-8
+use_rnn: True  # For spread-8
 mixer: "qmix"
 #hidden_dim: 128 # For RWARE
 mixing_embed_dim: 32

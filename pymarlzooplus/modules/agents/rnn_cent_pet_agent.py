@@ -1,13 +1,13 @@
 import torch.nn as nn
 import torch.nn.functional as F
 from pymarlzooplus.modules.agents.rnn_agent import RNNAgent
-from pymarlzooplus.modules.layer.PESymetry import PESymetryMean, RPESymetryMean
+from pymarlzooplus.modules.layer.PESymetry import PESymetryMean, RPESymetryMean, PESymetryMeanTanh
 import torch as th
 
 
-class RNNCentPEAgent(nn.Module):
+class RNNCentPETAgent(nn.Module):
     def __init__(self, input_shape, args):
-        super(RNNCentPEAgent, self).__init__()
+        super(RNNCentPETAgent, self).__init__()
         self.args = args
         self.algo_name = args.name
         self.use_rnn = args.use_rnn
@@ -19,20 +19,20 @@ class RNNCentPEAgent(nn.Module):
             self.is_image = True
 
         # RNN embedding
-        self.fc1 = PESymetryMean(input_shape, args.hidden_dim)
+        self.fc1 = PESymetryMeanTanh(input_shape, args.hidden_dim)
         if self.use_rnn is True:
             self.rnn = nn.GRUCell(args.hidden_dim, args.hidden_dim)
         else:
-            self.rnn = PESymetryMean(args.hidden_dim, args.hidden_dim)
+            self.rnn = PESymetryMeanTanh(args.hidden_dim, args.hidden_dim)
 
         #
-        self.fc2 = PESymetryMean(args.hidden_dim, args.n_actions)
+        self.fc2 = PESymetryMeanTanh(args.hidden_dim, args.n_actions)
         # Create the non-shared agents
         # self.agents = th.nn.ModuleList([RNNAgent(input_shape, args) for _ in range(self.n_agents)])
 
     def init_hidden(self):
         # make hidden states on the same device as the model
-        return self.fc1.diagonal.weight.new(self.n_agents, self.args.hidden_dim).zero_()
+        return self.fc1.individual.weight.new(self.n_agents, self.args.hidden_dim).zero_()
         # return th.cat([a.init_hidden() for a in self.agents])
 
     def forward(self, inputs, hidden_state):
@@ -58,7 +58,6 @@ class RNNCentPEAgent(nn.Module):
         q = self.fc2(h)
 
         return q, h
-
 
 
 

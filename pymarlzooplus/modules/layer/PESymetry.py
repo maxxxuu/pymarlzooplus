@@ -11,17 +11,17 @@ class PESymetryMean(nn.Module):
         pos : if pos=True, all the weights will be positive
         """
         super(PESymetryMean, self).__init__()
-        self.diagonal = nn.Linear(in_dim, out_dim)
-        self.rest = nn.Linear(in_dim, out_dim, bias=False)
+        self.individual = nn.Linear(in_dim, out_dim)
+        self.pooling = nn.Linear(in_dim, out_dim, bias=False)
         if pos:
-            P.register_parametrization(self.diagonal, "weight", SoftplusParameterization())
-            P.register_parametrization(self.rest, "weight", SoftplusParameterization())
+            P.register_parametrization(self.individual, "weight", SoftplusParameterization())
+            P.register_parametrization(self.pooling, "weight", SoftplusParameterization())
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x_mean = x.mean(0, keepdim=True)
         x_mean = x.mean(-2, keepdim=True)
-        x_mean = self.rest(x_mean)
-        x = self.diagonal(x)
+        x_mean = self.pooling(x_mean)
+        x = self.individual(x)
         x = x + x_mean
         return x
 
@@ -32,30 +32,64 @@ class PESymetryMeanTanh(nn.Module):
         pos : if pos=True, all the weights will be positive
         """
         super(PESymetryMeanTanh, self).__init__()
-        self.diagonal = nn.Linear(in_dim, out_dim)
-        self.rest = nn.Linear(in_dim, out_dim, bias=False)
+        self.individual = nn.Linear(in_dim, out_dim)
+        self.pooling = nn.Linear(in_dim, out_dim, bias=False)
         if pos:
-            P.register_parametrization(self.diagonal, "weight", SoftplusParameterization())
-            P.register_parametrization(self.rest, "weight", SoftplusParameterization())
+            P.register_parametrization(self.individual, "weight", SoftplusParameterization())
+            P.register_parametrization(self.pooling, "weight", SoftplusParameterization())
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x_mean = x.mean(0, keepdim=True)
         x_mean = x.mean(-2, keepdim=True)
-        x_mean = self.rest(x_mean)
-        x = self.diagonal(x)
+        x_mean = self.pooling(x_mean)
+        x = self.individual(x)
         x = x + F.tanh(x_mean)
         return x
+
+
+class PESymetryMeanDivided(nn.Module):
+    def __init__(self, in_dim: int, out_dim: int, pos: bool = False) -> None:
+        """
+
+        pos : if pos=True, all the weights will be positive
+        """
+        super(PESymetryMeanDivided, self).__init__()
+        if in_dim * 2 < out_dim:
+            self.individual = nn.Linear(in_dim, out_dim - in_dim)
+            self.pooling = nn.Linear(in_dim, in_dim, bias=False)
+        elif in_dim < out_dim:
+            self.individual = nn.Linear(in_dim, in_dim)
+            self.pooling = nn.Linear(in_dim, out_dim - in_dim, bias=False)
+        else:
+            pooling_dim = out_dim // 2
+            ind_dim = out_dim - pooling_dim
+            self.individual = nn.Linear(in_dim, ind_dim)
+            self.pooling = nn.Linear(in_dim, pooling_dim, bias=False)
+
+        if pos:
+            P.register_parametrization(self.individual, "weight", SoftplusParameterization())
+            P.register_parametrization(self.pooling, "weight", SoftplusParameterization())
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # x_mean = x.mean(0, keepdim=True)
+        x_mean = x.mean(-2, keepdim=True)
+        x_mean = self.pooling(x_mean)
+        x_mean = x_mean.expand(-1, x.size(-2), -1) if x.dim() == 3 else x_mean.expand(x.size(-2), -1)
+        x = self.individual(x)
+        x = torch.cat([x, x_mean], dim=-1)
+        return x
+
 
 class PESymetryMax(nn.Module):
     def __init__(self, in_dim: int, out_dim: int) -> None:
         super(PESymetryMax, self).__init__()
-        self.diagonal = nn.Linear(in_dim, out_dim)
-        self.rest = nn.Linear(in_dim, out_dim, bias=False)
+        self.individual = nn.Linear(in_dim, out_dim)
+        self.pooling = nn.Linear(in_dim, out_dim, bias=False)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x_max, _ = x.max(0, keepdim=True)
-        x_max = self.rest(x_max)
-        x = self.diagonal(x)
+        x_max = self.pooling(x_max)
+        x = self.individual(x)
         x = x + x_max
         return x
 
@@ -63,7 +97,7 @@ class PESymetryMax(nn.Module):
 class PESymetryMeanMax(nn.Module):
     def __init__(self, in_dim: int, out_dim: int) -> None:
         super(PESymetryMeanMax, self).__init__()
-        self.diagonal = nn.Linear(in_dim, out_dim)
+        self.individual = nn.Linear(in_dim, out_dim)
         self.max = nn.Linear(in_dim, out_dim, bias=False)
         self.mean = nn.Linear(in_dim, out_dim, bias=False)
 
@@ -72,7 +106,7 @@ class PESymetryMeanMax(nn.Module):
         x_max = self.max(x_max)
         x_mean = x.mean(-2, keepdim=True)
         x_mean = self.mean(x_mean)
-        x = self.diagonal(x)
+        x = self.individual(x)
         x = x + x_max + x_mean
         return x
 
@@ -80,15 +114,15 @@ class PESymetryMeanMax(nn.Module):
 class PESymetryMeanAct(nn.Module):
     def __init__(self, in_dim: int, out_dim: int) -> None:
         super(PESymetryMeanAct, self).__init__()
-        self.diagonal = nn.Linear(in_dim, out_dim)
-        self.rest = nn.Linear(in_dim, out_dim, bias=False)
+        self.individual = nn.Linear(in_dim, out_dim)
+        self.pooling = nn.Linear(in_dim, out_dim, bias=False)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x_mean = x.mean(0, keepdim=True)
         x_mean = x.mean(-2, keepdim=True)
-        x_mean = self.rest(x_mean)
+        x_mean = self.pooling(x_mean)
         x_mean = nn.ELU()(x_mean)
-        x = self.diagonal(x)
+        x = self.individual(x)
         # x = nn.ELU()(x)
         x = x + x_mean
         return x
@@ -97,8 +131,8 @@ class PESymetryMeanAct(nn.Module):
 class RPESymetryMean(nn.Module):
     def __init__(self, in_dim: int, out_dim: int) -> None:
         super(RPESymetryMean, self).__init__()
-        self.diagonal = nn.GRUCell(in_dim, out_dim)
-        self.rest = nn.GRUCell(in_dim, out_dim, bias=False)
+        self.individual = nn.GRUCell(in_dim, out_dim)
+        self.pooling = nn.GRUCell(in_dim, out_dim, bias=False)
 
     def forward(self, x: torch.Tensor, h: torch.Tensor) -> (torch.Tensor, torch.Tensor):
         # x_mean = x.mean(0, keepdim=True)
@@ -107,8 +141,8 @@ class RPESymetryMean(nn.Module):
             # print(f"Shape i: {i.shape}, shape j: {j.shape}")
             x_mean = i.mean(-2, keepdim=True)
             h_mean = j.mean(-2, keepdim=True)
-            h_mean = self.rest(x_mean, h_mean)
-            h_out = self.diagonal(i, j)
+            h_mean = self.pooling(x_mean, h_mean)
+            h_out = self.individual(i, j)
             h_out = h_out + h_mean
             output.append(h_out)
         output = torch.stack(output, dim=0)
