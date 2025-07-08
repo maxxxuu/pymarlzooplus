@@ -20,18 +20,21 @@ def get_metrics_config(directory):
         config = json.load(f)
     return metrics, config
 
+
 def results_parser(sacred_directory, models, game_name):
     base_dir = sacred_directory
 
     metric_list = ['return_mean', 'return_std', 'test_return_mean', 'test_return_std']
 
-    # Create data dictionary
-    # data[model][game][metric]
+    # Create data dictionary for a specific game
+    # data[model][run][metric]
+    # data[model]['average'][metric]
     data = {}
     for model in models:
-        data[model]            = {}
+
+        data[model] = {}
         data[model]['average'] = {}
-        
+
         for game in os.listdir(os.path.join(base_dir, model)):
             if game_name in game:
                 metric_list = ['return_mean', 'return_std', 'test_return_mean', 'test_return_std']
@@ -58,51 +61,78 @@ def results_parser(sacred_directory, models, game_name):
                             data[model][run]['train_steps'] = train_update_steps
                             data[model][run]['test_steps'] = test_update_steps
                             # Initialize list of average metrics
-                            data[model]['average'][metric] = np.array(metrics[metric]['values'])/n_runs
+                            data[model]['average'][metric] = np.array(metrics[metric]['values']) / n_runs
                         else:
-                            data[model]['average'][metric] += np.array(metrics[metric]['values'])/n_runs
-                        
+                            data[model]['average'][metric] += np.array(metrics[metric]['values']) / n_runs
+
                         data[model][run][metric] = metrics[metric]['values']
                 break
     return data
 
-def create_plots(sacred_directory, models, game_name, test_only, output_dir, output_file_name):
-    output_file_name = output_file_name if output_file_name is not None else game_name
-    
+
+def palette_choice(models, test_only, no_fill_between):
+    # Having Train and Test with fill between is unreadable
+    if not test_only and no_fill_between:  # plot Train and Test ; no fill between
+        palette = sns.color_palette('Paired', n_colors=len(models) * 2)
+
+    if test_only:
+        if not no_fill_between:  # plot Test ; fill between
+            palette = sns.color_palette('hls', n_colors=len(models))
+        elif no_fill_between:  # plot Test ; no fill between
+            palette = sns.color_palette('hls', n_colors=len(models))
+
+    return palette
+
+
+def create_plots(args):
+    # Sacred parameters
+    sacred_directory = args.sacred_directory
+    models = args.models
+    game_name = args.game
+    test_only = args.test_only
+    # Plot parameters
+    linestyle = args.linestyle
+    no_fill_between = args.no_fill_between
+    # Output parameters
+    output_dir = args.output_dir
+    output_file_name = args.output_file_name if args.output_file_name is not None else game_name
+
     # Get data
     data = results_parser(sacred_directory, models, game_name)
 
     plt.figure(figsize=(10, 10))
     sns.set_theme(style="whitegrid", context="talk")
 
-    if test_only:
-        palette = sns.color_palette('Paired', n_colors=len(models)*2)
-    else:
-        palette = sns.color_palette('tab10', n_colors=len(models))
+    models = sorted(models)
+    palette = palette_choice(models, test_only, no_fill_between)
     colors = cycle(palette)
 
     for model in models:
+        linestyle = 'dotted' if model == model.split('_')[0] else 'solid'
         return_mean = data[model]['average']['return_mean']
         return_std = data[model]['average']['return_std']
         test_return_mean = data[model]['average']['test_return_mean']
         test_return_std = data[model]['average']['test_return_std']
         train_steps = data[model]['average']['train_steps']
         test_steps = data[model]['average']['test_steps']
-        
-        if test_only:
+
+        if not test_only:
             col = next(colors)
-            sns.lineplot(x=train_steps, y=return_mean, label=model+'_train', color=col)
-            plt.fill_between(train_steps, return_mean - return_std, return_mean + return_std, color=col, alpha=0.2)
+            sns.lineplot(x=train_steps, y=return_mean, label=model + '_train', color=col, linestyle=linestyle)
+            if not no_fill_between:
+                plt.fill_between(train_steps, return_mean - return_std, return_mean + return_std, color=col, alpha=0.2)
         col = next(colors)
-        sns.lineplot(x=test_steps, y=test_return_mean, label=model+'_test', color=col)
-        plt.fill_between(test_steps, test_return_mean - test_return_std, test_return_mean + test_return_std, color=col, alpha=0.2)
+        sns.lineplot(x=test_steps, y=test_return_mean, label=model + '_test', color=col, linestyle=linestyle)
+        if not no_fill_between:
+            plt.fill_between(test_steps, test_return_mean - test_return_std, test_return_mean + test_return_std,
+                             color=col, alpha=0.2)
 
     plt.xlabel('Training steps')
     plt.ylabel('Average return across runs')
     plt.title(f'Evolution of average return for {game_name}')
     plt.legend(loc='lower right')
     plt.tight_layout()
-    
+
     if output_dir is not None:
         plt.savefig(f'{output_dir}/{output_file_name}.png', dpi=400)
         return None
@@ -118,11 +148,14 @@ def cli():
     p.add_argument("--models", nargs='+', required=True)
     p.add_argument("--game", type=str, required=True)
     p.add_argument("--test_only", action="store_true")
+    p.add_argument("--linestyle", type=str, default='solid')
+    p.add_argument("--no_fill_between", action="store_true")
     p.add_argument("--output_dir", type=str, default=None)
     p.add_argument("--output_file_name", type=str, default=None)
     args = p.parse_args()
 
-    create_plots(args.sacred_directory, args.models, args.game, args.test_only, args.output_dir, args.output_file_name)
+    create_plots(args)
+
 
 if __name__ == "__main__":
     cli()
