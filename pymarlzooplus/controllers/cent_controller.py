@@ -47,7 +47,7 @@ class CentMAC:
 
             if getattr(self.args, "mask_before_softmax", True):
                 # Make the logits for unavailable actions very negative to minimise their effect on the softmax
-                reshaped_avail_actions = avail_actions.reshape(ep_batch.batch_size, self.n_agents, -1)
+                reshaped_avail_actions = avail_actions.reshape(ep_batch.batch_size * self.n_agents, -1)
                 agent_outs[reshaped_avail_actions == 0] = -1e10
 
             agent_outs = th.nn.functional.softmax(agent_outs, dim=-1)
