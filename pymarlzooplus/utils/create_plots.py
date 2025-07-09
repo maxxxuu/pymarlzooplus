@@ -21,7 +21,24 @@ def get_metrics_config(directory):
     return metrics, config
 
 
-def results_parser(sacred_directory, models, game_name):
+def normalize_data(data, models):
+    gmin = float('inf')
+    gmax = float('-inf')
+    for type in ['test_return', 'return']:
+        for model in models:
+            arr = np.array(data[model]['average'][f'{type}_mean'])
+            gmin = min(gmin, np.min(arr))
+            gmax = max(gmax, np.max(arr))
+        assert gmax > gmin
+
+        for model in models:
+            mean = np.array(data[model]['average'][f'{type}_mean'])
+            std = np.array(data[model]['average'][f'{type}_std'])
+            data[model]['average'][f'min_max_norm_{type}_mean'] = (mean - gmin) / (gmax - gmin)                  
+            data[model]['average'][f'min_max_norm_{type}_std'] = (std - gmin) / (gmax - gmin)
+    return data
+
+def results_parser(sacred_directory, models, game_name, normalized):
     base_dir = sacred_directory
 
     metric_list = ['return_mean', 'return_std', 'test_return_mean', 'test_return_std']
@@ -51,6 +68,7 @@ def results_parser(sacred_directory, models, game_name):
                     for run in runs:
                         metrics, config = get_metrics_config(os.path.join(base_dir, model, game, run))
 
+                        # Initialize list of average metrics that adds values iteratively
                         if data[model]['average'][metric] is None:
                             # Get update steps
                             train_update_steps = metrics['return_mean']['steps']
@@ -60,13 +78,33 @@ def results_parser(sacred_directory, models, game_name):
 
                             data[model][run]['train_steps'] = train_update_steps
                             data[model][run]['test_steps'] = test_update_steps
+
                             # Initialize list of average metrics
-                            data[model]['average'][metric] = np.array(metrics[metric]['values']) / n_runs
+                            metric_run_mean = np.array(metrics[metric]['values']) / n_runs
+                            data[model]['average'][metric] = metric_run_mean
+
+                            # Normalized episodic reward
+                            if metric == 'return_mean' or metric == 'return_std':
+                                data[model]['average'][f'normalized_{metric}'] = metric_run_mean / metrics['ep_length_mean']['values']
+                            elif metric == 'test_return_mean' or metric == 'test_return_std':
+                                data[model]['average'][f'normalized_{metric}'] = metric_run_mean / metrics['test_ep_length_mean']['values']
+
                         else:
-                            data[model]['average'][metric] += np.array(metrics[metric]['values']) / n_runs
+                            metric_run_mean = np.array(metrics[metric]['values']) / n_runs
+                            data[model]['average'][metric] += metric_run_mean
+
+                            # Normalized episodic reward
+                            if metric == 'return_mean' or metric == 'return_std':
+                                data[model]['average'][f'normalized_{metric}'] += metric_run_mean / metrics['ep_length_mean']['values']
+                            elif metric == 'test_return_mean' or metric == 'test_return_std':
+                                data[model]['average'][f'normalized_{metric}'] += metric_run_mean / metrics['test_ep_length_mean']['values']
 
                         data[model][run][metric] = metrics[metric]['values']
+
                 break
+
+    if normalized:
+        return normalize_data(data, models)
     return data
 
 
@@ -93,12 +131,13 @@ def create_plots(args):
     # Plot parameters
     linestyle = args.linestyle
     no_fill_between = args.no_fill_between
+    normalized = args.normalized
     # Output parameters
     output_dir = args.output_dir
     output_file_name = args.output_file_name if args.output_file_name is not None else game_name
 
     # Get data
-    data = results_parser(sacred_directory, models, game_name)
+    data = results_parser(sacred_directory, models, game_name, normalized)
 
     plt.figure(figsize=(10, 10))
     sns.set_theme(style="whitegrid", context="talk")
@@ -109,6 +148,7 @@ def create_plots(args):
 
     for model in models:
         linestyle = 'dotted' if model == model.split('_')[0] else 'solid'
+
         return_mean = data[model]['average']['return_mean']
         return_std = data[model]['average']['return_std']
         test_return_mean = data[model]['average']['test_return_mean']
@@ -140,6 +180,47 @@ def create_plots(args):
         os.makedirs('plots')
     plt.savefig(f'plots/{output_file_name}.png', dpi=400)
 
+    if normalized:
+        plt.figure(figsize=(10, 10))
+        sns.set_theme(style="whitegrid", context="talk")
+
+        models = sorted(models)
+        palette = palette_choice(models, test_only, no_fill_between)
+        colors = cycle(palette)
+        for model in models:
+            linestyle = 'dotted' if model == model.split('_')[0] else 'solid'
+
+            return_mean = data[model]['average']['min_max_norm_return_mean']
+            return_std = data[model]['average']['min_max_norm_return_std']
+            test_return_mean = data[model]['average']['min_max_norm_test_return_mean']
+            test_return_std = data[model]['average']['min_max_norm_test_return_std']
+            train_steps = data[model]['average']['train_steps']
+            test_steps = data[model]['average']['test_steps']
+
+            if not test_only:
+                col = next(colors)
+                sns.lineplot(x=train_steps, y=return_mean, label=model + '_train', color=col, linestyle=linestyle)
+                if not no_fill_between:
+                    plt.fill_between(train_steps, return_mean - return_std, return_mean + return_std, color=col, alpha=0.2)
+            col = next(colors)
+            sns.lineplot(x=test_steps, y=test_return_mean, label=model + '_test', color=col, linestyle=linestyle)
+            if not no_fill_between:
+                plt.fill_between(test_steps, test_return_mean - test_return_std, test_return_mean + test_return_std,
+                                color=col, alpha=0.2)
+
+        plt.xlabel('Training steps')
+        plt.ylabel('Average return across runs')
+        plt.title(f'Evolution of average return for {game_name}')
+        plt.legend(loc='lower right')
+        plt.tight_layout()
+
+        if output_dir is not None:
+            plt.savefig(f'{output_dir}/norm_{output_file_name}.png', dpi=400)
+            return None
+        if not os.path.exists('plots'):
+            os.makedirs('plots')
+        plt.savefig(f'plots/norm_{output_file_name}.png', dpi=400)
+
 
 def cli():
     p = argparse.ArgumentParser()
@@ -152,6 +233,7 @@ def cli():
     p.add_argument("--no_fill_between", action="store_true")
     p.add_argument("--output_dir", type=str, default=None)
     p.add_argument("--output_file_name", type=str, default=None)
+    p.add_argument("--normalized", action="store_true")
     args = p.parse_args()
 
     create_plots(args)
