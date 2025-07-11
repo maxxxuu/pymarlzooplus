@@ -186,8 +186,14 @@ def prepare_best_data_for_plotting(dataframes, game_name, best_model):
         for typee in ['', 'test_']:
             df_mean = dataframes[game_name][typee+'return_mean']
             df_std = dataframes[game_name][typee+'return_std']
+            
+            if typee == '':
+                typee = 'train_'
 
+            # Steps (abscissa)
             best_data[model][typee+'steps'] = df_mean.index.to_numpy()
+            
+            # Data points (ordinate)
             best_data[model][typee+'mean'] = df_mean[model+'_'+run_num].to_numpy()
             std = df_std[model+'_'+run_num].to_numpy()
             best_data[model][typee+'lower'] = best_data[model][typee+'mean'] - std
@@ -248,12 +254,14 @@ def create_plots(data, game_name, best_or_avg, output_dir, palette=None, test_on
     models_to_plot = list(data.keys())
 
     if ax is None:
-        fig, ax = plt.subplots(figsize=(10, 10))
+        fig, ax = plt.subplots(figsize=(15, 15))
         new_fig = True
     else:
         new_fig = False
 
     sns.set_theme(style="whitegrid", context="talk")
+
+    linewidth = 10/len(models_to_plot)
     
     if palette is None:  # Indiv figure
         model_color = palette_choice(models_to_plot, test_only)
@@ -275,7 +283,8 @@ def create_plots(data, game_name, best_or_avg, output_dir, palette=None, test_on
             col = model_color[model][i]
             x_data = data[model][typee+'_steps']
             y_data = data[model][typee+'_mean']
-            sns.lineplot(x=x_data, y=y_data, label=label, color=col, linestyle=linestyle, ax=ax)
+            sns.lineplot(x=x_data, y=y_data, label=label, color=col, linestyle=linestyle, linewidth=linewidth, legend=False, ax=ax)
+            
             if fill_between:
                 lower = data[model][typee+'_lower']
                 upper = data[model][typee+'_upper']
@@ -283,15 +292,18 @@ def create_plots(data, game_name, best_or_avg, output_dir, palette=None, test_on
 
     # Only save for new figure (individual plots)
     if new_fig:
+        legend_handles = common_legend(models_to_plot, model_color, test_only)
+        fig.legend(handles=legend_handles, loc='lower center', ncols=len(models_to_plot), frameon=False, 
+               fontsize='small', handletextpad=0.5, columnspacing=1, bbox_to_anchor=(0.5, 0.0))
         ax.set_xlabel('Training steps')
         ax.set_ylabel('Reward')
+        
         game_title = re.sub(r'[\ue000-\uf8ff]', '-', game_name)
         ax.set_title(f'{best_or_avg} model reward evolution for {game_title}')
-        ax.legend(loc='lower right')
         filename = f"{best_or_avg}_model_{game_name}" + ("_test_only" if test_only else "")
         out_path = build_output(best_or_avg, False, output_dir, filename, test_only)
 
-        plt.tight_layout()
+        # fig.tight_layout(rect=[0, 0.10, 1, 0.95])
         plt.savefig(out_path, dpi=400)
         plt.close()
     else:
@@ -304,7 +316,7 @@ def create_subplots(base_game, same_game, dataframes, all_models, model_type, be
     same_game: list of games/tasks that belong to the same base game
     '''
     n_tasks = len(same_game)
-    fig, axs = plt.subplots(1, n_tasks, figsize=(10*n_tasks, 10), sharex=True)
+    fig, axs = plt.subplots(1, n_tasks, figsize=(15*n_tasks, 15), sharex=True)
     if n_tasks ==1:
         axs = [axs]
 
@@ -323,7 +335,6 @@ def create_subplots(base_game, same_game, dataframes, all_models, model_type, be
     for ax, game_name in zip(axs, same_game):
         plot_data = plot_function(dataframes, game_name, model_type)
         create_plots(plot_data, game_name, best_or_avg, output_dir=None, palette=palette, test_only=test_only, fill_between=fill_between, ax=ax)
-        ax.get_legend().remove()
 
     # Set axis labels
     mid = len(axs)//2
@@ -331,8 +342,8 @@ def create_subplots(base_game, same_game, dataframes, all_models, model_type, be
     axs[0].set_ylabel('Episodic Reward', labelpad=20)
 
     # Common legend for all subplots
-    fig.legend(handles=legend_handles, loc='lower center', ncol=11, frameon=False, 
-               fontsize='large', handletextpad=0.5, columnspacing=1, bbox_to_anchor=(0.5, 0.0))
+    fig.legend(handles=legend_handles, loc='lower center', ncols=len(all_models), frameon=False, 
+               fontsize='medium', handletextpad=0.5, columnspacing=1, bbox_to_anchor=(0.5, 0.0))
     
     fig.tight_layout(rect=[0, 0.10, 1, 0.95])
 
@@ -376,7 +387,7 @@ def cli():
     p.add_argument("--models", nargs='+', default=None)
     p.add_argument("--game", type=str, required=None)
     p.add_argument("--test_only", action="store_true")
-    p.add_argument("--fill_between", action="store_false")
+    p.add_argument("--no_fill_between", action="store_false")
     p.add_argument("--linestyle", type=str, default='solid')
     p.add_argument("--output_dir", type=str, default=None)
     p.add_argument("--output_file_name", type=str, default=None)
@@ -388,6 +399,7 @@ def cli():
 
 if __name__ == "__main__":
     args = cli()
+    
 
     dataframes, best_model, game_names, game_groups, model_game, game_model = results_parser(args.sacred_directory, args.models)
 
@@ -396,11 +408,11 @@ if __name__ == "__main__":
     for game_name in game_names:
         # Best plots
         best_data = prepare_best_data_for_plotting(dataframes, game_name, best_model)
-        create_plots(best_data, game_name, 'best', args.output_dir, None, args.test_only, args.fill_between)
+        create_plots(best_data, game_name, 'best', args.output_dir, None, args.test_only, args.no_fill_between)
 
         # Average plots
         avg_data = prepare_avg_data_for_plotting(dataframes, game_name, game_model)
-        create_plots(avg_data, game_name, 'avg', args.output_dir, None, args.test_only, args.fill_between)
+        create_plots(avg_data, game_name, 'avg', args.output_dir, None, args.test_only, args.no_fill_between)
 
     # Get models for each base game
     base_game_model = {}
@@ -417,7 +429,7 @@ if __name__ == "__main__":
         all_models = list(base_game_model[base_game])
 
         # Best plots
-        create_subplots(base_game, same_game, dataframes, all_models, best_model, 'best', args.output_dir, args.test_only, args.fill_between)
+        create_subplots(base_game, same_game, dataframes, all_models, best_model, 'best', args.output_dir, args.test_only, args.no_fill_between)
 
         # Avg plots
-        create_subplots(base_game, same_game, dataframes, all_models, game_model, 'avg', args.output_dir, args.test_only, args.fill_between)
+        create_subplots(base_game, same_game, dataframes, all_models, game_model, 'avg', args.output_dir, args.test_only, args.no_fill_between)
