@@ -33,9 +33,9 @@ mixer: "dmaq"
 use_rnn: True
 #hidden_dim: 128
 mixing_embed_dim: 32
-hypernet_embed: 64
+hypernet_embed: 32
 adv_hypernet_layers: 3
-adv_hypernet_embed: 64
+adv_hypernet_embed: 32
 
 num_kernel: 10
 is_minus_one: True

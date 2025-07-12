@@ -57,7 +57,7 @@ def results_parser(sacred_directory, models, game_name, normalized):
                 metric_list = ['return_mean', 'return_std', 'test_return_mean', 'test_return_std']
                 # runs = os.listdir(os.path.join(base_dir, model, game))[:-1]
                 runs = [run for run in os.listdir(os.path.join(base_dir, model, game)) if run.isdigit()]
-                # runs = ['1'] # TODO: delete this, temp solution while exp are running
+                runs = ['1'] # TODO: delete this, temp solution while exp are running
                 n_runs = len(runs)
                 for run in runs:
                     data[model][run] = {}

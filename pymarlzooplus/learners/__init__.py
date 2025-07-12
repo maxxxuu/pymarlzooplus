@@ -7,6 +7,7 @@ from .maddpg_learner import MADDPGLearner
 from .ppo_learner import PPOLearner
 from .happo_learner import HAPPOLearner
 from .dmaq_qatten_learner import DMAQ_qattenLearner
+from .dmaq_qatten_clip_learner import DMAQ_qatten_clip_Learner
 from .mat_learner import MATLearner
 from .maser_q_learner import  MASERQLearner
 
@@ -18,6 +19,7 @@ REGISTRY = {"q_learner": QLearner,
             "ppo_learner": PPOLearner,
             "happo_learner": HAPPOLearner,
             "dmaq_qatten_learner": DMAQ_qattenLearner,
+            "dmaq_qatten_clip_learner": DMAQ_qatten_clip_Learner,
             "mat_learner": MATLearner,
             "emc_qplex_curiosity_vdn_learner": EMC_qplex_curiosity_vdn_Learner,
             "maser_q_learner": MASERQLearner
