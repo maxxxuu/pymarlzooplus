@@ -3,7 +3,7 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 
 from pymarlzooplus.modules.agents import REGISTRY as agent_REGISTRY
-
+from utils.th_utils import get_parameters_num
 
 def onehot_from_logits(logits, eps=0.0):
     """
@@ -106,6 +106,7 @@ class MADDPGMAC:
 
     def _build_agents(self, input_shape):
         self.agent = agent_REGISTRY[self.args.agent](input_shape, self.args)
+        print("&&&&&&&&&&&&&&&&&&&&&&", self.args.agent, get_parameters_num(self.parameters()), "&&&&&&&&&&&&&&&&&&&&&&" )
 
     def _build_inputs(self, batch, t):
         # Assumes homogenous agents with flat observations.

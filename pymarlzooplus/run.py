@@ -304,20 +304,20 @@ def run_sequential(args, logger):
             for _ in range(n_test_runs):
                 runner.run(test_mode=True)
 
-        if args.save_model and (
-            runner.t_env - model_save_time >= args.save_model_interval
-            or model_save_time == 0
-        ):
-            model_save_time = runner.t_env
-            save_path = os.path.join(
-                args.local_results_path, "models", args.unique_token, str(runner.t_env)
-            )
-            os.makedirs(save_path, exist_ok=True)
-            logger.console_logger.info("Saving models to {}".format(save_path))
+        # if args.save_model and (
+        #     runner.t_env - model_save_time >= args.save_model_interval
+        #     or model_save_time == 0
+        # ):
+        #     model_save_time = runner.t_env
+        #     save_path = os.path.join(
+        #         args.local_results_path, "models", args.unique_token, str(runner.t_env)
+        #     )
+        #     os.makedirs(save_path, exist_ok=True)
+        #     logger.console_logger.info("Saving models to {}".format(save_path))
 
-            # learner should handle saving/loading -- delegate actor save/load to mac,
-            # use appropriate filenames to do critics, optimizer states
-            learner.save_models(save_path)
+        #     # learner should handle saving/loading -- delegate actor save/load to mac,
+        #     # use appropriate filenames to do critics, optimizer states
+        #     learner.save_models(save_path)
 
         episode += args.batch_size_run
 
@@ -325,6 +325,18 @@ def run_sequential(args, logger):
             logger.log_stat("episode", episode, runner.t_env)
             logger.print_recent_stats()
             last_log_T = runner.t_env
+
+    # save model at the end of training
+    if args.save_model:
+        model_save_time = runner.t_env
+        save_path = os.path.join(
+            args.local_results_path, "models", args.unique_token, str(runner.t_env)
+        )
+        os.makedirs(save_path, exist_ok=True)
+        logger.console_logger.info("Saving models to {}".format(save_path))
+        # learner should handle saving/loading -- delegate actor save/load to mac,
+        # use appropriate filenames to do critics, optimizer states
+        learner.save_models(save_path)
 
     runner.close_env()
     logger.console_logger.info("Finished Training")

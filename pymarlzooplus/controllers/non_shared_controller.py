@@ -2,6 +2,7 @@ import torch as th
 
 from pymarlzooplus.modules.agents import REGISTRY as agent_REGISTRY
 from pymarlzooplus.components.action_selectors import REGISTRY as action_REGISTRY
+from utils.th_utils import get_parameters_num
 
 
 # This multi-agent controller does not share parameters between agents
@@ -73,6 +74,7 @@ class NonSharedMAC:
 
     def _build_agents(self, input_shape):
         self.agent = agent_REGISTRY[self.args.agent](input_shape, self.args)
+        print("&&&&&&&&&&&&&&&&&&&&&&", self.args.agent, get_parameters_num(self.parameters()), "&&&&&&&&&&&&&&&&&&&&&&" )
 
     def _build_inputs(self, batch, t):
         # Assumes homogenous agents with flat observations.
