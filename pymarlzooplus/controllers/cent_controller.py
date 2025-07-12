@@ -1,3 +1,5 @@
+import warnings
+
 import torch as th
 
 from pymarlzooplus.modules.agents import REGISTRY as agent_REGISTRY
@@ -90,14 +92,15 @@ class CentMAC:
             inputs.append(th.eye(self.n_agents, device=batch.device).unsqueeze(0).expand(bs, -1, -1))
 
         if self.is_image is False:
-            inputs = th.cat([x.reshape(bs * self.n_agents, -1) for x in inputs], dim=1)
+            inputs = th.cat([x.reshape(bs , self.n_agents, -1) for x in inputs], dim=-1)
         else:
+            warnings.warn("Current version of CentMAC is not tested on image input")
             img_ch, img_h, img_w = inputs[0].shape[2:]
             inputs = [
-                inputs[0].reshape(bs * self.n_agents, img_ch, img_h, img_w),
+                inputs[0].reshape(bs, self.n_agents, img_ch, img_h, img_w),
                 [] if len(inputs) == 1
                    else
-                th.cat([x.reshape(bs * self.n_agents, -1) for x in inputs[1:]], dim=1)
+                th.cat([x.reshape(bs, self.n_agents, -1) for x in inputs[1:]], dim=-1)
             ]
 
         return inputs
