@@ -34,6 +34,7 @@ def run(_run, _config, _log):
             break  # Successfully identified the observer as FileStorageObserver
     assert file_storage_observer_idx > -1, "File storage observer is not defined!"
     results_dir = _run.observers[file_storage_observer_idx].dir
+    
 
     # check args sanity
     _config = args_sanity_check(_config, _log)
@@ -41,6 +42,8 @@ def run(_run, _config, _log):
     args = SN(**_config)
     args.device = "cuda" if args.use_cuda else "cpu"
     args.device_cnn_modules = "cuda" if args.use_cuda_cnn_modules else "cpu"
+    
+    args.results_dir = results_dir
 
     # setup loggers
     logger = Logger(_log)
@@ -328,9 +331,8 @@ def run_sequential(args, logger):
 
     # save model at the end of training
     if args.save_model:
-        model_save_time = runner.t_env
         save_path = os.path.join(
-            args.local_results_path, "models", args.unique_token, str(runner.t_env)
+            args.results_dir, "models"
         )
         os.makedirs(save_path, exist_ok=True)
         logger.console_logger.info("Saving models to {}".format(save_path))
