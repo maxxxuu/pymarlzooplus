@@ -57,6 +57,24 @@ register(
 )
 
 register(
+    id="Foraging-1s-15x15-3p-4f-v2.1",
+    entry_point="pymarlzooplus.envs.lb_foraging_v2.lbforaging_v2.foraging:ForagingEnv",
+    kwargs={
+        "players": 3,
+        "min_player_level": 3,
+        "max_player_level": 3,
+        "field_size": (15, 15),
+        "max_num_food": 4,
+        "min_food_level": 3,
+        "max_food_level": 3,
+        "sight": 1,
+        "max_episode_steps": 50,
+        "force_coop": False,
+        "grid_observation": True,
+    },
+)
+
+register(
     id="Foraging-15x15-3p-4f-coop-v2",
     entry_point="pymarlzooplus.envs.lb_foraging_v2.lbforaging_v2.foraging:ForagingEnv",
     kwargs={
@@ -102,6 +120,24 @@ register(
         "min_food_level": 3,
         "max_food_level": 3,
         "sight": 2,
+        "max_episode_steps": 50,
+        "force_coop": True,
+        "grid_observation": True,
+    },
+)
+
+register(
+    id="Foraging-1s-25x25-8p-5f-coop-v2.1",
+    entry_point="pymarlzooplus.envs.lb_foraging_v2.lbforaging_v2.foraging:ForagingEnv",
+    kwargs={
+        "players": 8,
+        "min_player_level": 3,
+        "max_player_level": 3,
+        "field_size": (25, 25),
+        "max_num_food": 5,
+        "min_food_level": 3,
+        "max_food_level": 3,
+        "sight": 1,
         "max_episode_steps": 50,
         "force_coop": True,
         "grid_observation": True,
@@ -188,6 +224,24 @@ register(
         "min_food_level": 3,
         "max_food_level": 3,
         "sight": 2,
+        "max_episode_steps": 50,
+        "force_coop": True,
+        "grid_observation": True,
+    },
+)
+
+register(
+    id="Foraging-1s-30x30-7p-4f-coop-v2.1",
+    entry_point="pymarlzooplus.envs.lb_foraging_v2.lbforaging_v2.foraging:ForagingEnv",
+    kwargs={
+        "players": 7,
+        "min_player_level": 3,
+        "max_player_level": 3,
+        "field_size": (30, 30),
+        "max_num_food": 4,
+        "min_food_level": 3,
+        "max_food_level": 3,
+        "sight": 1,
         "max_episode_steps": 50,
         "force_coop": True,
         "grid_observation": True,
