@@ -21,5 +21,6 @@
 run_array_repeat.sh
 logs
 configs_list.txt
+launch_cpu_job.py
 
 
