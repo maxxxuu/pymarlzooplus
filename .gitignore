@@ -18,4 +18,8 @@
 **/.DS_Store
 **/test_runs.log
 
+run_array_repeat.sh
+logs
+configs_list.txt
+
 
