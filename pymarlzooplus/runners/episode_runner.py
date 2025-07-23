@@ -29,6 +29,7 @@ class EpisodeRunner:
             "In 'episode_runner', the argument 'centralized_image_encoding' of pettingzoo should be False "
             "since there is only one environment, and thus the encoding can be considered as centralized."
         )
+
         self.env = env_REGISTRY[self.args.env](**self.args.env_args)
         # Get info from environment to be printed
         print_info = self.env.get_print_info()
@@ -83,6 +84,16 @@ class EpisodeRunner:
         episode_return = 0
         env_info = {}
 
+        ################# ADDED ######################
+        if self.args.evaluate == True:
+            all_info = {
+                'obs': [],
+                'actions': [],
+                'episode_return': 0,
+            }
+
+        # Save state and actions for every step
+
         self.mac.init_hidden(batch_size=self.batch_size)
 
         while not terminated:
@@ -112,6 +123,11 @@ class EpisodeRunner:
                     test_mode,
                     pre_transition_data
                 )
+
+            ################# ADDED ######################
+            if self.args.evaluate == True:
+                all_info['obs'].append([obs.tolist() for obs in self.env.get_obs()])
+                all_info['actions'].append(actions[0].tolist())
 
             # Step
             reward, terminated, env_info = self.env.step(actions[0])
@@ -150,6 +166,10 @@ class EpisodeRunner:
             print(f"Episode return: {episode_return}")
         self.batch.update(last_data, ts=self.t)
 
+        ################# ADDED ######################
+        if self.args.evaluate == True:
+            all_info['episode_return'] = episode_return
+
         # Select actions in the last stored state
         actions, extra_returns = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
         self.batch.update({"actions": actions}, ts=self.t)
@@ -174,6 +194,10 @@ class EpisodeRunner:
                 self.logger.log_stat("epsilon", self.mac.action_selector.epsilon, self.t_env)
             self.log_train_stats_t = self.t_env
 
+        ################# ADDED ######################
+        if self.args.evaluate == True:
+            return self.batch, all_info
+        
         return self.batch
 
     def _log(self, returns, stats, prefix):

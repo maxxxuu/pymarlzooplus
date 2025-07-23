@@ -1,13 +1,18 @@
 import datetime
 import os
+from pathlib import Path
 import pprint
 import time
 import threading
 import torch as th
+from tqdm import tqdm
 from types import SimpleNamespace as SN
 from pymarlzooplus.utils._logging import Logger
 from pymarlzooplus.utils.timehelper import time_left, time_str
 from os.path import dirname, abspath
+import importlib
+import pickle
+import json
 
 from sacred.observers import FileStorageObserver  # This is for finding the results' path
 
@@ -21,6 +26,7 @@ from pymarlzooplus.components.transforms import OneHot
 from pymarlzooplus.components.episodic_memory_buffer import EpisodicMemoryBuffer
 
 from pymarlzooplus.utils.plot_utils import plot_single_experiment_results
+from pymarlzooplus.utils.t_sne_plots import plot_2d_t_sne
 
 
 def run(_run, _config, _log):
@@ -97,8 +103,34 @@ def run(_run, _config, _log):
 
 def evaluate_sequential(args, runner):
 
-    for _ in range(args.test_nepisode):
-        runner.run(test_mode=True)
+    if args.evaluate == True and args.runner == 'episode':
+        # Get action meanings
+        env_copy = runner.env.original_env.unwrapped
+        env_mod = importlib.import_module(env_copy.__class__.__module__)
+        Action_Enum = getattr(env_mod, 'Action')
+        action_to_meaning = {a.value: a.name for a in Action_Enum}
+
+        print(action_to_meaning)
+
+        all_data = {}
+        # Run test episodes
+        for _ in tqdm(range(args.test_nepisode)):
+            batch, all_info = runner.run(test_mode=True)
+            all_data[f'episode_{_}'] = all_info
+
+        # Save data as json
+        path_to_save = os.path.join(args.results_dir, "all_data.json")
+        with open(path_to_save, 'w') as f:
+            json.dump(all_data, f)
+        print('Saved state and action data to', path_to_save)
+
+        # Create 2D t-SNE plots
+        plot_output_dir = Path(args.results_dir) / 'tsne_plots'
+        plot_2d_t_sne(all_data, action_to_meaning, plot_output_dir)
+
+    else:
+        for _ in range(args.test_nepisode):
+            runner.run(test_mode=True)
 
     if args.save_replay:
         runner.save_replay()
@@ -204,28 +236,40 @@ def run_sequential(args, logger):
                 "Checkpoint directory {} doesn't exist".format(args.checkpoint_path)
             )
             return
+        
 
-        # Go through all files in args.checkpoint_path
-        for name in os.listdir(args.checkpoint_path):
-            full_name = os.path.join(args.checkpoint_path, name)
-            # Check if they are dirs the names of which are numbers
-            if os.path.isdir(full_name) and name.isdigit():
-                timesteps.append(int(name))
+        ########## ADDED FOR FIX ###########
+        #  Get the model path
+        model_path = os.path.join(args.checkpoint_path, 'models')
 
-        if args.load_step == 0:
-            # choose the max timestep
-            timestep_to_load = max(timesteps)
-        else:
-            # choose the timestep closest to load_step
-            timestep_to_load = min(timesteps, key=lambda x: abs(x - args.load_step))
+        # Load t_max from config
+        with open(os.path.join(args.checkpoint_path, 'config.json'), 'r') as f:
+            config = json.load(f)
+            t_max = config['t_max']
+        timestep_to_load= t_max
 
-        model_path = os.path.join(args.checkpoint_path, str(timestep_to_load))
+        # # Go through all files in args.checkpoint_path
+        # for name in os.listdir(args.checkpoint_path):
+        #     full_name = os.path.join(args.checkpoint_path, name)
+        #     # Check if they are dirs the names of which are numbers
+        #     if os.path.isdir(full_name) and name.isdigit():
+        #         timesteps.append(int(name))
+
+        # if args.load_step == 0:
+        #     # choose the max timestep
+        #     timestep_to_load = max(timesteps)
+        # else:
+        #     # choose the timestep closest to load_step
+        #     timestep_to_load = min(timesteps, key=lambda x: abs(x - args.load_step))
+
+        # model_path = os.path.join(args.checkpoint_path, str(timestep_to_load))
 
         logger.console_logger.info("Loading model from {}".format(model_path))
         learner.load_models(model_path)
         runner.t_env = timestep_to_load
 
         if args.evaluate or args.save_replay:
+            print('Evaluation mode')
             runner.log_train_stats_t = runner.t_env
             evaluate_sequential(args, runner)
             logger.log_stat("episode", runner.t_env, runner.t_env)
