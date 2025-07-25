@@ -77,7 +77,7 @@ class TSNEPlotter:
         '''
         print('Fitting t-SNE model...')
         ind_obs_embedded = TSNE(n_components=2, init='pca').fit_transform(obs_list)
-        state_obs_embedded = TSNE(n_components=2, init='pcagi ').fit_transform(states_list)
+        state_obs_embedded = TSNE(n_components=2, init='pca ').fit_transform(states_list)
 
         dataframe = pd.DataFrame({
                         'x_obs':ind_obs_embedded[:,0],

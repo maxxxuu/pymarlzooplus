@@ -144,8 +144,8 @@ def t_sne_to_dataframe(obs_list, actions_list, states_list, models_list, action_
     (number of episodes * number of steps per episode * number of agents)
     '''
     print('Fitting t-SNE model...')
-    ind_obs_embedded = TSNE(n_components=2, init='random').fit_transform(obs_list)
-    state_obs_embedded = TSNE(n_components=2, init='random').fit_transform(states_list)
+    ind_obs_embedded = TSNE(n_components=2, init='pca').fit_transform(obs_list)
+    state_obs_embedded = TSNE(n_components=2, init='pca').fit_transform(states_list)
 
     dataframe = pd.DataFrame({
                     'x_obs':ind_obs_embedded[:,0],
@@ -157,7 +157,7 @@ def t_sne_to_dataframe(obs_list, actions_list, states_list, models_list, action_
                     })
     
     dataframe['action_meaning'] = dataframe['action'].apply(lambda x: f"{x} : {action_mapping[x]}")
-    dataframe['action_meaning'] = dataframe['action'].apply(lambda x: f"{action_mapping[x]}")
+    # dataframe['action_meaning'] = dataframe['action'].apply(lambda x: f"{action_mapping[x]}")
 
     return dataframe
 
@@ -174,7 +174,10 @@ def plot(dataframe, path_to_save, game_name):
     hue_levels = sorted(dataframe['action_meaning'].unique())
     palette_list = sns.color_palette("Set1", len(hue_levels))
     palette = dict(zip(hue_levels, palette_list))
-    
+
+    dataframe['action_meaning'] = pd.Categorical(dataframe['action_meaning'], categories=hue_levels, ordered=True)
+    dataframe = dataframe.sort_values('action_meaning')
+
     for model_name in model_names:
         # Create folder for each model
         model_folder = path_to_save / model_name
@@ -188,7 +191,7 @@ def plot(dataframe, path_to_save, game_name):
         # Plot observations to 2D
         plt.figure(figsize=(10,10))
         sns.scatterplot(x='x_obs', y='y_obs', hue='action_meaning', hue_order=hue_levels, data=model_df, 
-                        legend='full', palette=palette, alpha=1)
+                        legend='full', palette=palette, alpha=0.8)
 
         file_name = f'2d_t_sned_{model_name}'
         output_path = model_folder / f"{file_name}.png"
@@ -198,7 +201,7 @@ def plot(dataframe, path_to_save, game_name):
         # Plot states to 2D
         plt.figure(figsize=(10,10))
         sns.scatterplot(x='x_state', y='y_state', hue='action_meaning', hue_order=hue_levels, data=model_df, 
-                        legend='full', palette=palette, alpha=1)
+                        legend='full', palette=palette, alpha=0.8)
         
         file_name = f'2d_t_sne_observations_and_states_{model_name}'
         output_path = model_folder / f"{file_name}.png"
