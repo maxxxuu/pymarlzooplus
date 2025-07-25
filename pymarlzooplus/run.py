@@ -110,13 +110,12 @@ def evaluate_sequential(args, runner):
         Action_Enum = getattr(env_mod, 'Action')
         action_to_meaning = {a.value: a.name for a in Action_Enum}
 
-        print(action_to_meaning)
-
         all_data = {}
         # Run test episodes
         for _ in tqdm(range(args.test_nepisode)):
             batch, all_info = runner.run(test_mode=True)
             all_data[f'episode_{_}'] = all_info
+        all_data['action_meaning'] = action_to_meaning
 
         # Save data as json
         path_to_save = os.path.join(args.results_dir, "all_data.json")
@@ -126,7 +125,7 @@ def evaluate_sequential(args, runner):
 
         # Create 2D t-SNE plots
         plot_output_dir = Path(args.results_dir) / 'tsne_plots'
-        plot_2d_t_sne(all_data, action_to_meaning, plot_output_dir)
+        # plot_2d_t_sne(all_data, action_to_meaning, plot_output_dir, args.test_nepisode)
 
     else:
         for _ in range(args.test_nepisode):
