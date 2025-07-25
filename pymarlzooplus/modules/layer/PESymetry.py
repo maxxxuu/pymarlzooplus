@@ -134,7 +134,7 @@ class RPESymetryMean(nn.Module):
         self.individual = nn.GRUCell(in_dim, out_dim)
         self.pooling = nn.GRUCell(in_dim, out_dim, bias=False)
 
-    def forward(self, x: torch.Tensor, h: torch.Tensor) -> (torch.Tensor, torch.Tensor):
+    def forward(self, x: torch.Tensor, h: torch.Tensor) -> torch.Tensor:
         # x_mean = x.mean(0, keepdim=True)
         output = []
         for i, j in zip(x.view(-1, x.shape[-2], x.shape[-1]), h.view(-1, h.shape[-2], h.shape[-1])):

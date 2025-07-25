@@ -91,8 +91,12 @@ def results_parser(sacred_directory, models):
                         if not metrics_path.is_file():
                             print(f"{metrics_path} not found: SKIPPED")
                             continue
+                        elif not os.path.isdir(run_dir / "plots"):
+                            print(f"{metrics_path} not finished")
+                            continue
                         # Load data frmo json
                         with open(metrics_path) as f:
+                            print(f"Importing from {metrics_path}")
                             metrics = json.load(f)
 
                         # Check if metrics is empty
