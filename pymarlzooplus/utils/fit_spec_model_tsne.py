@@ -11,6 +11,13 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 from sklearn.manifold import TSNE
+from sklearn.neighbors import NearestNeighbors
+from scipy.stats import entropy
+from shapely.geometry import Point, Polygon, MultiPolygon
+from shapely.geometry.base import BaseGeometry
+import alphashape
+from matplotlib.patches import Polygon as MplPolygon
+from sklearn.cluster import DBSCAN
 
 
 def create_all_data_script(path_to_sacred, model_name_paths, test_nepisode):
@@ -42,6 +49,7 @@ def create_all_data_script(path_to_sacred, model_name_paths, test_nepisode):
                     with \
                     env_args.key={game_name} \
                     env_args.time_limit={max_steps} \
+                    env_args.seed=2025  \
                     checkpoint_path={path} \
                     evaluate=True \
                     test_nepisode={test_nepisode} \
@@ -157,9 +165,21 @@ def t_sne_to_dataframe(obs_list, actions_list, states_list, models_list, action_
                     })
     
     dataframe['action_meaning'] = dataframe['action'].apply(lambda x: f"{x} : {action_mapping[x]}")
+    dataframe['entropy'] = np.nan
     # dataframe['action_meaning'] = dataframe['action'].apply(lambda x: f"{action_mapping[x]}")
 
     return dataframe
+
+
+def is_valid_for_alphashape(points):
+    if len(points) < 4:
+        return False
+    if np.all(points[:, 0] == points[0, 0]):
+        return False
+    if np.all(points[:, 1] == points[0, 1]):
+        return False
+    return True
+
 
 def plot(dataframe, path_to_save, game_name):
     # Distinct models
@@ -184,7 +204,26 @@ def plot(dataframe, path_to_save, game_name):
         model_folder.mkdir(parents=True, exist_ok=True)
 
         model_df = dataframe[dataframe['model_name'] == model_name]
+        model_df.to_csv(f'{model_folder}/tsne_data.csv', index=False)
+
         print(f"Plotting model {model_name} with dataframe of shape {model_df.shape}")
+
+        print('Calculating neighbor entropy...')
+        k = 20
+        X = model_df[['x_state', 'y_state']].values
+        actions = model_df['action'].values
+
+        nbrs = NearestNeighbors(n_neighbors=k + 1).fit(X)
+        distances, indices = nbrs.kneighbors(X)
+
+        entropies = []
+        for idx_list in indices:
+            neighbor_actions = actions[idx_list[1:]]  # exclude itself
+            hist = np.bincount(neighbor_actions, minlength=5)
+            probs = hist / hist.sum()
+            entropies.append(entropy(probs))
+
+        model_df['local_entropy'] = entropies
 
         #----------------- t-SNE -----------------
         print('Plotting t-SNE...')
@@ -194,6 +233,58 @@ def plot(dataframe, path_to_save, game_name):
                         legend='full', palette=palette, alpha=0.8)
 
         file_name = f'2d_t_sned_{model_name}'
+        output_path = model_folder / f"{file_name}.png"
+        plt.savefig(output_path, dpi=400)
+
+        for action in sorted(model_df['action_meaning'].unique()):
+            sub_df = model_df[model_df['action_meaning'] == action]
+            points = sub_df[['x_obs', 'y_obs']].values
+
+            clustering = DBSCAN(eps=8.0, min_samples=10).fit(points)
+            labels = clustering.labels_
+
+            for cluster_id in np.unique(labels):
+                if cluster_id == -1:
+                    continue
+
+                cluster_points = points[labels == cluster_id]
+
+                if len(cluster_points) < 4:
+                    continue
+
+                try:
+                    shape = alphashape.alphashape(cluster_points, 0.2)
+                    if shape.is_empty:
+                        continue
+
+                    if shape.geom_type == 'Polygon':
+                        patch = MplPolygon(np.array(shape.exterior.coords),
+                                           alpha=0.2, color=palette[action])
+                        plt.gca().add_patch(patch)
+
+                    elif shape.geom_type == 'MultiPolygon':
+                        for poly in shape.geoms:
+                            patch = MplPolygon(np.array(poly.exterior.coords),
+                                               alpha=0.2, color=palette[action])
+                            plt.gca().add_patch(patch)
+                except Exception as e:
+                    print(f"Failed to draw shape for action={action}, cluster={cluster_id}: {e}")
+
+        plt.title(f"t-SNE with Alpha Shapes per Action  - {model_name}")
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        file_name = f'Alpha_observations_{model_name}'
+        output_path = model_folder / f"{file_name}.png"
+        plt.savefig(output_path, dpi=400)
+
+        plt.close()
+
+        # Plot obs - entropy
+        plt.figure(figsize=(10, 10))
+        sns.scatterplot(data=model_df, x='x_obs', y='y_obs', hue='local_entropy', palette='coolwarm')
+
+        file_name = f'entropy_2d_t_sned_{model_name}'
         output_path = model_folder / f"{file_name}.png"
         plt.savefig(output_path, dpi=400)
         plt.close()
@@ -206,7 +297,61 @@ def plot(dataframe, path_to_save, game_name):
         file_name = f'2d_t_sne_observations_and_states_{model_name}'
         output_path = model_folder / f"{file_name}.png"
         plt.savefig(output_path, dpi=400)
+
+        for action in sorted(model_df['action_meaning'].unique()):
+            sub_df = model_df[model_df['action_meaning'] == action]
+            points = sub_df[['x_state', 'y_state']].values
+
+            clustering = DBSCAN(eps=8.0, min_samples=10).fit(points)
+            labels = clustering.labels_
+
+            for cluster_id in np.unique(labels):
+                if cluster_id == -1:
+                    continue
+
+                cluster_points = points[labels == cluster_id]
+
+                if len(cluster_points) < 4:
+                    continue
+
+                try:
+                    shape = alphashape.alphashape(cluster_points, 0.2)
+                    if shape.is_empty:
+                        continue
+
+                    if shape.geom_type == 'Polygon':
+                        patch = MplPolygon(np.array(shape.exterior.coords),
+                                           alpha=0.2, color=palette[action])
+                        plt.gca().add_patch(patch)
+
+                    elif shape.geom_type == 'MultiPolygon':
+                        for poly in shape.geoms:
+                            patch = MplPolygon(np.array(poly.exterior.coords),
+                                               alpha=0.2, color=palette[action])
+                            plt.gca().add_patch(patch)
+                except Exception as e:
+                    print(f"Failed to draw shape for action={action}, cluster={cluster_id}: {e}")
+
+        plt.title(f"t-SNE with Alpha Shapes per Action - {model_name}")
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        file_name = f'Alpha_o_s_{model_name}'
+        output_path = model_folder / f"{file_name}.png"
+        plt.savefig(output_path, dpi=400)
+
         plt.close()
+
+        # Plot states - entropy
+        plt.figure(figsize=(10, 10))
+        sns.scatterplot(data=model_df, x='x_state', y='y_state', hue='local_entropy', palette='coolwarm')
+
+        file_name = f'entropy_2d_t_sne_observations_and_states_{model_name}'
+        output_path = model_folder / f"{file_name}.png"
+        plt.savefig(output_path, dpi=400)
+        plt.close()
+
+        plt.figure(figsize=(10, 10))
 
         #----------------- Action disparity -----------------
         print('Plotting action disparity...')
@@ -246,10 +391,15 @@ def cli():
     p.add_argument("--model_paths", nargs='+', default=None) # ends with the run number and must contain 'models' folder
     p.add_argument("--test_nepisode", type=int, default=10)
     p.add_argument("--output_dir", type=str, default=None)
+    p.add_argument("--embedded_data", type=str, default=None)
 
     args = p.parse_args()
 
     print(args.model_paths)
+
+    if args.output_dir is None:
+        args.output_dir = default_dir / "tsne_plots"
+
 
     # Create json files by running the appropriate command lines
     flat, key_to_model, action_mapping, game_name = create_all_data_script(args.sacred_directory, args.model_paths, args.test_nepisode)
@@ -258,13 +408,18 @@ def cli():
     obs_list, actions_list, states_list, models_list = combine_data(flat, key_to_model)
 
     # Fit t-SNE model and return dataframe for plotting
-    dataframe = t_sne_to_dataframe(obs_list, actions_list, states_list, models_list, action_mapping)
+    if args.embedded_data is None:
+        dataframe = t_sne_to_dataframe(obs_list, actions_list, states_list, models_list, action_mapping)
+        dataframe.to_csv(f'{args.output_dir}/tsne_data.csv', index=False)
+    else:
+        dataframe = pd.read_csv(args.embedded_data)
+
+
+
 
     # Plot
-    if args.output_dir is None:
-        output_dir = default_dir / "tsne_plots"
 
-    plot(dataframe, output_dir, game_name)
+    plot(dataframe, args.output_dir, game_name)
 
 if __name__ == "__main__":
     cli()
