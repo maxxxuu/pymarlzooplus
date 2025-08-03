@@ -52,7 +52,7 @@ def info_parser(sacred_directory):
 
     return games, game_groups, models, model_game, game_model
 
-def results_parser(sacred_directory, models):
+def results_parser(sacred_directory, models, games=None):
     sacred_directory = Path(sacred_directory)
 
     # Get all games names that end with v1 (specifying game name annoying lolol) and also groups them
@@ -62,6 +62,9 @@ def results_parser(sacred_directory, models):
     else:
         game_names, game_groups, _, model_game, game_model = info_parser(sacred_directory)
 
+    if games is not None:
+        game_groups = {k: v for k, v in game_groups.items() if games in k}
+        game_names = set().union(*game_groups.values())
     print('Games:', game_names)
 
     metric_names = ['return_mean', 'return_std', 'test_return_mean', 'test_return_std']
@@ -405,7 +408,7 @@ if __name__ == "__main__":
     args = cli()
     
 
-    dataframes, best_model, game_names, game_groups, model_game, game_model = results_parser(args.sacred_directory, args.models)
+    dataframes, best_model, game_names, game_groups, model_game, game_model = results_parser(args.sacred_directory, args.models, args.game)
 
     print('Plotting standalone games')
 

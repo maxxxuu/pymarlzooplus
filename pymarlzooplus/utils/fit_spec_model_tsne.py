@@ -10,6 +10,7 @@ import json
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
+import matplotlib.patches as patches
 from sklearn.manifold import TSNE
 from sklearn.neighbors import NearestNeighbors
 from scipy.stats import entropy
@@ -180,6 +181,15 @@ def is_valid_for_alphashape(points):
         return False
     return True
 
+def draw_dashed_circle(ax, center, radius, color='dimgray', linewidth=1):
+    circle = patches.Circle(
+        center, radius=radius,
+        edgecolor=color,
+        facecolor='none',
+        linestyle='--',
+        linewidth=linewidth
+    )
+    ax.add_patch(circle)
 
 def plot(dataframe, path_to_save, game_name):
     # Distinct models
@@ -198,47 +208,57 @@ def plot(dataframe, path_to_save, game_name):
     dataframe['action_meaning'] = pd.Categorical(dataframe['action_meaning'], categories=hue_levels, ordered=True)
     dataframe = dataframe.sort_values('action_meaning')
 
-    for model_name in model_names:
-        # Create folder for each model
-        model_folder = path_to_save / model_name
-        model_folder.mkdir(parents=True, exist_ok=True)
+    sns.set_style("whitegrid",
+                  # {"grid.color": ".4"}
+                  )
+    plt.rcParams.update({'font.size': 20})
 
+    # ----------------- Single t-SNE -----------------
+    num_models = len(model_names)
+    num_subplots = num_models * 2
+    num_cols = num_models
+    num_rows = 2
+
+    fig, axes = plt.subplots(num_rows, num_cols, figsize=(5 * num_rows, 5 * num_rows+1))
+    axes = axes.flatten()
+    fig.tight_layout(pad=0.5)
+    fig.subplots_adjust(wspace=0.1)
+
+    # Ensure axes is always indexable
+    if num_subplots == 1:
+        axes = [axes]
+
+    # Keep track of which actions have already been added to the legend
+    added_labels = set()
+
+    # Define plotting order: [model1_obs, model2_obs, ..., model1_state, model2_state, ...]
+    plot_order = [(model_name, 'obs') for model_name in model_names] + \
+                 [(model_name, 'state') for model_name in model_names]
+
+    for ax_idx, (model_name, mode) in enumerate(plot_order):
         model_df = dataframe[dataframe['model_name'] == model_name]
-        model_df.to_csv(f'{model_folder}/tsne_data.csv', index=False)
-
         print(f"Plotting model {model_name} with dataframe of shape {model_df.shape}")
+        ax = axes[ax_idx]
+        x_col, y_col = f'x_{mode}', f'y_{mode}'
 
-        print('Calculating neighbor entropy...')
-        k = 20
-        X = model_df[['x_state', 'y_state']].values
-        actions = model_df['action'].values
+        sns.scatterplot(
+            x=x_col, y=y_col,
+            hue='action_meaning',
+            hue_order=hue_levels,
+            data=model_df,
+            palette=palette,
+            alpha=0.8,
+            ax=ax,
+            s=10,
+            legend="full" if ax_idx == 0 else False,
+        )
 
-        nbrs = NearestNeighbors(n_neighbors=k + 1).fit(X)
-        distances, indices = nbrs.kneighbors(X)
-
-        entropies = []
-        for idx_list in indices:
-            neighbor_actions = actions[idx_list[1:]]  # exclude itself
-            hist = np.bincount(neighbor_actions, minlength=5)
-            probs = hist / hist.sum()
-            entropies.append(entropy(probs))
-
-        model_df['local_entropy'] = entropies
-
-        #----------------- t-SNE -----------------
-        print('Plotting t-SNE...')
-        # Plot observations to 2D
-        plt.figure(figsize=(10,10))
-        sns.scatterplot(x='x_obs', y='y_obs', hue='action_meaning', hue_order=hue_levels, data=model_df, 
-                        legend='full', palette=palette, alpha=0.8)
-
-        file_name = f'2d_t_sned_{model_name}'
-        output_path = model_folder / f"{file_name}.png"
-        plt.savefig(output_path, dpi=400)
+        if ax_idx == 0:
+            ax.legend_.remove()
 
         for action in sorted(model_df['action_meaning'].unique()):
             sub_df = model_df[model_df['action_meaning'] == action]
-            points = sub_df[['x_obs', 'y_obs']].values
+            points = sub_df[[x_col, y_col]].values
 
             clustering = DBSCAN(eps=8.0, min_samples=10).fit(points)
             labels = clustering.labels_
@@ -246,9 +266,7 @@ def plot(dataframe, path_to_save, game_name):
             for cluster_id in np.unique(labels):
                 if cluster_id == -1:
                     continue
-
                 cluster_points = points[labels == cluster_id]
-
                 if len(cluster_points) < 4:
                     continue
 
@@ -257,130 +275,255 @@ def plot(dataframe, path_to_save, game_name):
                     if shape.is_empty:
                         continue
 
-                    if shape.geom_type == 'Polygon':
-                        patch = MplPolygon(np.array(shape.exterior.coords),
-                                           alpha=0.2, color=palette[action])
-                        plt.gca().add_patch(patch)
-
-                    elif shape.geom_type == 'MultiPolygon':
-                        for poly in shape.geoms:
-                            patch = MplPolygon(np.array(poly.exterior.coords),
-                                               alpha=0.2, color=palette[action])
-                            plt.gca().add_patch(patch)
-                except Exception as e:
-                    print(f"Failed to draw shape for action={action}, cluster={cluster_id}: {e}")
-
-        plt.title(f"t-SNE with Alpha Shapes per Action  - {model_name}")
-        plt.legend()
-        plt.grid(True)
-        plt.tight_layout()
-        file_name = f'Alpha_observations_{model_name}'
-        output_path = model_folder / f"{file_name}.png"
-        plt.savefig(output_path, dpi=400)
-
-        plt.close()
-
-        # Plot obs - entropy
-        plt.figure(figsize=(10, 10))
-        sns.scatterplot(data=model_df, x='x_obs', y='y_obs', hue='local_entropy', palette='coolwarm')
-
-        file_name = f'entropy_2d_t_sned_{model_name}'
-        output_path = model_folder / f"{file_name}.png"
-        plt.savefig(output_path, dpi=400)
-        plt.close()
-
-        # Plot states to 2D
-        plt.figure(figsize=(10,10))
-        sns.scatterplot(x='x_state', y='y_state', hue='action_meaning', hue_order=hue_levels, data=model_df, 
-                        legend='full', palette=palette, alpha=0.8)
-        
-        file_name = f'2d_t_sne_observations_and_states_{model_name}'
-        output_path = model_folder / f"{file_name}.png"
-        plt.savefig(output_path, dpi=400)
-
-        for action in sorted(model_df['action_meaning'].unique()):
-            sub_df = model_df[model_df['action_meaning'] == action]
-            points = sub_df[['x_state', 'y_state']].values
-
-            clustering = DBSCAN(eps=8.0, min_samples=10).fit(points)
-            labels = clustering.labels_
-
-            for cluster_id in np.unique(labels):
-                if cluster_id == -1:
-                    continue
-
-                cluster_points = points[labels == cluster_id]
-
-                if len(cluster_points) < 4:
-                    continue
-
-                try:
-                    shape = alphashape.alphashape(cluster_points, 0.2)
-                    if shape.is_empty:
-                        continue
+                    def add_patch_from_shape(shape_geom):
+                        patch = MplPolygon(
+                            np.array(shape_geom.exterior.coords),
+                            alpha=0.3,
+                            color=palette[action],
+                            label=None,
+                        )
+                        ax.add_patch(patch)
 
                     if shape.geom_type == 'Polygon':
-                        patch = MplPolygon(np.array(shape.exterior.coords),
-                                           alpha=0.2, color=palette[action])
-                        plt.gca().add_patch(patch)
-
+                        add_patch_from_shape(shape)
                     elif shape.geom_type == 'MultiPolygon':
                         for poly in shape.geoms:
-                            patch = MplPolygon(np.array(poly.exterior.coords),
-                                               alpha=0.2, color=palette[action])
-                            plt.gca().add_patch(patch)
+                            add_patch_from_shape(poly)
+
+                    added_labels.add(action)
+
                 except Exception as e:
-                    print(f"Failed to draw shape for action={action}, cluster={cluster_id}: {e}")
+                    print(
+                        f"Failed to draw shape for {model_name} - {mode} - action={action}, cluster={cluster_id}: {e}")
 
-        plt.title(f"t-SNE with Alpha Shapes per Action - {model_name}")
-        plt.legend()
-        plt.grid(True)
-        plt.tight_layout()
-        file_name = f'Alpha_o_s_{model_name}'
-        output_path = model_folder / f"{file_name}.png"
-        plt.savefig(output_path, dpi=400)
+        title_name = {"model":{"qplex": "QPLEX", "qplex_cent_pet": "CPE-QPLEX"}, "mode":{"obs": "Ind Obs", "state": "Ind+Joint Obs"}}
+        ax.set_title(f"{title_name['model'][model_name]} - {title_name['mode'][mode]}")
+        ax.set_aspect('equal')
+        ax.grid(True)
 
-        plt.close()
+        if mode == "state":
+            draw_dashed_circle(ax, (-50, 0), 25, color="darkslategray")
+            draw_dashed_circle(ax, (0, -45), 20, color="darkslategray")
+            draw_dashed_circle(ax, (75, 25), 25, color="darkslategray")
 
-        # Plot states - entropy
-        plt.figure(figsize=(10, 10))
-        sns.scatterplot(data=model_df, x='x_state', y='y_state', hue='local_entropy', palette='coolwarm')
+        if ax_idx % num_cols != 0:
+            # ax.set_yticklabels([])
+            ax.set_ylabel("")
+        else:
+            ax.set_ylabel("y")
 
-        file_name = f'entropy_2d_t_sne_observations_and_states_{model_name}'
-        output_path = model_folder / f"{file_name}.png"
-        plt.savefig(output_path, dpi=400)
-        plt.close()
+        if ax_idx >= num_subplots - num_cols :
+            # ax.set_yticklabels([])
+            ax.set_xlabel("x")
+        else:
+            ax.set_xlabel("")
 
-        plt.figure(figsize=(10, 10))
+    # Collect and deduplicate legend handles, place shared legend below
+    handles, labels = axes[0].get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    fig.legend(by_label.values(), by_label.keys(), loc='lower center',
+               ncol=len(by_label), bbox_to_anchor=(0.51, -0), markerscale=3,
+               frameon=False,
+               fontsize='small',
+               labelspacing=0.2,
+               columnspacing=0.6,
+               handletextpad=0.05,
+               handlelength=0.9,
+               )
 
-        #----------------- Action disparity -----------------
-        print('Plotting action disparity...')
-        action_disparity = pd.DataFrame(model_df['action_meaning'].value_counts())
-        action_disparity['ratio'] = action_disparity['count'] / action_disparity['count'].sum()
-        action_disparity = action_disparity.reindex(hue_levels)
+    # Layout adjustment to make room for legend
+    plt.tight_layout(rect=[0, 0.05, 1, 1])
 
-        fig, ax = plt.subplots(figsize=(10,1.5))
+    # Save figure
+    output_path = path_to_save / "Alpha_shapes_all_models_horizontal.pdf"
+    plt.savefig(output_path, dpi=400, bbox_inches='tight')
+    plt.close()
 
-        left = 0
-        patches = []
-        for action in hue_levels:
-            ratio = action_disparity.loc[action, 'ratio']
-            color = palette[action]
-            ax.barh(y=0, left=left, width=ratio, height=0.5, color=color, edgecolor=None)
-            patches.append(Patch(color=color, label=f"{action} ({ratio*100:.1f}%)"))
-            left += ratio
-        
-        ax.axis('off')
+    # for model_name in model_names:
+    #     # Create folder for each model
+    #     model_folder = path_to_save / model_name
+    #     model_folder.mkdir(parents=True, exist_ok=True)
+    #
+    #     model_df = dataframe[dataframe['model_name'] == model_name]
+    #     model_df.to_csv(f'{model_folder}/tsne_data.csv', index=False)
+    #
+    #     print(f"Plotting model {model_name} with dataframe of shape {model_df.shape}")
+    #
+    #     print('Calculating neighbor entropy...')
+    #     k = 20
+    #     X = model_df[['x_state', 'y_state']].values
+    #     actions = model_df['action'].values
+    #
+    #     nbrs = NearestNeighbors(n_neighbors=k + 1).fit(X)
+    #     distances, indices = nbrs.kneighbors(X)
+    #
+    #     entropies = []
+    #     for idx_list in indices:
+    #         neighbor_actions = actions[idx_list[1:]]  # exclude itself
+    #         hist = np.bincount(neighbor_actions, minlength=5)
+    #         probs = hist / hist.sum()
+    #         entropies.append(entropy(probs))
+    #
+    #     model_df['local_entropy'] = entropies
+    #
+    #     #----------------- t-SNE -----------------
+    #     print('Plotting t-SNE...')
+    #     # Plot observations to 2D
+    #     plt.figure(figsize=(10,10))
+    #     sns.scatterplot(x='x_obs', y='y_obs', hue='action_meaning', hue_order=hue_levels, data=model_df,
+    #                     legend='full', palette=palette, alpha=0.8)
+    #
+    #     file_name = f'2d_t_sned_{model_name}'
+    #     output_path = model_folder / f"{file_name}.png"
+    #     plt.savefig(output_path, dpi=400)
+    #
+    #     for action in sorted(model_df['action_meaning'].unique()):
+    #         sub_df = model_df[model_df['action_meaning'] == action]
+    #         points = sub_df[['x_obs', 'y_obs']].values
+    #
+    #         clustering = DBSCAN(eps=8.0, min_samples=10).fit(points)
+    #         labels = clustering.labels_
+    #
+    #         for cluster_id in np.unique(labels):
+    #             if cluster_id == -1:
+    #                 continue
+    #
+    #             cluster_points = points[labels == cluster_id]
+    #
+    #             if len(cluster_points) < 4:
+    #                 continue
+    #
+    #             try:
+    #                 shape = alphashape.alphashape(cluster_points, 0.2)
+    #                 if shape.is_empty:
+    #                     continue
+    #
+    #                 if shape.geom_type == 'Polygon':
+    #                     patch = MplPolygon(np.array(shape.exterior.coords),
+    #                                        alpha=0.2, color=palette[action])
+    #                     plt.gca().add_patch(patch)
+    #
+    #                 elif shape.geom_type == 'MultiPolygon':
+    #                     for poly in shape.geoms:
+    #                         patch = MplPolygon(np.array(poly.exterior.coords),
+    #                                            alpha=0.2, color=palette[action])
+    #                         plt.gca().add_patch(patch)
+    #             except Exception as e:
+    #                 print(f"Failed to draw shape for action={action}, cluster={cluster_id}: {e}")
+    #
+    #     plt.title(f"t-SNE with Alpha Shapes per Action  - {model_name}")
+    #     plt.legend()
+    #     plt.grid(True)
+    #     plt.tight_layout()
+    #     file_name = f'Alpha_observations_{model_name}'
+    #     output_path = model_folder / f"{file_name}.png"
+    #     plt.savefig(output_path, dpi=400)
+    #
+    #     plt.close()
+    #
+    #     # Plot obs - entropy
+    #     plt.figure(figsize=(10, 10))
+    #     sns.scatterplot(data=model_df, x='x_obs', y='y_obs', hue='local_entropy', palette='coolwarm')
+    #
+    #     file_name = f'entropy_2d_t_sned_{model_name}'
+    #     output_path = model_folder / f"{file_name}.png"
+    #     plt.savefig(output_path, dpi=400)
+    #     plt.close()
+    #
+    #     # Plot states to 2D
+    #     plt.figure(figsize=(10,10))
+    #     sns.scatterplot(x='x_state', y='y_state', hue='action_meaning', hue_order=hue_levels, data=model_df,
+    #                     legend='full', palette=palette, alpha=0.8)
+    #
+    #     file_name = f'2d_t_sne_observations_and_states_{model_name}'
+    #     output_path = model_folder / f"{file_name}.png"
+    #     plt.savefig(output_path, dpi=400)
+    #
+    #     for action in sorted(model_df['action_meaning'].unique()):
+    #         sub_df = model_df[model_df['action_meaning'] == action]
+    #         points = sub_df[['x_state', 'y_state']].values
+    #
+    #         clustering = DBSCAN(eps=8.0, min_samples=10).fit(points)
+    #         labels = clustering.labels_
+    #
+    #         for cluster_id in np.unique(labels):
+    #             if cluster_id == -1:
+    #                 continue
+    #
+    #             cluster_points = points[labels == cluster_id]
+    #
+    #             if len(cluster_points) < 4:
+    #                 continue
+    #
+    #             try:
+    #                 shape = alphashape.alphashape(cluster_points, 0.2)
+    #                 if shape.is_empty:
+    #                     continue
+    #
+    #                 if shape.geom_type == 'Polygon':
+    #                     patch = MplPolygon(np.array(shape.exterior.coords),
+    #                                        alpha=0.2, color=palette[action])
+    #                     plt.gca().add_patch(patch)
+    #
+    #                 elif shape.geom_type == 'MultiPolygon':
+    #                     for poly in shape.geoms:
+    #                         patch = MplPolygon(np.array(poly.exterior.coords),
+    #                                            alpha=0.2, color=palette[action])
+    #                         plt.gca().add_patch(patch)
+    #             except Exception as e:
+    #                 print(f"Failed to draw shape for action={action}, cluster={cluster_id}: {e}")
+    #
+    #     plt.title(f"t-SNE with Alpha Shapes per Action - {model_name}")
+    #     plt.legend()
+    #     plt.grid(True)
+    #     plt.tight_layout()
+    #     file_name = f'Alpha_o_s_{model_name}'
+    #     output_path = model_folder / f"{file_name}.png"
+    #     plt.savefig(output_path, dpi=400)
+    #
+    #     plt.close()
+    #
+    #     # Plot states - entropy
+    #     plt.figure(figsize=(10, 10))
+    #     sns.scatterplot(data=model_df, x='x_state', y='y_state', hue='local_entropy', palette='coolwarm')
+    #
+    #     file_name = f'entropy_2d_t_sne_observations_and_states_{model_name}'
+    #     output_path = model_folder / f"{file_name}.png"
+    #     plt.savefig(output_path, dpi=400)
+    #     plt.close()
+    #
+    #     plt.figure(figsize=(10, 10))
+    #
+    #     #----------------- Action disparity -----------------
+    #     print('Plotting action disparity...')
+    #     action_disparity = pd.DataFrame(model_df['action_meaning'].value_counts())
+    #     action_disparity['ratio'] = action_disparity['count'] / action_disparity['count'].sum()
+    #     action_disparity = action_disparity.reindex(hue_levels)
+    #
+    #     fig, ax = plt.subplots(figsize=(10,1.5))
+    #
+    #     left = 0
+    #     patches = []
+    #     for action in hue_levels:
+    #         ratio = action_disparity.loc[action, 'ratio']
+    #         color = palette[action]
+    #         ax.barh(y=0, left=left, width=ratio, height=0.5, color=color, edgecolor=None)
+    #         patches.append(Patch(color=color, label=f"{action} ({ratio*100:.1f}%)"))
+    #         left += ratio
+    #
+    #     ax.axis('off')
+    #
+    #     ax.legend(handles=patches, loc='lower center', bbox_to_anchor=(0.5, 1.1),
+    #               ncol=len(hue_levels), frameon=False)
+    #
+    #     plt.tight_layout()
+    #
+    #     file_name = f'action_disparity_{model_name}'
+    #     output_path = model_folder / f"{file_name}.png"
+    #     plt.savefig(output_path, dpi=100)
+    #     plt.close()
 
-        ax.legend(handles=patches, loc='lower center', bbox_to_anchor=(0.5, 1.1), 
-                  ncol=len(hue_levels), frameon=False)
 
-        plt.tight_layout()
-
-        file_name = f'action_disparity_{model_name}'
-        output_path = model_folder / f"{file_name}.png"
-        plt.savefig(output_path, dpi=100)
-        plt.close()
 
 
 def cli():
